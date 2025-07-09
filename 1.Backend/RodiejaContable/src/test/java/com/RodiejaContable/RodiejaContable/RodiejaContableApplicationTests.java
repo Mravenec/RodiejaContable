@@ -1,10 +1,10 @@
-package com.RodiejaContable.RodiejaContable;
+package com.rodiejacontable.rodiejacontable;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class RodiejaContableApplicationTests {
+class RodiejacontableApplicationTests {
 
 	@Test
 	void contextLoads() {

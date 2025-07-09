@@ -8,11 +8,10 @@
 		<version>3.5.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.RodiejaContable</groupId>
-	<artifactId>RodiejaContable</artifactId>
+	<groupId>com.rodiejacontable</groupId>
+	<artifactId>rodiejacontable</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>pom</packaging>
-	<name>RodiejaContable</name>
+	<name>rodiejacontable</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
@@ -29,23 +28,15 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
-		<rodieja-db.version>0.0.1-SNAPSHOT</rodieja-db.version>
 	</properties>
-	
-	<modules>
-		<module>module/RodiejaContableDBmodule</module>
-	</modules>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web-services</artifactId>
+			<artifactId>spring-boot-starter-jooq</artifactId>
 		</dependency>
-
-		<!-- Database Module -->
 		<dependency>
-			<groupId>com.RodiejaContable.database</groupId>
-			<artifactId>RodiejaContable</artifactId>
-			<version>${rodieja-db.version}</version>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
 		<dependency>
