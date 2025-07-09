@@ -1511,3 +1511,16 @@ SELECT * FROM vista_auditoria_completa;
 SELECT * FROM vista_auditoria_completa WHERE tipo_entidad = 'Vehículo';
 CALL sp_historial_vehiculo(1);
 CALL sp_actividad_auditoria_fecha('2023-02-01', '2023-04-30');
+
+SELECT * FROM vista_analisis_financiero_mensual;
+SELECT * FROM vista_auditoria_completa;
+SELECT * FROM vista_dashboard_ejecutivo;
+SELECT * FROM vista_inventario_completo;
+SELECT * FROM vista_inventario_critico;
+SELECT * FROM vista_rentabilidad_generaciones;
+SELECT * FROM vista_resumen_generaciones;
+SELECT * FROM vista_top_productos_vendidos;
+SELECT * FROM vista_transacciones_completas;
+SELECT * FROM vista_vehiculos_completa;
+SELECT * FROM vista_ventas_por_empleado;
+
