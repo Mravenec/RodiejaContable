@@ -1,6 +1,6 @@
 package com.rodiejacontable.repository;
 
-import com.rodiejacontable.database.jooq.tables.Generaciones;
+import static com.rodiejacontable.database.jooq.Tables.GENERACIONES;
 import com.rodiejacontable.database.jooq.tables.pojos.Generaciones;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +15,17 @@ public class GeneracionesRepository {
     @Autowired
     private DSLContext dsl;
     
-    private final Generaciones GENERACIONES = Generaciones.GENERACIONES;
+    // Using static import for GENERACIONES
     
     public List<Generaciones> findAll() {
         return dsl.selectFrom(GENERACIONES)
-                .fetchInto(Generaciones.class);
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.Generaciones.class);
     }
     
     public Optional<Generaciones> findById(Integer id) {
         return dsl.selectFrom(GENERACIONES)
                 .where(GENERACIONES.ID.eq(id))
-                .fetchOptionalInto(Generaciones.class);
+                .fetchOptionalInto(com.rodiejacontable.database.jooq.tables.pojos.Generaciones.class);
     }
     
     public Generaciones save(Generaciones generacion) {
@@ -43,7 +43,7 @@ public class GeneracionesRepository {
                 .set(GENERACIONES.FECHA_CREACION, generacion.getFechaCreacion())
                 .returning()
                 .fetchOne()
-                .into(Generaciones.class);
+                .into(com.rodiejacontable.database.jooq.tables.pojos.Generaciones.class);
     }
     
     public Generaciones update(Generaciones generacion) {
@@ -58,27 +58,27 @@ public class GeneracionesRepository {
                 .set(GENERACIONES.TOTAL_EGRESOS, generacion.getTotalEgresos())
                 .set(GENERACIONES.BALANCE_NETO, generacion.getBalanceNeto())
                 .set(GENERACIONES.ACTIVO, generacion.getActivo())
-                .where(GENERACIONES.ID.eq(generacion.getId()))
+                .where(com.rodiejacontable.database.jooq.Tables.GENERACIONES.ID.eq(generacion.getId()))
                 .returning()
                 .fetchOne()
-                .into(Generaciones.class);
+                .into(com.rodiejacontable.database.jooq.tables.pojos.Generaciones.class);
     }
     
     public void delete(Integer id) {
-        dsl.deleteFrom(GENERACIONES)
-           .where(GENERACIONES.ID.eq(id))
+        dsl.deleteFrom(com.rodiejacontable.database.jooq.Tables.GENERACIONES)
+           .where(com.rodiejacontable.database.jooq.Tables.GENERACIONES.ID.eq(id))
            .execute();
     }
     
     public List<Generaciones> findByModeloId(Integer modeloId) {
         return dsl.selectFrom(GENERACIONES)
                 .where(GENERACIONES.MODELO_ID.eq(modeloId))
-                .fetchInto(Generaciones.class);
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.Generaciones.class);
     }
     
     public List<Generaciones> findByActivo(Byte activo) {
         return dsl.selectFrom(GENERACIONES)
                 .where(GENERACIONES.ACTIVO.eq(activo))
-                .fetchInto(Generaciones.class);
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.Generaciones.class);
     }
 }

@@ -1,6 +1,6 @@
 package com.rodiejacontable.repository;
 
-import com.rodiejacontable.database.jooq.tables.Empleados;
+import static com.rodiejacontable.database.jooq.Tables.EMPLEADOS;
 import com.rodiejacontable.database.jooq.tables.pojos.Empleados;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ public class EmpleadosRepository {
     @Autowired
     private DSLContext dsl;
     
-    private final Empleados EMPLEADOS = Empleados.EMPLEADOS;
+    // Using static import for EMPLEADOS
     
     public List<Empleados> findAll() {
         return dsl.selectFrom(EMPLEADOS)

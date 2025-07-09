@@ -1,7 +1,7 @@
 package com.rodiejacontable.controller;
 
-import com.rodiejacontable.database.jooq.tables.pojos.Empleado;
-import com.rodiejacontable.service.EmpleadoService;
+import com.rodiejacontable.database.jooq.tables.pojos.Empleados;
+import com.rodiejacontable.service.EmpleadosService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,30 +10,30 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/empleados")
-public class EmpleadoController {
+public class EmpleadosController {
 
     @Autowired
-    private EmpleadoService empleadoService;
+    private EmpleadosService empleadoService;
 
     @GetMapping
-    public List<Empleado> getAllEmpleados() {
+    public List<Empleados> getAllEmpleados() {
         return empleadoService.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Empleado> getEmpleadoById(@PathVariable Integer id) {
+    public ResponseEntity<Empleados> getEmpleadoById(@PathVariable Integer id) {
         return ResponseEntity.ok(empleadoService.findById(id));
     }
 
     @PostMapping
-    public Empleado createEmpleado(@RequestBody Empleado empleado) {
+    public Empleados createEmpleado(@RequestBody Empleados empleado) {
         return empleadoService.create(empleado);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Empleado> updateEmpleado(
+    public ResponseEntity<Empleados> updateEmpleado(
             @PathVariable Integer id, 
-            @RequestBody Empleado empleadoDetails) {
+            @RequestBody Empleados empleadoDetails) {
         return ResponseEntity.ok(empleadoService.update(id, empleadoDetails));
     }
 

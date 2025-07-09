@@ -31,7 +31,7 @@ public class EmpleadosService {
     }
     
     public Empleados update(Integer id, Empleados empleadoDetails) {
-        Empleado empleado = findById(id);
+        Empleados empleado = findById(id);
         
         empleado.setNombre(empleadoDetails.getNombre() != null ? empleadoDetails.getNombre() : empleado.getNombre());
         empleado.setActivo(empleadoDetails.getActivo() != null ? empleadoDetails.getActivo() : empleado.getActivo());
@@ -40,7 +40,7 @@ public class EmpleadosService {
     }
     
     public void delete(Integer id) {
-        Empleado empleado = findById(id);
+        Empleados empleado = findById(id);
         empleadoRepository.delete(empleado.getId());
     }
 }
