@@ -1,8 +1,8 @@
-package com.RodiejaContable.RodiejaContable.controller;
+package com.rodiejacontable.rodiejacontable.controller;
 
 import com.rodiejacontable.database.jooq.tables.records.VistaAuditoriaCompletaRecord;
 import com.rodiejacontable.database.jooq.tables.pojos.HistorialVehiculos;
-import com.RodiejaContable.RodiejaContable.service.AuditoriaService;
+import com.rodiejacontable.rodiejacontable.service.AuditoriaService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

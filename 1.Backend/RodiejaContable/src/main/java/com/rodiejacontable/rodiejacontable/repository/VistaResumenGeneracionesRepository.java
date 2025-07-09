@@ -1,7 +1,7 @@
-package com.RodiejaContable.RodiejaContable.repository;
+package com.rodiejacontable.rodiejacontable.repository;
 
 import static com.rodiejacontable.database.jooq.Tables.VISTA_RESUMEN_GENERACIONES;
-import com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones;
+
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
@@ -10,8 +10,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.rodiejacontable.database.jooq.Tables.VISTA_RESUMEN_GENERACIONES;
 
 @Repository
 public class VistaResumenGeneracionesRepository {

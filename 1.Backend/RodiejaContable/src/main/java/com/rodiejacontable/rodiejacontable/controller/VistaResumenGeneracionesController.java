@@ -1,7 +1,7 @@
-package com.RodiejaContable.RodiejaContable.controller;
+package com.rodiejacontable.rodiejacontable.controller;
 
 // Using fully qualified class name to avoid ambiguity
-import com.RodiejaContable.RodiejaContable.service.VistaResumenGeneracionesService;
+import com.rodiejacontable.rodiejacontable.service.VistaResumenGeneracionesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

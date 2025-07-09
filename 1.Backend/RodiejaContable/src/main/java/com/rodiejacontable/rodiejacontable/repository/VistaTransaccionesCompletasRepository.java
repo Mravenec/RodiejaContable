@@ -1,4 +1,4 @@
-package com.RodiejaContable.RodiejaContable.repository;
+package com.rodiejacontable.rodiejacontable.repository;
 
 import com.rodiejacontable.database.jooq.enums.VistaTransaccionesCompletasCategoria;
 import com.rodiejacontable.database.jooq.enums.VistaTransaccionesCompletasEstado;

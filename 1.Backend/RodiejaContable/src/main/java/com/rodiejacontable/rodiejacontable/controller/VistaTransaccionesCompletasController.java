@@ -1,11 +1,10 @@
-package com.RodiejaContable.RodiejaContable.controller;
+package com.rodiejacontable.rodiejacontable.controller;
 
-import com.RodiejaContable.RodiejaContable.service.VistaTransaccionesCompletasService;
+import com.rodiejacontable.rodiejacontable.service.VistaTransaccionesCompletasService;
 import com.rodiejacontable.database.jooq.enums.VistaTransaccionesCompletasCategoria;
 import com.rodiejacontable.database.jooq.enums.VistaTransaccionesCompletasEstado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;

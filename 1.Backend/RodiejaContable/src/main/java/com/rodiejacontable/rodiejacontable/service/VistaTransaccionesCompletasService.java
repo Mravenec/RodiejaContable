@@ -1,6 +1,6 @@
-package com.RodiejaContable.RodiejaContable.service;
+package com.rodiejacontable.rodiejacontable.service;
 
-import com.RodiejaContable.RodiejaContable.repository.VistaTransaccionesCompletasRepository;
+import com.rodiejacontable.rodiejacontable.repository.VistaTransaccionesCompletasRepository;
 import com.rodiejacontable.database.jooq.enums.VistaTransaccionesCompletasCategoria;
 import com.rodiejacontable.database.jooq.enums.VistaTransaccionesCompletasEstado;
 import org.springframework.beans.factory.annotation.Autowired;

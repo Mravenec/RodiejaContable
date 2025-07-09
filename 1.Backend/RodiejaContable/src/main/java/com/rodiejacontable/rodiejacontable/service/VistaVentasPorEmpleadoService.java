@@ -1,6 +1,6 @@
-package com.RodiejaContable.RodiejaContable.service;
+package com.rodiejacontable.rodiejacontable.service;
 
-import com.RodiejaContable.RodiejaContable.repository.VistaVentasPorEmpleadoRepository;
+import com.rodiejacontable.rodiejacontable.repository.VistaVentasPorEmpleadoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class VistaVentasPorEmpleadoService {

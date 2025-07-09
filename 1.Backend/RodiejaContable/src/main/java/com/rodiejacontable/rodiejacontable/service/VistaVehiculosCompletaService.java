@@ -1,6 +1,6 @@
-package com.RodiejaContable.RodiejaContable.service;
+package com.rodiejacontable.rodiejacontable.service;
 
-import com.RodiejaContable.RodiejaContable.repository.VistaVehiculosCompletaRepository;
+import com.rodiejacontable.rodiejacontable.repository.VistaVehiculosCompletaRepository;
 import com.rodiejacontable.database.jooq.enums.VistaVehiculosCompletaEstado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

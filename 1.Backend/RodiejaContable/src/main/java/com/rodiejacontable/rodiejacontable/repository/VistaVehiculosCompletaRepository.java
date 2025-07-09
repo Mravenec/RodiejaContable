@@ -1,4 +1,4 @@
-package com.RodiejaContable.RodiejaContable.repository;
+package com.rodiejacontable.rodiejacontable.repository;
 
 import com.rodiejacontable.database.jooq.enums.VistaVehiculosCompletaEstado;
 import org.jooq.DSLContext;

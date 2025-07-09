@@ -1,6 +1,6 @@
-package com.RodiejaContable.RodiejaContable.controller;
+package com.rodiejacontable.rodiejacontable.controller;
 
-import com.RodiejaContable.RodiejaContable.service.VistaVehiculosCompletaService;
+import com.rodiejacontable.rodiejacontable.service.VistaVehiculosCompletaService;
 import com.rodiejacontable.database.jooq.enums.VistaVehiculosCompletaEstado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;

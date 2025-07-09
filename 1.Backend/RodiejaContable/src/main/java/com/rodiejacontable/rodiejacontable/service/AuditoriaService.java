@@ -1,8 +1,8 @@
-package com.RodiejaContable.RodiejaContable.service;
+package com.rodiejacontable.rodiejacontable.service;
 
 import com.rodiejacontable.database.jooq.tables.records.VistaAuditoriaCompletaRecord;
 import com.rodiejacontable.database.jooq.tables.pojos.HistorialVehiculos;
-import com.RodiejaContable.RodiejaContable.repository.AuditoriaRepository;
+import com.rodiejacontable.rodiejacontable.repository.AuditoriaRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

@@ -1,4 +1,4 @@
-package com.RodiejaContable.RodiejaContable.repository;
+package com.rodiejacontable.rodiejacontable.repository;
 
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
