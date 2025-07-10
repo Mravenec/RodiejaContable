@@ -70,10 +70,8 @@ public class TransaccionesFinancierasService {
             transaccion.setFecha(LocalDate.now());
         }
         
-        // Extraer día, mes y año de la fecha
-        transaccion.setDia((byte) transaccion.getFecha().getDayOfMonth());
-        transaccion.setMes((byte) transaccion.getFecha().getMonthValue());
-        transaccion.setAnio((short) transaccion.getFecha().getYear());
+        // Los campos dia, mes y anio son generados automáticamente por la base de datos
+        // basados en el campo fecha, por lo que no los establecemos manualmente
         
         if (transaccion.getEstado() == null) {
             transaccion.setEstado(TransaccionesFinancierasEstado.PENDIENTE);

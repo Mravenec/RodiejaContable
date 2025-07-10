@@ -1,0 +1,157 @@
+### Obtener todas las transacciones
+GET http://localhost:8080/api/transacciones-financieras
+
+### Obtener transacciones por rango de fechas
+GET http://localhost:8080/api/transacciones-financieras/rango-fechas?fechaInicio=2023-01-01&fechaFin=2023-12-31
+
+### Crear transacciones de compra de vehículos
+### Compra Corolla 2015
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "COMPRA-VEH-001",
+  "fecha": "2023-01-10",
+  "tipoTransaccionId": 6,
+  "empleadoId": 1,
+  "vehiculoId": 1,
+  "monto": 3500000.00,
+  "descripcion": "Compra Corolla 2015",
+  "referencia": "COMPRA-001",
+  "estado": "COMPLETADA"
+}
+
+### Compra Corolla 2016
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "COMPRA-VEH-002",
+  "fecha": "2023-01-20",
+  "tipoTransaccionId": 6,
+  "empleadoId": 2,
+  "vehiculoId": 2,
+  "monto": 4200000.00,
+  "descripcion": "Compra Corolla 2016",
+  "referencia": "COMPRA-002",
+  "estado": "COMPLETADA"
+}
+
+### Crear transacciones de venta de vehículos
+### Venta Toyota Corolla 2015
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "VENTA-VEH-001",
+  "fecha": "2023-02-20",
+  "tipoTransaccionId": 1,
+  "empleadoId": 1,
+  "vehiculoId": 1,
+  "monto": 4200000.00,
+  "comisionEmpleado": 40000.00,
+  "descripcion": "Venta Toyota Corolla 2015",
+  "referencia": "FACT-001",
+  "estado": "COMPLETADA"
+}
+
+### Venta Toyota Corolla 2016
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "VENTA-VEH-002",
+  "fecha": "2023-03-15",
+  "tipoTransaccionId": 1,
+  "empleadoId": 2,
+  "vehiculoId": 2,
+  "monto": 5100000.00,
+  "comisionEmpleado": 50000.00,
+  "descripcion": "Venta Toyota Corolla 2016",
+  "referencia": "FACT-002",
+  "estado": "COMPLETADA"
+}
+
+### Crear transacciones de venta de repuestos
+### Venta Motor Corolla
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "VENTA-REP-001",
+  "fecha": "2023-03-12",
+  "tipoTransaccionId": 2,
+  "empleadoId": 1,
+  "repuestoId": 1,
+  "monto": 750000.00,
+  "comisionEmpleado": 10000.00,
+  "descripcion": "Venta Motor Corolla",
+  "referencia": "FACT-011",
+  "estado": "COMPLETADA"
+}
+
+### Venta Transmisión Corolla
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "VENTA-REP-002",
+  "fecha": "2023-03-12",
+  "tipoTransaccionId": 2,
+  "empleadoId": 2,
+  "repuestoId": 2,
+  "monto": 580000.00,
+  "comisionEmpleado": 8000.00,
+  "descripcion": "Venta Transmisión Corolla",
+  "referencia": "FACT-012",
+  "estado": "COMPLETADA"
+}
+
+### Crear transacciones de compra de repuestos directos
+### Compra Batería nueva
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "COMPRA-REP-001",
+  "fecha": "2023-05-05",
+  "tipoTransaccionId": 7,
+  "empleadoId": 5,
+  "repuestoId": 33,
+  "monto": 35000.00,
+  "descripcion": "Compra Batería nueva",
+  "referencia": "COMP-REP-001",
+  "estado": "COMPLETADA"
+}
+
+### Crear gastos operativos varios
+### Pago servicio grúa
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "GASTO-OPE-001",
+  "fecha": "2023-03-05",
+  "tipoTransaccionId": 11,
+  "empleadoId": 8,
+  "monto": 25000.00,
+  "descripcion": "Pago servicio grúa",
+  "referencia": "GRUA-001",
+  "estado": "COMPLETADA"
+}
+
+### Crear otros ingresos diversos
+### Otros ingresos por alquiler
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "OTR-ING-001",
+  "fecha": "2023-04-15",
+  "tipoTransaccionId": 16,
+  "empleadoId": 13,
+  "monto": 55000.00,
+  "descripcion": "Otros ingresos por alquiler",
+  "referencia": "OTR-INC-001",
+  "estado": "COMPLETADA"
+}
