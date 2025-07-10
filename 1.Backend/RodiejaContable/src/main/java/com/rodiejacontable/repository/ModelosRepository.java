@@ -18,7 +18,7 @@ public class ModelosRepository {
     
     public List<Modelos> findAll() {
         return dsl.selectFrom(MODELOS)
-                 .orderBy(MODELOS.NOMBRE.asc())
+                 .orderBy(MODELOS.ID.asc())
                  .fetchInto(Modelos.class);
     }
     
