@@ -20,22 +20,21 @@ public class HistorialVehiculosController {
         this.historialService = historialService;
     }
 
-    @PostMapping
+    @PostMapping(consumes = "application/json")
     public ResponseEntity<HistorialVehiculos> registrarCambio(
-            @RequestParam Integer vehiculoId,
-            @RequestParam HistorialVehiculosAccion accion,
-            @RequestParam String campoModificado,
-            @RequestParam(required = false) String valorAnterior,
-            @RequestParam(required = false) String valorNuevo,
-            @RequestParam String usuario,
-            @RequestParam String ipUsuario,
-            @RequestParam(required = false) String observaciones) {
+            @RequestBody HistorialVehiculos historial) {
         
-        HistorialVehiculos historial = historialService.registrarCambio(
-                vehiculoId, accion, campoModificado, valorAnterior, 
-                valorNuevo, usuario, ipUsuario, observaciones);
+        HistorialVehiculos nuevoHistorial = historialService.registrarCambio(
+                historial.getVehiculoId(), 
+                historial.getAccion(), 
+                historial.getCampoModificado(), 
+                historial.getValorAnterior(), 
+                historial.getValorNuevo(), 
+                historial.getUsuario(), 
+                historial.getIpUsuario(), 
+                historial.getObservaciones());
         
-        return ResponseEntity.ok(historial);
+        return ResponseEntity.ok(nuevoHistorial);
     }
 
     @GetMapping("/{id}")
