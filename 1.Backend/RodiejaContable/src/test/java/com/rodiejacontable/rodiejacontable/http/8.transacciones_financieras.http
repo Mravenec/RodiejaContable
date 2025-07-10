@@ -4,6 +4,52 @@ GET http://localhost:8080/api/transacciones-financieras
 ### Obtener transacciones por rango de fechas
 GET http://localhost:8080/api/transacciones-financieras/rango-fechas?fechaInicio=2023-01-01&fechaFin=2023-12-31
 
+### Venta mayoreo de repuestos a taller XYZ
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "MAYOR-001",
+  "fecha": "2023-05-18",
+  "tipoTransaccionId": 3,
+  "empleadoId": 8,
+  "monto": 2000000.00,
+  "descripcion": "Venta mayoreo de repuestos a taller XYZ",
+  "referencia": "FACT-MAY-01",
+  "estado": "COMPLETADA"
+}
+
+### Servicio mecánico cambio de motor
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "SERV-MEC-001",
+  "fecha": "2023-05-22",
+  "tipoTransaccionId": 4,
+  "empleadoId": 9,
+  "monto": 135000.00,
+  "descripcion": "Servicio mecánico cambio de motor",
+  "referencia": "SERV-MEC-01",
+  "estado": "COMPLETADA"
+}
+
+### Venta de ECU tras 4 meses en inventario
+POST http://localhost:8080/api/transacciones-financieras
+Content-Type: application/json
+
+{
+  "codigoTransaccion": "VENTA-ECU-001",
+  "fecha": "2023-06-05",
+  "tipoTransaccionId": 2,
+  "empleadoId": 3,
+  "repuestoId": 3,
+  "monto": 220000.00,
+  "descripcion": "Venta de ECU tras 4 meses en inventario",
+  "referencia": "FACT-ECU-01",
+  "estado": "COMPLETADA"
+}
+
 ### Crear transacciones de compra de vehículos
 ### Compra Corolla 2015
 POST http://localhost:8080/api/transacciones-financieras
