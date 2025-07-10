@@ -16,10 +16,9 @@
     EJEMPLO EN WORKBENCH:
         Hostname: 127.0.0.1  |  Port: 3306
         Username: root        |  Password: 123456
-
-    IMPORTANTE: 
-      Cambie la contraseña por seguridad en producción.
 */
+
+
 -- ========================================
 -- SISTEMA UNIFICADO DE GESTIÓN VEHICULAR
 -- ========================================

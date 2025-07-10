@@ -55,11 +55,6 @@ public class VehiculosService {
     
     @Transactional
     public Vehiculos create(Vehiculos vehiculo) {
-        // Validar que el código de vehículo sea único
-        if (vehiculosRepository.existsByCodigoVehiculo(vehiculo.getCodigoVehiculo())) {
-            throw new ResourceAlreadyExistsException("Ya existe un vehículo con el código: " + vehiculo.getCodigoVehiculo());
-        }
-        
         // Validar que la generación existe
         generacionesRepository.findById(vehiculo.getGeneracionId())
             .orElseThrow(() -> new ResourceNotFoundException("Generación no encontrada con ID: " + vehiculo.getGeneracionId()));
@@ -77,20 +72,18 @@ public class VehiculosService {
             vehiculo.setActivo((byte) 1);
         }
         
-        // Calcular inversión total si no se proporciona
-        if (vehiculo.getInversionTotal() == null) {
-            BigDecimal precioCompra = vehiculo.getPrecioCompra() != null ? vehiculo.getPrecioCompra() : BigDecimal.ZERO;
-            BigDecimal costoGrua = vehiculo.getCostoGrua() != null ? vehiculo.getCostoGrua() : BigDecimal.ZERO;
-            BigDecimal comisiones = vehiculo.getComisiones() != null ? vehiculo.getComisiones() : BigDecimal.ZERO;
-            
-            vehiculo.setInversionTotal(precioCompra.add(costoGrua).add(comisiones));
-        }
+        // No establecer inversion_total ya que se calcula automáticamente en la base de datos
+        // usando la fórmula: (precio_compra + costo_grua + comisiones)
+        vehiculo.setInversionTotal(null);
         
         LocalDateTime now = LocalDateTime.now();
         if (vehiculo.getFechaCreacion() == null) {
             vehiculo.setFechaCreacion(now);
         }
         vehiculo.setFechaActualizacion(now);
+        
+        // El código de vehículo será generado automáticamente por el trigger de la base de datos
+        vehiculo.setCodigoVehiculo(null);
         
         return vehiculosRepository.save(vehiculo);
     }
