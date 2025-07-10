@@ -3,11 +3,15 @@ package com.rodiejacontable.controller;
 import com.rodiejacontable.database.jooq.tables.pojos.VistaDashboardEjecutivo;
 import com.rodiejacontable.service.VistaDashboardEjecutivoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/dashboard/ejecutivo")
@@ -28,13 +32,39 @@ public class VistaDashboardEjecutivoController {
      * Obtiene los datos del dashboard para una sección específica
      */
     @GetMapping("/seccion/{seccion}")
-    public ResponseEntity<VistaDashboardEjecutivo> getDashboardBySeccion(
+    public ResponseEntity<?> getDashboardBySeccion(
             @PathVariable String seccion) {
         VistaDashboardEjecutivo data = dashboardService.getDashboardBySeccion(seccion);
         if (data != null) {
             return ResponseEntity.ok(data);
         }
-        return ResponseEntity.notFound().build();
+        
+        // Si no se encuentra la sección, devolvemos un mensaje útil
+        Map<String, Object> response = new HashMap<>();
+        response.put("error", "Sección no encontrada");
+        response.put("seccionSolicitada", seccion);
+        response.put("seccionesDisponibles", getAvailableSections());
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    /**
+     * Obtiene la lista de todas las secciones disponibles
+     */
+    @GetMapping("/secciones")
+    public ResponseEntity<List<String>> getSeccionesDisponibles() {
+        return ResponseEntity.ok(getAvailableSections());
+    }
+
+    /**
+     * Método auxiliar para obtener las secciones disponibles
+     */
+    private List<String> getAvailableSections() {
+        return dashboardService.getDashboardData().stream()
+                .map(VistaDashboardEjecutivo::getSeccion)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     /**
