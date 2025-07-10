@@ -80,10 +80,7 @@ public class InventarioRepuestosController {
     @GetMapping
     public ResponseEntity<List<InventarioRepuestos>> obtenerTodos() {
         List<InventarioRepuestos> repuestos = inventarioRepuestosService.obtenerTodos();
-        if (repuestos.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>(repuestos, HttpStatus.OK);
+        return ResponseEntity.ok(repuestos);
     }
 
     @DeleteMapping("/{id}")
