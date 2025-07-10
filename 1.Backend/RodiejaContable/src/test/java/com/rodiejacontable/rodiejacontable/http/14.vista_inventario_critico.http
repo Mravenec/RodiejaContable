@@ -1,0 +1,29 @@
+### Obtener todo el inventario crítico
+GET http://localhost:8080/api/inventario-critico
+
+### Buscar en inventario crítico con filtros básicos
+GET http://localhost:8080/api/inventario-critico/buscar?estado=CRITICO
+
+### Búsqueda avanzada con múltiples filtros
+GET http://localhost:8080/api/inventario-critico/buscar?parteVehiculo=MOTOR&clasificacionMargen=BAJO&diasMinimos=90
+
+### Obtener inventario crítico por estado
+GET http://localhost:8080/api/inventario-critico/estado/CRITICO
+
+### Obtener inventario por parte de vehículo
+GET http://localhost:8080/api/inventario-critico/parte-vehiculo/MOTOR
+
+### Obtener inventario por clasificación de margen
+GET http://localhost:8080/api/inventario-critico/clasificacion-margen/BAJO
+
+### Obtener inventario por clasificación de rotación
+GET http://localhost:8080/api/inventario-critico/clasificacion-rotacion/LENTA
+
+### Obtener inventario crítico por vehículo de origen
+GET http://localhost:8080/api/inventario-critico/vehiculo-origen/Toyota%20Corolla
+
+### Obtener inventario crítico por año de vehículo
+GET http://localhost:8080/api/inventario-critico/anio/2020
+
+### Obtener estadísticas de inventario crítico
+GET http://localhost:8080/api/inventario-critico/estadisticas

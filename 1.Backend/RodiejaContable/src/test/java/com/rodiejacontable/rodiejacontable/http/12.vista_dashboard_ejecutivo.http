@@ -1,0 +1,17 @@
+### Obtener todos los datos del dashboard ejecutivo
+GET http://localhost:8080/api/dashboard/ejecutivo
+
+### Obtener datos del dashboard por sección
+GET http://localhost:8080/api/dashboard/ejecutivo/seccion/ventas
+
+### Obtener resumen general del dashboard
+GET http://localhost:8080/api/dashboard/ejecutivo/resumen
+
+### Obtener métricas detalladas por sección
+GET http://localhost:8080/api/dashboard/ejecutivo/metricas/ventas
+
+### Obtener tendencias
+GET http://localhost:8080/api/dashboard/ejecutivo/tendencias?periodo=ULTIMOS_6_MESES
+
+### Obtener KPI principales
+GET http://localhost:8080/api/dashboard/ejecutivo/kpis

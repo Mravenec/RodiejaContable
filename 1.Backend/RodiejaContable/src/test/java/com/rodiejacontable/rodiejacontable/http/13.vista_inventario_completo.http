@@ -1,0 +1,26 @@
+### Obtener todo el inventario
+GET http://localhost:8080/api/inventario
+
+### Obtener un ítem de inventario por ID
+GET http://localhost:8080/api/inventario/1
+
+### Buscar en inventario con filtros básicos
+GET http://localhost:8080/api/inventario/buscar?marca=Toyota&estado=DISPONIBLE
+
+### Búsqueda avanzada con múltiples filtros
+GET http://localhost:8080/api/inventario/buscar?marca=Toyota&modelo=Corolla&anio=2020&parte=MOTOR&precioMin=1000&precioMax=5000
+
+### Obtener inventario por estado
+GET http://localhost:8080/api/inventario/estado/DISPONIBLE
+
+### Obtener inventario por parte de vehículo
+GET http://localhost:8080/api/inventario/parte/MOTOR
+
+### Obtener inventario por año de vehículo
+GET http://localhost:8080/api/inventario/anio/2020
+
+### Obtener inventario por rango de precios
+GET http://localhost:8080/api/inventario/precio?min=1000&max=5000
+
+### Obtener estadísticas de inventario
+GET http://localhost:8080/api/inventario/estadisticas
