@@ -1,14 +1,25 @@
+
+
 /*
-    ======================================
+    =========================================
     CONEXIÓN SUGERIDA (MySQL/MariaDB)
-    =======================================
+    =========================================
     HOST     : localhost
     PUERTO   : 3306
     USUARIO  : root
     PASSWORD : 123456
     DATABASE : sistema_vehicular
-*/
 
+    EJEMPLO DE CONEXIÓN POR CONSOLA:
+        mysql -u root -p123456 -h 127.0.0.1 -P 3306
+
+    EJEMPLO EN WORKBENCH:
+        Hostname: 127.0.0.1  |  Port: 3306
+        Username: root        |  Password: 123456
+
+    IMPORTANTE: 
+      Cambie la contraseña por seguridad en producción.
+*/
 -- ========================================
 -- SISTEMA UNIFICADO DE GESTIÓN VEHICULAR
 -- ========================================
@@ -111,7 +122,7 @@ CREATE TABLE inventario_repuestos (
         'SUSPENSION Y AMORTIGUAMIENTO', 'EMBRAGUE', 'SISTEMA DE FRENOS',
         'TANQUE DE GASOLINA', 'DISTRIBUIDOR', 'RADIADOR', 'VENTILADOR',
         'BOMBA DE AGUA', 'BATERIA', 'AROS Y LLANTAS', 'SISTEMA DE DIRECCION',
-        'SISTEMA ELECTRICO', 'FUSIBLES', 'ALTERNADOR', 'VÁLVULAS DE ESCAPE'
+        'SISTEMA ELECTRICO', 'FUSIBLES', 'ALTERNADOR', 'VÁLVULAS DE ESCAPE', 'TURBO'
     ) NOT NULL,
     descripcion TEXT,
     precio_costo DECIMAL(10,2) DEFAULT 0.00,
@@ -1511,6 +1522,8 @@ SELECT * FROM vista_auditoria_completa;
 SELECT * FROM vista_auditoria_completa WHERE tipo_entidad = 'Vehículo';
 CALL sp_historial_vehiculo(1);
 CALL sp_actividad_auditoria_fecha('2023-02-01', '2023-04-30');
+
+
 
 SELECT * FROM vista_analisis_financiero_mensual;
 SELECT * FROM vista_auditoria_completa;

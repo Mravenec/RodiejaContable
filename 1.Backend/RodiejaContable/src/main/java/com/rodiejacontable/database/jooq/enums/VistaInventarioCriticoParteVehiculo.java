@@ -57,7 +57,9 @@ public enum VistaInventarioCriticoParteVehiculo implements EnumType {
 
     ALTERNADOR("ALTERNADOR"),
 
-    VÁLVULAS_DE_ESCAPE("VÁLVULAS DE ESCAPE");
+    VÁLVULAS_DE_ESCAPE("VÁLVULAS DE ESCAPE"),
+
+    TURBO("TURBO");
 
     private final String literal;
 
