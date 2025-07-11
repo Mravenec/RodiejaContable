@@ -1,13 +1,14 @@
 package com.rodiejacontable.service;
 
+import com.rodiejacontable.exception.EmpleadoNoEncontradoException;
 import com.rodiejacontable.repository.VistaVentasPorEmpleadoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class VistaVentasPorEmpleadoService {
@@ -23,8 +24,9 @@ public class VistaVentasPorEmpleadoService {
         return repository.findAll();
     }
 
-    public Optional<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> findByEmpleado(String empleado) {
-        return repository.findByEmpleado(empleado);
+    public com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado findByEmpleado(String empleado) {
+        return repository.findByEmpleado(empleado)
+                .orElseThrow(() -> new EmpleadoNoEncontradoException("No se encontraron ventas para el empleado: " + empleado));
     }
 
     public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> findTopNVentas(int limit) {
@@ -35,6 +37,24 @@ public class VistaVentasPorEmpleadoService {
         return repository.findAllEmpleados();
     }
 
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> findByEmpleadoAndRangoFechas(
+            String empleado, LocalDate fechaInicio, LocalDate fechaFin) {
+        List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> resultados = 
+            repository.findByEmpleadoAndRangoFechas(empleado, fechaInicio, fechaFin);
+            
+        if (resultados.isEmpty()) {
+            throw new EmpleadoNoEncontradoException("No se encontraron registros para el empleado: " + empleado + 
+                " en el rango de fechas especificado");
+        }
+        
+        return resultados;
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> findByRangoFechas(
+            LocalDate fechaInicio, LocalDate fechaFin) {
+        return repository.findByRangoFechas(fechaInicio, fechaFin);
+    }
+    
     @SuppressWarnings("unchecked")
     public Map<String, Object> getEstadisticasGenerales() {
         List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> ventas = repository.findAll();
@@ -68,6 +88,50 @@ public class VistaVentasPorEmpleadoService {
         result.put("totalEmpleados", ventas.size());
         
         return (Map<String, Object>)(Map<?, ?>)result;
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> findByTipoProducto(String tipo) {
+        return repository.findByTipoProducto(tipo);
+    }
+    
+    /**
+     * Obtiene las ventas mensuales por empleado para un año específico
+     * @param year Año para el cual se desean obtener las ventas
+     * @return Lista de ventas mensuales por empleado
+     */
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> getVentasMensualesPorEmpleado(int year) {
+        return repository.findVentasMensualesPorEmpleado(year);
+    }
+    
+    /**
+     * Compara las ventas entre múltiples empleados en un rango de fechas
+     * @param empleados Lista de nombres de empleados a comparar
+     * @param fechaInicio Fecha de inicio del rango
+     * @param fechaFin Fecha de fin del rango
+     * @return Lista de ventas comparativas por empleado
+     */
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> compareVentasEntreEmpleados(
+            List<String> empleados, LocalDate fechaInicio, LocalDate fechaFin) {
+        if (empleados == null || empleados.isEmpty()) {
+            throw new IllegalArgumentException("La lista de empleados no puede estar vacía");
+        }
+        
+        if (fechaInicio == null || fechaFin == null) {
+            throw new IllegalArgumentException("Las fechas de inicio y fin son obligatorias");
+        }
+        
+        if (fechaInicio.isAfter(fechaFin)) {
+            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin");
+        }
+        
+        List<com.rodiejacontable.database.jooq.tables.pojos.VistaVentasPorEmpleado> resultados = 
+            repository.findVentasComparativas(empleados, fechaInicio, fechaFin);
+            
+        if (resultados.isEmpty()) {
+            throw new EmpleadoNoEncontradoException("No se encontraron ventas para los empleados especificados en el rango de fechas proporcionado");
+        }
+        
+        return resultados;
     }
     
     @SuppressWarnings("unchecked")
