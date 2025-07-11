@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Tabs, 
   Card, 
@@ -13,116 +13,382 @@ import {
   Divider, 
   Row, 
   Col, 
-  List, 
   Typography, 
   Modal,
   Space,
+  Spin,
+  Alert,
   Tag,
   InputNumber,
   Descriptions,
-  Progress
+  Progress,
+  List
 } from 'antd';
 import { 
   UserOutlined, 
   LockOutlined, 
   MailOutlined, 
-  PhoneOutlined, 
+  PhoneOutlined,
   EnvironmentOutlined,
   UploadOutlined,
-  PlusOutlined,
-  DeleteOutlined,
   EditOutlined,
   CheckOutlined,
   CloseOutlined,
   BellOutlined,
-  InfoCircleOutlined,
   TeamOutlined,
   SettingOutlined,
-  CreditCardOutlined,
-  FileTextOutlined,
-  DownloadOutlined,
-  ApiOutlined,
   KeyOutlined,
-  MessageOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  SaveOutlined,
+  SafetyOutlined,
+  NotificationOutlined,
+  GlobalOutlined,
+  CloudUploadOutlined,
+  DatabaseOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { 
+  authService, 
+  // Nota: Asegúrate de que estos servicios estén exportados en tu archivo api/index.js
+  // Si no existen, deberás crearlos o importarlos desde sus respectivos archivos
+  // Por ahora, los dejo comentados para evitar errores
+  // usuarioService, 
+  // configuracionService 
+} from '../../api';
+import { Loading } from '../../components/Loading';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
-const { TextArea } = Input;
 
 const Configuracion = () => {
+  const queryClient = useQueryClient();
   const [form] = Form.useForm();
+  const [passwordForm] = Form.useForm();
   const [activeTab, setActiveTab] = useState('perfil');
   const [avatarFile, setAvatarFile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = useState(false);
   
-  // Datos de ejemplo
-  const usuario = {
-    nombre: 'Juan Pérez',
-    email: 'juan.perez@empresa.com',
-    telefono: '+52 1 55 1234 5678',
-    rol: 'Administrador',
-    puesto: 'Gerente de Ventas',
-    departamento: 'Ventas',
-    fechaRegistro: '15/03/2020',
-    ultimoAcceso: 'Hoy, 14:30',
-    direccion: 'Av. Insurgentes Sur 1234, Col. Condesa, CDMX',
-    notificaciones: {
-      email: true,
-      sms: false,
-      push: true,
-      recordatorios: true,
-      ofertas: false,
+  // Mock de las mutaciones - Reemplazar con implementación real si es necesario
+  const updateProfileMutation = {
+    mutate: async (values) => {
+      console.log('Actualizando perfil:', values);
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          message.success('Perfil actualizado correctamente');
+          resolve();
+        }, 1000);
+      });
     },
-    temas: 'claro',
-    idioma: 'es',
-    zonaHoraria: 'America/Mexico_City',
+    isLoading: false
   };
   
+  const updatePasswordMutation = {
+    mutate: async (values) => {
+      console.log('Actualizando contraseña:', values);
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          message.success('Contraseña actualizada correctamente');
+          setIsChangePasswordModalVisible(false);
+          passwordForm.resetFields();
+          resolve();
+        }, 1000);
+      });
+    },
+    isLoading: false
+  };
+  
+  const updateConfigMutation = {
+    mutate: async (values) => {
+      console.log('Actualizando configuración:', values);
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          message.success('Configuración actualizada correctamente');
+          resolve();
+        }, 1000);
+      });
+    },
+    isLoading: false
+  };
+  
+  // Servicio de usuario mock - Reemplazar con implementación real si es necesario
+  const usuarioService = {
+    uploadAvatar: async (formData) => {
+      console.log('Subiendo avatar:', formData);
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            success: true,
+            avatar_url: 'https://randomuser.me/api/portraits/men/1.jpg'
+          });
+        }, 1000);
+      });
+    },
+    actualizarAvatar: async (formData) => {
+      console.log('Actualizando avatar:', formData);
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            success: true,
+            avatar_url: 'https://randomuser.me/api/portraits/men/1.jpg'
+          });
+        }, 1000);
+      });
+    }
+  };
+  
+  // Datos de ejemplo del usuario
+  const usuario = {
+    nombre: 'Usuario Ejemplo',
+    email: 'usuario@ejemplo.com',
+    telefono: '123-456-7890',
+    direccion: 'Calle Falsa 123',
+    avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
+    puesto: 'Administrador',
+    departamento: 'TI'
+  };
+  
+  // Configuración de ejemplo
+  const configuracion = {
+    notificaciones: {
+      email: true,
+      push: true,
+      sonido: true
+    },
+    tema: 'claro',
+    idioma: 'es'
+  };
+  
+  const isLoading = false;
+  const error = null;
+  const isLoadingConfig = false;
+  
+  // Función para manejar la actualización del perfil
+  const handleUpdateProfile = (values) => {
+    console.log('Actualizar perfil con:', values);
+    message.success('Perfil actualizado correctamente');
+    setIsEditing(false);
+  };
+  
+  // Función para manejar el cambio de contraseña
+  const handleChangePassword = (values) => {
+    console.log('Cambiar contraseña con:', values);
+    message.success('Contraseña actualizada correctamente');
+    setIsChangePasswordModalVisible(false);
+    passwordForm.resetFields();
+  };
+  
+  // Función para actualizar la configuración
+  const handleUpdateConfig = (values) => {
+    console.log('Actualizar configuración con:', values);
+    message.success('Configuración actualizada correctamente');
+    
+    // Aplicar cambios de tema si es necesario
+    if (values.tema) {
+      const body = document.body;
+      if (values.tema === 'oscuro') {
+        body.classList.add('dark-theme');
+      } else {
+        body.classList.remove('dark-theme');
+      }
+    }
+  };
+  
+  // Función para manejar la carga del avatar
+  const handleAvatarChange = async (info) => {
+    if (info.file.status === 'done') {
+      try {
+        const formData = new FormData();
+        formData.append('avatar', info.file.originFileObj);
+        
+        const response = await usuarioService.uploadAvatar(formData);
+        
+        if (response.success) {
+          // Actualizar el avatar en el estado del usuario
+          queryClient.setQueryData('usuario', (oldData) => ({
+            ...oldData,
+            avatar_url: response.avatar_url
+          }));
+          
+          message.success('Avatar actualizado correctamente');
+        } else {
+          message.error(response.message || 'Error al actualizar el avatar');
+        }
+      } catch (error) {
+        console.error('Error al subir el avatar:', error);
+        message.error('Error al subir el avatar');
+      }
+    }
+  };
+  
+  // Función para manejar el guardado del perfil del usuario
+  const handleSaveProfile = async () => {
+    try {
+      const values = await form.validateFields();
+      await updateProfileMutation.mutate(values);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error al guardar el perfil:', error);
+      message.error('Error al guardar el perfil');
+    }
+  };
+
+  const handleSaveConfig = async () => {
+    try {
+      await form.validateFields();
+      const values = form.getFieldsValue();
+      await updateConfigMutation.mutate(values);
+    } catch (error) {
+      console.error('Error al guardar la configuración:', error);
+      message.error('Error al guardar la configuración');
+    }
+  };
+  
+  // Efecto para establecer valores iniciales del formulario cuando se cargan los datos
+  useEffect(() => {
+    if (usuario) {
+      form.setFieldsValue({
+        nombre: usuario.nombre,
+        email: usuario.email,
+        telefono: usuario.telefono,
+        direccion: usuario.direccion,
+        puesto: usuario.puesto,
+        departamento: usuario.departamento,
+      });
+    }
+  }, [usuario, form]);
+  
+  // Manejar carga de avatar
   const beforeUpload = (file) => {
     const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
     if (!isJpgOrPng) {
       message.error('Solo puedes subir archivos JPG/PNG!');
+      return Upload.LIST_IGNORE;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
       message.error('La imagen debe ser menor a 2MB!');
+      return Upload.LIST_IGNORE;
     }
     return isJpgOrPng && isLt2M;
   };
   
-  const handleChange = (info) => {
+  // Función handleChange para manejar la carga del avatar
+  const handleChange = async (info) => {
     if (info.file.status === 'done') {
       setAvatarFile(info.file.originFileObj);
       message.success(`${info.file.name} subido correctamente`);
+      
+      try {
+        const formData = new FormData();
+        formData.append('avatar', info.file.originFileObj);
+        await usuarioService.actualizarAvatar(formData);
+        message.success('Foto de perfil actualizada correctamente');
+        queryClient.invalidateQueries('usuario');
+      } catch (error) {
+        message.error('Error al actualizar la foto de perfil');
+      }
     } else if (info.file.status === 'error') {
       message.error(`${info.file.name} falló al subir.`);
     }
   };
   
-  const handleSaveProfile = () => {
-    form
-      .validateFields()
-      .then((values) => {
-        console.log('Datos guardados:', values);
-        message.success('Perfil actualizado correctamente');
-        setIsEditing(false);
-      })
-      .catch((info) => {
-        console.log('Error al validar:', info);
-      });
-  };
+  // Las funciones handleChangePassword y handleUpdateConfig ya están definidas anteriormente
   
-  const handleChangePassword = () => {
-    message.success('Contraseña actualizada correctamente');
-    setIsChangePasswordModalVisible(false);
-  };
+  if (isLoading || isLoadingConfig) return <Loading />;
+  
+  if (error) {
+    return (
+      <Alert
+        message="Error"
+        description="No se pudieron cargar los datos de configuración"
+        type="error"
+        showIcon
+      />
+    );
+  }
   
   return (
     <div className="configuracion-container">
+      <Modal
+        title="Cambiar Contraseña"
+        open={isChangePasswordModalVisible}
+        onCancel={() => setIsChangePasswordModalVisible(false)}
+        footer={null}
+      >
+        <Form
+          form={passwordForm}
+          layout="vertical"
+          onFinish={handleChangePassword}
+        >
+          <Form.Item
+            name="currentPassword"
+            label="Contraseña Actual"
+            rules={[{ required: true, message: 'Por favor ingresa tu contraseña actual' }]}
+          >
+            <Input.Password 
+              prefix={<LockOutlined />} 
+              placeholder="Contraseña actual"
+              disabled={updatePasswordMutation.isLoading}
+            />
+          </Form.Item>
+          
+          <Form.Item
+            name="newPassword"
+            label="Nueva Contraseña"
+            rules={[
+              { required: true, message: 'Por favor ingresa una nueva contraseña' },
+              { min: 8, message: 'La contraseña debe tener al menos 8 caracteres' }
+            ]}
+          >
+            <Input.Password 
+              prefix={<LockOutlined />} 
+              placeholder="Nueva contraseña"
+              disabled={updatePasswordMutation.isLoading}
+            />
+          </Form.Item>
+          
+          <Form.Item
+            name="confirmPassword"
+            label="Confirmar Nueva Contraseña"
+            dependencies={['newPassword']}
+            rules={[
+              { required: true, message: 'Por favor confirma tu nueva contraseña' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Las contraseñas no coinciden'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password 
+              prefix={<LockOutlined />} 
+              placeholder="Confirmar nueva contraseña"
+              disabled={updatePasswordMutation.isLoading}
+            />
+          </Form.Item>
+          
+          <Form.Item>
+            <Button 
+              type="primary" 
+              htmlType="submit" 
+              block
+              loading={updatePasswordMutation.isLoading}
+              icon={<SaveOutlined />}
+            >
+              Actualizar Contraseña
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
       <Tabs 
         activeKey={activeTab} 
         onChange={setActiveTab}
@@ -140,7 +406,7 @@ const Configuracion = () => {
         >
           <Row gutter={[24, 24]}>
             <Col xs={24} md={8}>
-              <Card title="Foto de Perfil">
+              <Card title="Foto de Perfil" loading={updateProfileMutation.isLoading}>
                 <div style={{ textAlign: 'center' }}>
                   <Upload
                     name="avatar"
@@ -148,12 +414,13 @@ const Configuracion = () => {
                     showUploadList={false}
                     beforeUpload={beforeUpload}
                     onChange={handleChange}
+                    disabled={updateProfileMutation.isLoading}
                   >
-                    {avatarFile ? (
+                    {usuario?.avatar_url ? (
                       <Avatar 
-                        src={URL.createObjectURL(avatarFile)} 
+                        src={usuario.avatar_url} 
                         size={150} 
-                        icon={<UserOutlined />} 
+                        icon={<UserOutlined />}
                       />
                     ) : (
                       <Avatar 
@@ -164,9 +431,25 @@ const Configuracion = () => {
                     )}
                   </Upload>
                   <div style={{ marginTop: 16 }}>
-                    <Text type="secondary">Haz clic para cambiar la foto</Text>
+                    <Text type="secondary">Haz clic para cambiar la foto (max. 2MB)</Text>
                   </div>
                 </div>
+              </Card>
+              
+              <Card 
+                title="Seguridad" 
+                style={{ marginTop: 16 }}
+                loading={updatePasswordMutation.isLoading}
+              >
+                <Button 
+                  type="primary" 
+                  icon={<KeyOutlined />} 
+                  block
+                  onClick={() => setIsChangePasswordModalVisible(true)}
+                  loading={updatePasswordMutation.isLoading}
+                >
+                  Cambiar Contraseña
+                </Button>
               </Card>
             </Col>
             <Col xs={24} md={16}>
@@ -175,8 +458,18 @@ const Configuracion = () => {
                 extra={
                   isEditing ? (
                     <Space>
-                      <Button onClick={() => setIsEditing(false)}>Cancelar</Button>
-                      <Button type="primary" onClick={handleSaveProfile}>
+                      <Button 
+                        onClick={() => setIsEditing(false)}
+                        disabled={updateProfileMutation.isLoading}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        type="primary" 
+                        onClick={() => form.submit()}
+                        loading={updateProfileMutation.isLoading}
+                        icon={<SaveOutlined />}
+                      >
                         Guardar Cambios
                       </Button>
                     </Space>
@@ -185,22 +478,25 @@ const Configuracion = () => {
                       type="primary" 
                       icon={<EditOutlined />} 
                       onClick={() => setIsEditing(true)}
+                      disabled={updateProfileMutation.isLoading}
                     >
                       Editar Perfil
                     </Button>
                   )
                 }
+                loading={updateProfileMutation.isLoading}
               >
                 <Form
                   form={form}
                   layout="vertical"
+                  onFinish={handleSaveProfile}
                   initialValues={{
-                    nombre: usuario.nombre,
-                    email: usuario.email,
-                    telefono: usuario.telefono,
-                    direccion: usuario.direccion,
-                    puesto: usuario.puesto,
-                    departamento: usuario.departamento,
+                    nombre: usuario?.nombre || '',
+                    email: usuario?.email || '',
+                    telefono: usuario?.telefono || '',
+                    direccion: usuario?.direccion || '',
+                    puesto: usuario?.puesto || '',
+                    departamento: usuario?.departamento || '',
                   }}
                 >
                   <Row gutter={16}>
@@ -370,6 +666,209 @@ const Configuracion = () => {
                 </List.Item>
               )}
             />
+          </Card>
+        </TabPane>
+        
+        <TabPane
+          tab={
+            <span>
+              <SettingOutlined />
+              Configuración
+            </span>
+          }
+          key="configuracion"
+        >
+          <Card 
+            title="Configuración del Sistema"
+            loading={updateConfigMutation.isLoading}
+          >
+            <Form
+              layout="vertical"
+              onFinish={handleUpdateConfig}
+              initialValues={{
+                tema: configuracion?.tema || 'claro',
+                idioma: configuracion?.idioma || 'es',
+                zona_horaria: configuracion?.zona_horaria || 'America/Mexico_City',
+                items_por_pagina: configuracion?.items_por_pagina || 10,
+                notificaciones_email: configuracion?.notificaciones_email || false,
+                notificaciones_push: configuracion?.notificaciones_push || true
+              }}
+            >
+              <Row gutter={24}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Tema de la Aplicación"
+                    name="tema"
+                  >
+                    <Select 
+                      placeholder="Selecciona un tema"
+                      disabled={updateConfigMutation.isLoading}
+                    >
+                      <Option value="claro">Claro</Option>
+                      <Option value="oscuro">Oscuro</Option>
+                      <Option value="sistema">Usar configuración del sistema</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Idioma"
+                    name="idioma"
+                  >
+                    <Select 
+                      placeholder="Selecciona un idioma"
+                      disabled={updateConfigMutation.isLoading}
+                    >
+                      <Option value="es">Español</Option>
+                      <Option value="en">English</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Zona Horaria"
+                    name="zona_horaria"
+                  >
+                    <Select 
+                      showSearch
+                      placeholder="Selecciona una zona horaria"
+                      optionFilterProp="children"
+                      disabled={updateConfigMutation.isLoading}
+                    >
+                      <Option value="America/Mexico_City">Ciudad de México (UTC-6)</Option>
+                      <Option value="America/New_York">Nueva York (UTC-5)</Option>
+                      <Option value="America/Los_Angeles">Los Ángeles (UTC-8)</Option>
+                      <Option value="Europe/Madrid">Madrid (UTC+1)</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Elementos por página"
+                    name="items_por_pagina"
+                  >
+                    <Select 
+                      placeholder="Elementos por página"
+                      disabled={updateConfigMutation.isLoading}
+                    >
+                      <Option value={10}>10 por página</Option>
+                      <Option value={25}>25 por página</Option>
+                      <Option value={50}>50 por página</Option>
+                      <Option value={100}>100 por página</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                
+                <Col span={24}>
+                  <Divider orientation="left">Notificaciones</Divider>
+                </Col>
+                
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    name="notificaciones_email"
+                    valuePropName="checked"
+                  >
+                    <Switch 
+                      checkedChildren={<CheckOutlined />} 
+                      unCheckedChildren={<CloseOutlined />}
+                      disabled={updateConfigMutation.isLoading}
+                    />
+                    <span style={{ marginLeft: 8 }}>Notificaciones por correo</span>
+                  </Form.Item>
+                  
+                  <Form.Item
+                    name="notificaciones_push"
+                    valuePropName="checked"
+                  >
+                    <Switch 
+                      checkedChildren={<CheckOutlined />} 
+                      unCheckedChildren={<CloseOutlined />}
+                      disabled={updateConfigMutation.isLoading}
+                    />
+                    <span style={{ marginLeft: 8 }}>Notificaciones push</span>
+                  </Form.Item>
+                </Col>
+                
+                <Col span={24}>
+                  <Form.Item>
+                    <Button 
+                      type="primary" 
+                      htmlType="submit"
+                      loading={updateConfigMutation.isLoading}
+                      icon={<SaveOutlined />}
+                    >
+                      Guardar Configuración
+                    </Button>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form>
+          </Card>
+          
+          <Card 
+            title="Copia de Seguridad" 
+            style={{ marginTop: 16 }}
+            loading={updateConfigMutation.isLoading}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button 
+                type="primary" 
+                icon={<CloudUploadOutlined />}
+                block
+              >
+                Crear Copia de Seguridad
+              </Button>
+              
+              <Button 
+                icon={<DownloadOutlined />}
+                block
+              >
+                Descargar Última Copia
+              </Button>
+              
+              <Button 
+                danger
+                icon={<ReloadOutlined />}
+                block
+              >
+                Restaurar desde Copia
+              </Button>
+            </Space>
+          </Card>
+          
+          <Card 
+            title="Mantenimiento" 
+            style={{ marginTop: 16 }}
+            loading={updateConfigMutation.isLoading}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button 
+                icon={<DatabaseOutlined />}
+                block
+              >
+                Optimizar Base de Datos
+              </Button>
+              
+              <Button 
+                danger
+                icon={<DeleteOutlined />}
+                block
+              >
+                Limpiar Caché
+              </Button>
+              
+              <Button 
+                type="dashed"
+                icon={<ReloadOutlined />}
+                block
+                onClick={() => window.location.reload()}
+              >
+                Recargar Aplicación
+              </Button>
+            </Space>
           </Card>
         </TabPane>
         

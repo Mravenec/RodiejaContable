@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from 'react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { QueryProvider } from './providers/QueryProvider';
 import App from './App';
 import 'antd/dist/reset.css';
 import './index.css';
@@ -19,25 +19,15 @@ if (process.env.NODE_ENV === 'development') {
 console.log('Aplicación iniciada correctamente');
 console.log('Versión de React:', React.version);
 
-// Configuración de React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
-
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <QueryProvider>
       <BrowserRouter>
         <AuthProvider>
           <App />
         </AuthProvider>
       </BrowserRouter>
-    </QueryClientProvider>
+    </QueryProvider>
   </React.StrictMode>
 );
