@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -45,6 +47,10 @@ public class VistaVehiculosCompletaService {
     public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> findByAnio(Integer anio) {
         return repository.findByAnio(anio);
     }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> findByPrecioVentaBetween(BigDecimal minPrecio, BigDecimal maxPrecio) {
+        return repository.findByPrecioVentaBetween(minPrecio, maxPrecio);
+    }
 
     public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> findByRangoFechasIngreso(
             LocalDate fechaInicio, LocalDate fechaFin) {
@@ -78,32 +84,67 @@ public class VistaVehiculosCompletaService {
     public Map<String, Object> getEstadisticasPorMarca(String marca) {
         List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> vehiculos = repository.findByMarca(marca);
         
+        if (vehiculos == null || vehiculos.isEmpty()) {
+            return Map.of(
+                "marca", marca,
+                "inversionTotal", BigDecimal.ZERO,
+                "ventasTotales", BigDecimal.ZERO,
+                "gananciaNeta", BigDecimal.ZERO,
+                "totalVehiculos", 0,
+                "vehiculosVendidos", 0,
+                "vehiculosEnInventario", 0
+            );
+        }
+        
         BigDecimal inversionTotal = vehiculos.stream()
                 .map(com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta::getInversionTotal)
+                .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
                 
         BigDecimal ventasTotales = vehiculos.stream()
-                .filter(v -> v.getEstado() == VistaVehiculosCompletaEstado.VENDIDO)
+                .filter(Objects::nonNull)
+                .filter(v -> v.getEstado() == VistaVehiculosCompletaEstado.VENDIDO && v.getPrecioVenta() != null)
                 .map(com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta::getPrecioVenta)
-                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b != null ? b : BigDecimal.ZERO));
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
                 
         long totalVehiculos = vehiculos.size();
         long vehiculosVendidos = vehiculos.stream()
+                .filter(Objects::nonNull)
                 .filter(v -> v.getEstado() == VistaVehiculosCompletaEstado.VENDIDO)
                 .count();
                 
         long vehiculosEnInventario = vehiculos.stream()
+                .filter(Objects::nonNull)
                 .filter(v -> v.getEstado() == VistaVehiculosCompletaEstado.DISPONIBLE)
                 .count();
         
+        BigDecimal gananciaNeta = BigDecimal.ZERO;
+        if (ventasTotales != null && inversionTotal != null) {
+            gananciaNeta = ventasTotales.subtract(inversionTotal);
+        }
+        
         return Map.of(
-                "marca", marca,
-                "inversionTotal", inversionTotal,
-                "ventasTotales", ventasTotales,
-                "gananciaNeta", ventasTotales.subtract(inversionTotal),
+                "marca", marca != null ? marca : "",
+                "inversionTotal", inversionTotal != null ? inversionTotal : BigDecimal.ZERO,
+                "ventasTotales", ventasTotales != null ? ventasTotales : BigDecimal.ZERO,
+                "gananciaNeta", gananciaNeta,
                 "totalVehiculos", totalVehiculos,
                 "vehiculosVendidos", vehiculosVendidos,
                 "vehiculosEnInventario", vehiculosEnInventario
         );
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> findByTipoVehiculo(String tipo) {
+        if (tipo == null || tipo.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return repository.findByTipoVehiculo(tipo);
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> findByTipoTransmision(String transmision) {
+        if (transmision == null || transmision.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return repository.findByTipoTransmision(transmision);
     }
 }

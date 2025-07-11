@@ -103,6 +103,31 @@ public class VistaVehiculosCompletaRepository {
                 .orderBy(VISTA_VEHICULOS_COMPLETA.ANIO.desc())
                 .fetch(VISTA_VEHICULOS_COMPLETA.ANIO);
     }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> findByTipoTransmision(String transmision) {
+        // Buscar en modelo o generación que contengan el tipo de transmisión
+        return dsl.selectFrom(VISTA_VEHICULOS_COMPLETA)
+                .where(VISTA_VEHICULOS_COMPLETA.MODELO.likeIgnoreCase("%" + transmision + "%")
+                    .or(VISTA_VEHICULOS_COMPLETA.GENERACION.likeIgnoreCase("%" + transmision + "%")))
+                .orderBy(VISTA_VEHICULOS_COMPLETA.MARCA.asc(), VISTA_VEHICULOS_COMPLETA.MODELO.asc(), VISTA_VEHICULOS_COMPLETA.ANIO.desc())
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta.class);
+    }
+
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> findByTipoVehiculo(String tipo) {
+        // Buscar por modelo ya que no existe un campo tipo_vehiculo
+        return dsl.selectFrom(VISTA_VEHICULOS_COMPLETA)
+                .where(VISTA_VEHICULOS_COMPLETA.MODELO.likeIgnoreCase("%" + tipo + "%")
+                    .or(VISTA_VEHICULOS_COMPLETA.GENERACION.likeIgnoreCase("%" + tipo + "%")))
+                .orderBy(VISTA_VEHICULOS_COMPLETA.MARCA.asc(), VISTA_VEHICULOS_COMPLETA.MODELO.asc(), VISTA_VEHICULOS_COMPLETA.ANIO.desc())
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta.class);
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta> findByPrecioVentaBetween(BigDecimal minPrecio, BigDecimal maxPrecio) {
+        return dsl.selectFrom(VISTA_VEHICULOS_COMPLETA)
+                .where(VISTA_VEHICULOS_COMPLETA.PRECIO_VENTA.between(minPrecio, maxPrecio))
+                .orderBy(VISTA_VEHICULOS_COMPLETA.PRECIO_VENTA.asc())
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaVehiculosCompleta.class);
+    }
 
     public Map<String, Object> getEstadisticasGenerales() {
         BigDecimal inversionTotal = dsl.select(DSL.coalesce(DSL.sum(VISTA_VEHICULOS_COMPLETA.INVERSION_TOTAL), BigDecimal.ZERO))

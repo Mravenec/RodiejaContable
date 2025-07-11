@@ -116,29 +116,30 @@ public class VistaTransaccionesCompletasRepository {
             LocalDate fechaInicio,
             LocalDate fechaFin) {
             
-        var query = dsl.selectFrom(VISTA_TRANSACCIONES_COMPLETAS);
+        var condition = DSL.noCondition();
         
         // Aplicar filtros si están presentes
         if (categoria != null) {
-            query = query.where(VISTA_TRANSACCIONES_COMPLETAS.CATEGORIA.eq(categoria));
+            condition = condition.and(VISTA_TRANSACCIONES_COMPLETAS.CATEGORIA.eq(categoria));
         }
         
         if (estado != null) {
-            query = query.and(VISTA_TRANSACCIONES_COMPLETAS.ESTADO.eq(estado));
+            condition = condition.and(VISTA_TRANSACCIONES_COMPLETAS.ESTADO.eq(estado));
         }
         
         if (fechaInicio != null && fechaFin != null) {
-            query = query.and(VISTA_TRANSACCIONES_COMPLETAS.FECHA.between(fechaInicio, fechaFin));
+            condition = condition.and(VISTA_TRANSACCIONES_COMPLETAS.FECHA.between(fechaInicio, fechaFin));
         } else if (fechaInicio != null) {
-            query = query.and(VISTA_TRANSACCIONES_COMPLETAS.FECHA.greaterOrEqual(fechaInicio));
+            condition = condition.and(VISTA_TRANSACCIONES_COMPLETAS.FECHA.greaterOrEqual(fechaInicio));
         } else if (fechaFin != null) {
-            query = query.and(VISTA_TRANSACCIONES_COMPLETAS.FECHA.lessOrEqual(fechaFin));
+            condition = condition.and(VISTA_TRANSACCIONES_COMPLETAS.FECHA.lessOrEqual(fechaFin));
         }
         
-        // Ordenar por fecha descendente por defecto
-        query = query.orderBy(VISTA_TRANSACCIONES_COMPLETAS.FECHA.desc());
-        
-        return query.fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaTransaccionesCompletas.class);
+        // Construir la consulta con las condiciones
+        return dsl.selectFrom(VISTA_TRANSACCIONES_COMPLETAS)
+                .where(condition)
+                .orderBy(VISTA_TRANSACCIONES_COMPLETAS.FECHA.desc())
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaTransaccionesCompletas.class);
     }
     
     public Map<String, Object> getEstadisticas() {

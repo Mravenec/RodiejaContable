@@ -5,6 +5,7 @@ import static com.rodiejacontable.database.jooq.Tables.TRANSACCIONES_FINANCIERAS
 import com.rodiejacontable.database.jooq.enums.TransaccionesFinancierasEstado;
 import com.rodiejacontable.database.jooq.tables.pojos.TransaccionesFinancieras;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -73,7 +74,7 @@ public class TransaccionesFinancierasRepository {
     }
     
     public BigDecimal getTotalMontoByTipoTransaccionAndPeriodo(Integer tipoTransaccionId, LocalDate fechaInicio, LocalDate fechaFin) {
-        return dsl.select(TRANSACCIONES_FINANCIERAS.MONTO.sum())
+        return dsl.select(DSL.sum(TRANSACCIONES_FINANCIERAS.MONTO))
                  .from(TRANSACCIONES_FINANCIERAS)
                  .where(TRANSACCIONES_FINANCIERAS.TIPO_TRANSACCION_ID.eq(tipoTransaccionId)
                      .and(TRANSACCIONES_FINANCIERAS.FECHA.between(fechaInicio, fechaFin)))
