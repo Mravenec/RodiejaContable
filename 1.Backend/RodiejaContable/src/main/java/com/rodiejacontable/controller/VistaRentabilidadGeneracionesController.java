@@ -113,7 +113,7 @@ public class VistaRentabilidadGeneracionesController {
         // KPI 4: Balance neto total
         BigDecimal balanceNeto = (BigDecimal) estadisticas.get("balanceNetoTotal");
         kpis.put("balanceNetoTotal", balanceNeto != null ? 
-                "$" + balanceNeto.setScale(2, RoundingMode.HALF_UP) : "N/A");
+                "₡" + balanceNeto.setScale(2, RoundingMode.HALF_UP) : "N/A");
         
         return kpis;
     }

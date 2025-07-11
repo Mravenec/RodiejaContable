@@ -69,17 +69,17 @@ public class VistaResumenGeneracionesService {
         // KPI 3: Inversión total
         BigDecimal totalInversion = (BigDecimal) estadisticas.get("totalInversion");
         kpis.put("totalInversion", totalInversion != null ? 
-                "$" + totalInversion.setScale(2, RoundingMode.HALF_UP) : "$0.00");
+                "₡" + totalInversion.setScale(2, RoundingMode.HALF_UP) : "₡0.00");
 
         // KPI 4: Ingresos totales
         BigDecimal totalIngresos = (BigDecimal) estadisticas.get("totalIngresos");
         kpis.put("totalIngresos", totalIngresos != null ? 
-                "$" + totalIngresos.setScale(2, RoundingMode.HALF_UP) : "$0.00");
+                "₡" + totalIngresos.setScale(2, RoundingMode.HALF_UP) : "₡0.00");
 
         // KPI 5: Balance neto total
         BigDecimal balanceNetoTotal = (BigDecimal) estadisticas.get("balanceNetoTotal");
         kpis.put("balanceNetoTotal", balanceNetoTotal != null ? 
-                "$" + balanceNetoTotal.setScale(2, RoundingMode.HALF_UP) : "$0.00");
+                "₡" + balanceNetoTotal.setScale(2, RoundingMode.HALF_UP) : "₡0.00");
 
         // KPI 6: Retorno sobre inversión promedio
         BigDecimal porcentajeRetornoPromedio = (BigDecimal) estadisticas.get("porcentajeRetornoPromedio");
@@ -144,9 +144,9 @@ public class VistaResumenGeneracionesService {
             }
             
             // Formatear valores monetarios
-            resumen.put("totalInversion", "$" + ((BigDecimal) resumen.get("totalInversion")).setScale(2, RoundingMode.HALF_UP));
-            resumen.put("totalIngresos", "$" + ((BigDecimal) resumen.get("totalIngresos")).setScale(2, RoundingMode.HALF_UP));
-            resumen.put("balanceNeto", "$" + ((BigDecimal) resumen.get("balanceNeto")).setScale(2, RoundingMode.HALF_UP));
+            resumen.put("totalInversion", "₡" + ((BigDecimal) resumen.get("totalInversion")).setScale(2, RoundingMode.HALF_UP));
+            resumen.put("totalIngresos", "₡" + ((BigDecimal) resumen.get("totalIngresos")).setScale(2, RoundingMode.HALF_UP));
+            resumen.put("balanceNeto", "₡" + ((BigDecimal) resumen.get("balanceNeto")).setScale(2, RoundingMode.HALF_UP));
         }
         
         return resultado;
