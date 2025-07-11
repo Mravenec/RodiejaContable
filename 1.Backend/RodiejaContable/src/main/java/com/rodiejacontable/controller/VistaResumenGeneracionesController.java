@@ -59,6 +59,30 @@ public class VistaResumenGeneracionesController {
             @RequestParam Integer anioFin) {
         return service.findByRangoAnios(anioInicio, anioFin);
     }
+    
+    @GetMapping("/motor/{motor}")
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> getByMotor(@PathVariable String motor) {
+        return service.findByMotor(motor);
+    }
+    
+    @GetMapping("/transmision/{transmision}")
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> getByTransmision(@PathVariable String transmision) {
+        return service.findByTransmision(transmision);
+    }
+    
+    @GetMapping("/combustible/{combustible}")
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> getByCombustible(@PathVariable String combustible) {
+        return service.findByCombustible(combustible);
+    }
+    
+    @GetMapping("/buscar")
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> buscarGeneraciones(
+            @RequestParam(required = false) String marca,
+            @RequestParam(required = false) String modelo,
+            @RequestParam(required = false) Integer anioInicio,
+            @RequestParam(required = false) Integer anioFin) {
+        return service.buscarGeneraciones(marca, modelo, anioInicio, anioFin);
+    }
 
     @GetMapping("/estadisticas")
     public Map<String, Object> getEstadisticas() {

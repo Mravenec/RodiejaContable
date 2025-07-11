@@ -104,6 +104,53 @@ public class VistaResumenGeneracionesRepository {
                 .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones.class);
     }
 
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> findByMotor(String motor) {
+        return dsl.selectFrom(VISTA_RESUMEN_GENERACIONES)
+                .where(VISTA_RESUMEN_GENERACIONES.DESCRIPCION.like("%" + motor + "%"))
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones.class);
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> findByTransmision(String transmision) {
+        return dsl.selectFrom(VISTA_RESUMEN_GENERACIONES)
+                .where(VISTA_RESUMEN_GENERACIONES.DESCRIPCION.like("%" + transmision + "%"))
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones.class);
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> findByCombustible(String combustible) {
+        return dsl.selectFrom(VISTA_RESUMEN_GENERACIONES)
+                .where(VISTA_RESUMEN_GENERACIONES.DESCRIPCION.like("%" + combustible + "%"))
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones.class);
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> buscarGeneraciones(
+            String marca, 
+            String modelo, 
+            Integer anioInicio, 
+            Integer anioFin) {
+        
+        var condition = DSL.noCondition();
+        
+        if (marca != null && !marca.trim().isEmpty()) {
+            condition = condition.and(VISTA_RESUMEN_GENERACIONES.MARCA.like("%" + marca + "%"));
+        }
+        
+        if (modelo != null && !modelo.trim().isEmpty()) {
+            condition = condition.and(VISTA_RESUMEN_GENERACIONES.MODELO.like("%" + modelo + "%"));
+        }
+        
+        if (anioInicio != null) {
+            condition = condition.and(VISTA_RESUMEN_GENERACIONES.ANIO_INICIO.ge(anioInicio));
+        }
+        
+        if (anioFin != null) {
+            condition = condition.and(VISTA_RESUMEN_GENERACIONES.ANIO_FIN.le(anioFin));
+        }
+        
+        return dsl.selectFrom(VISTA_RESUMEN_GENERACIONES)
+                .where(condition)
+                .fetchInto(com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones.class);
+    }
+
     public Map<String, Object> getEstadisticas() {
         Map<String, Object> estadisticas = new java.util.HashMap<>();
         

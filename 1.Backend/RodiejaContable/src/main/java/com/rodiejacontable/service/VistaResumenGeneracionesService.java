@@ -49,6 +49,35 @@ public class VistaResumenGeneracionesService {
         }
         return repository.findByRangoAnios(anioInicio, anioFin);
     }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> findByMotor(String motor) {
+        if (motor == null || motor.trim().isEmpty()) {
+            throw new IllegalArgumentException("El parámetro 'motor' no puede estar vacío");
+        }
+        return repository.findByMotor(motor.trim());
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> findByTransmision(String transmision) {
+        if (transmision == null || transmision.trim().isEmpty()) {
+            throw new IllegalArgumentException("El parámetro 'transmision' no puede estar vacío");
+        }
+        return repository.findByTransmision(transmision.trim());
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> findByCombustible(String combustible) {
+        if (combustible == null || combustible.trim().isEmpty()) {
+            throw new IllegalArgumentException("El parámetro 'combustible' no puede estar vacío");
+        }
+        return repository.findByCombustible(combustible.trim());
+    }
+    
+    public List<com.rodiejacontable.database.jooq.tables.pojos.VistaResumenGeneraciones> buscarGeneraciones(
+            String marca, 
+            String modelo, 
+            Integer anioInicio, 
+            Integer anioFin) {
+        return repository.buscarGeneraciones(marca, modelo, anioInicio, anioFin);
+    }
 
     public Map<String, Object> getEstadisticas() {
         return repository.getEstadisticas();
