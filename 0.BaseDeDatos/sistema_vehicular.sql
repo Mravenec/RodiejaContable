@@ -1,5 +1,3 @@
-
-
 /*
     =========================================
     CONEXIÓN SUGERIDA (MySQL/MariaDB)
@@ -86,7 +84,7 @@ CREATE TABLE vehiculos (
     precio_compra DECIMAL(12,2) NOT NULL,
     costo_grua DECIMAL(10,2) DEFAULT 0,
     comisiones DECIMAL(10,2) DEFAULT 0,
-    inversion_total DECIMAL(12,2) AS (precio_compra + costo_grua + comisiones) STORED,
+    inversion_total DECIMAL(12,2) AS (-(precio_compra + costo_grua + comisiones)) STORED,
     fecha_ingreso DATE NOT NULL,
     estado ENUM('DISPONIBLE', 'VENDIDO', 'DESARMADO', 'REPARACION') DEFAULT 'DISPONIBLE',
     precio_venta DECIMAL(12,2) DEFAULT NULL,
@@ -351,26 +349,30 @@ BEGIN
     IF NEW.generacion_id IS NOT NULL THEN
         UPDATE generaciones g SET
             total_inversion = (
-                SELECT COALESCE(SUM(v.inversion_total), 0) 
-                FROM vehiculos v 
+                SELECT COALESCE(SUM(v.inversion_total),0)
+                FROM vehiculos v
                 WHERE v.generacion_id = NEW.generacion_id AND v.activo = TRUE
             ),
             total_ingresos = (
-                SELECT COALESCE(SUM(tf.monto), 0) 
-                FROM transacciones_financieras tf 
+                SELECT COALESCE(SUM(tf.monto),0)
+                FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = NEW.generacion_id AND tt.categoria = 'INGRESO' AND tf.activo = TRUE
+                WHERE tf.generacion_id = NEW.generacion_id
+                  AND tt.categoria = 'INGRESO'
+                  AND tf.activo = TRUE
             ),
             total_egresos = (
-                SELECT COALESCE(SUM(tf.monto), 0) 
-                FROM transacciones_financieras tf 
+                SELECT COALESCE(SUM(tf.monto),0)
+                FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = NEW.generacion_id AND tt.categoria = 'EGRESO' AND tf.activo = TRUE
+                WHERE tf.generacion_id = NEW.generacion_id
+                  AND tt.categoria = 'EGRESO'
+                  AND tf.activo = TRUE
             )
         WHERE g.id = NEW.generacion_id;
-        
-        UPDATE generaciones SET 
-            balance_neto = total_ingresos - total_egresos - total_inversion
+
+        UPDATE generaciones
+        SET balance_neto = total_inversion + total_ingresos - total_egresos
         WHERE id = NEW.generacion_id;
     END IF;
 END//
