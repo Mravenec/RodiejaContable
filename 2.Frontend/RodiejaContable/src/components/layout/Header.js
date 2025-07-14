@@ -17,18 +17,39 @@ const Header = ({ collapsed, toggleCollapse }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const handleMenuClick = async (e) => {
+    switch (e.key) {
+      case '1':
+        navigate('/configuracion/perfil');
+        break;
+      case '2':
+        navigate('/configuracion');
+        break;
+      case '3': // Cerrar Sesión
+        try {
+          await logout();
+          // Usar window.location.replace para evitar problemas con el historial
+          window.location.replace('/login');
+        } catch (error) {
+          console.error('Error en logout:', error);
+          window.location.replace('/login');
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
   const items = [
     {
       key: '1',
       label: 'Mi Perfil',
-      icon: <UserOutlined />,
-      onClick: () => navigate('/configuracion/perfil')
+      icon: <UserOutlined />
     },
     {
       key: '2',
       label: 'Configuración',
-      icon: <SettingOutlined />,
-      onClick: () => navigate('/configuracion')
+      icon: <SettingOutlined />
     },
     {
       type: 'divider',
@@ -37,11 +58,7 @@ const Header = ({ collapsed, toggleCollapse }) => {
       key: '3',
       label: 'Cerrar Sesión',
       icon: <LogoutOutlined />,
-      danger: true,
-      onClick: () => {
-        logout();
-        navigate('/login');
-      }
+      danger: true
     },
   ];
 
@@ -78,13 +95,22 @@ const Header = ({ collapsed, toggleCollapse }) => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <Dropdown menu={{ items }} trigger={['click']}>
-          <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px' }}>
+        <Dropdown menu={{ items, onClick: handleMenuClick }} trigger={['click']} overlayStyle={{ minWidth: '200px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            cursor: 'pointer', 
+            padding: '8px',
+            maxWidth: '180px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
             <Avatar 
               style={{ backgroundColor: '#1890ff' }} 
               icon={<UserOutlined />} 
             />
-            <div style={{ marginLeft: '8px' }}>
+            <div style={{ marginLeft: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               <Text strong>{user?.name || 'Usuario'}</Text>
               <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
                 {user?.role || 'Administrador'}

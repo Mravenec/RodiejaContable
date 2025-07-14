@@ -62,7 +62,7 @@ const MainLayout = () => {
       >
         <div className="logo" style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <h2 style={{ color: '#1890ff', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden' }}>
-            {!collapsed ? 'Rodieja Contable' : 'RC'}
+            {!collapsed ? 'Rodieja S.A.' : 'RSA'}
           </h2>
         </div>
         
@@ -131,15 +131,14 @@ const MainLayout = () => {
           </div>
         </Header>
         
-        <Content
-          style={{
-            margin: '24px 16px',
-            padding: 24,
-            minHeight: 280,
-            background: '#fff',
-            borderRadius: '8px',
-          }}
-        >
+        <Content style={{ 
+          margin: '108px 16px 24px', /* Aumentado de 88px a 108px para más espacio */
+          padding: 24, 
+          minHeight: 'calc(100vh - 132px)', /* Ajustado para mantener la misma altura total */
+          background: '#fff',
+          borderRadius: '8px',
+          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)'
+        }}>
           <Outlet />
         </Content>
       </Layout>

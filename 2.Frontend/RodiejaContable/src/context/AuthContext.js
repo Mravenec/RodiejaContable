@@ -21,8 +21,9 @@ export const AuthProvider = ({ children }) => {
   // Cargar el usuario al iniciar la aplicación
   const loadUser = useCallback(() => {
     try {
-      // Simular carga de usuario
-      return Promise.resolve(mockUser);
+      const user = authService.getCurrentUser();
+      setUser(user);
+      return user;
     } catch (err) {
       console.error('Error al cargar el usuario:', err);
       return null;
@@ -37,18 +38,25 @@ export const AuthProvider = ({ children }) => {
   }, [loadUser]);
 
   // Iniciar sesión simulada
-  const login = async (credentials) => {
+  const login = async (userData) => {
     try {
       setLoading(true);
       setError(null);
       
       // Simular tiempo de espera
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Devolver el usuario simulado
-      setUser(mockUser);
-      return { user: mockUser, token: 'mock-token' };
+      // Guardar el token y el usuario en localStorage
+      const token = 'mock-jwt-token';
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      // Actualizar el estado del usuario
+      setUser(userData);
+      
+      return { user: userData, token };
     } catch (err) {
+      console.error('Error en login:', err);
       setError(err.message || 'Error en la autenticación');
       throw err;
     } finally {
@@ -58,8 +66,23 @@ export const AuthProvider = ({ children }) => {
 
   // Cerrar sesión
   const logout = useCallback(() => {
-    authService.logout();
-    setUser(null);
+    console.log('Ejecutando logout...');
+    try {
+      // Limpiar solo los datos de autenticación
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      
+      // Limpiar el estado del usuario
+      setUser(null);
+      
+      // Devolver una promesa resuelta
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error al limpiar datos de autenticación:', error);
+      return Promise.reject(error);
+    }
   }, []);
 
   // Verificar si el usuario está autenticado

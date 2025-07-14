@@ -22,7 +22,7 @@ const Login = () => {
     setLoading(true);
     try {
       // Simular autenticación
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // En una aplicación real, aquí se haría la autenticación con el backend
       if (values.username === 'admin' && values.password === 'admin123') {
@@ -34,7 +34,7 @@ const Login = () => {
         };
         
         // Llamar a login con los datos del usuario
-        login(userData);
+        await login(userData);
         
         // Navegar a la página de destino o al dashboard
         const from = location.state?.from?.pathname || '/';
@@ -52,7 +52,8 @@ const Login = () => {
   };
 
   return (
-    <Card style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
+      <Card style={{ width: '100%', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
       <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Iniciar Sesión</h2>
       
       <Form
@@ -101,6 +102,7 @@ const Login = () => {
         </div>
       </Form>
     </Card>
+    </div>
   );
 };
 

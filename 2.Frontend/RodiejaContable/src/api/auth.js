@@ -32,14 +32,26 @@ export const authService = {
   },
 
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    try {
+      console.log('Ejecutando logout...');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.clear(); // Limpiar sessionStorage por si acaso
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error('Error en authService.logout:', error);
+      return Promise.reject(error);
+    }
   },
 
   getCurrentUser() {
-    // Devolver usuario simulado si no hay usuario en localStorage
+    // Verificar si hay un token primero
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    
+    // Si hay token, intentar obtener el usuario
     const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : mockUser;
+    return user ? JSON.parse(user) : null;
   },
 
   getAuthHeader() {
@@ -47,6 +59,7 @@ export const authService = {
   },
 
   isAuthenticated() {
-    return true; // Siempre autenticado en modo desarrollo
+    const token = localStorage.getItem('token');
+    return !!token; // Devuelve true si hay un token, false en caso contrario
   },
 };

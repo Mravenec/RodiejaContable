@@ -91,7 +91,21 @@ const Sidebar = ({ collapsed }) => {
         bottom: 0,
       }}
     >
-      <div style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.2)' }} />
+      <div style={{ 
+        height: 32, 
+        margin: 16, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        background: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: '4px',
+        padding: '0 8px'
+      }}>
+        {collapsed ? 'RSA' : 'Rodieja S.A.'}
+      </div>
       <Menu
         theme="dark"
         mode="inline"

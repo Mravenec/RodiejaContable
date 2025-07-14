@@ -7,25 +7,17 @@ const { Title } = Typography;
 
 const AuthLayout = () => {
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-      <Content
-        style={{
+    <Layout style={{ minHeight: '100%' }}>
+      <Content style={{ padding: '24px', height: '100%' }}>
+        <div style={{ 
+          width: '100%', 
+          maxWidth: '400px', 
+          margin: '0 auto',
           display: 'flex',
+          flexDirection: 'column',
           justifyContent: 'center',
-          alignItems: 'center',
-          padding: '24px',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '400px',
-            background: '#fff',
-            padding: '32px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-          }}
-        >
+          minHeight: '100%'
+        }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <Title level={2} style={{ color: '#1890ff' }}>Rodieja Contable</Title>
             <p style={{ color: '#666' }}>Sistema de Gestión Vehicular</p>
