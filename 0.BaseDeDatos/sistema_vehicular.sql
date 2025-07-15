@@ -378,6 +378,27 @@ BEGIN
 END//
 DELIMITER ;
 
+
+-- Trigger al registrar una venta completa, marca el vehículo como VENDIDO
+DELIMITER //
+
+CREATE TRIGGER tr_marcar_vehiculo_vendido
+AFTER INSERT ON transacciones_financieras
+FOR EACH ROW
+BEGIN
+    /* Solo cuando el tipo de transacción sea “Venta Vehículo”
+       (ajusta el id o usa nombre si prefieres)                */
+    IF NEW.tipo_transaccion_id = 1 THEN
+        UPDATE vehiculos
+        SET   estado      = 'VENDIDO',
+              precio_venta = NEW.monto,
+              fecha_venta  = NEW.fecha
+        WHERE id = NEW.vehiculo_id;
+    END IF;
+END//
+
+DELIMITER ;
+
 -- ========================================
 -- TRIGGERS ADICIONALES PARA MAYOR ROBUSTEZ
 -- ========================================
