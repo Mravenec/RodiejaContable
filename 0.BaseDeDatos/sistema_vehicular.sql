@@ -1,3 +1,5 @@
+    
+
 /*
     =========================================
     CONEXIÓN SUGERIDA (MySQL/MariaDB)
@@ -84,7 +86,7 @@ CREATE TABLE vehiculos (
     precio_compra DECIMAL(12,2) NOT NULL,
     costo_grua DECIMAL(10,2) DEFAULT 0,
     comisiones DECIMAL(10,2) DEFAULT 0,
-    inversion_total DECIMAL(12,2) AS (-(precio_compra + costo_grua + comisiones)) STORED,
+    inversion_total DECIMAL(12,2) AS (precio_compra + costo_grua + comisiones) STORED,
     fecha_ingreso DATE NOT NULL,
     estado ENUM('DISPONIBLE', 'VENDIDO', 'DESARMADO', 'REPARACION') DEFAULT 'DISPONIBLE',
     precio_venta DECIMAL(12,2) DEFAULT NULL,
@@ -107,45 +109,88 @@ CREATE TABLE vehiculos (
 -- Tabla de inventario de repuestos
 CREATE TABLE inventario_repuestos (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    codigo_repuesto VARCHAR(20) UNIQUE,
+    codigo_repuesto VARCHAR(100) UNIQUE,
     vehiculo_origen_id INT DEFAULT NULL,
-    anio_registro SMALLINT NOT NULL,
-    mes_registro TINYINT NOT NULL,
+
+    -- Fecha de ingreso al sistema
+	anio_registro SMALLINT AS (YEAR(fecha_creacion)) STORED,
+	mes_registro TINYINT AS (MONTH(fecha_creacion)) STORED,
+
+
+    -- Información general
     codigo_ubicacion VARCHAR(100),
-    imagen_url TEXT,
+    imagen_url       TEXT,
     parte_vehiculo ENUM(
-        'MOTOR', 'CHASIS', 'CARROCERIA', 'COMPUTADORA',
-        'CAJA DE CAMBIO', 'AIRBAGS O BOLSAS DE AIRE', 'EJES Y DIFERENCIA',
-        'SUSPENSION Y AMORTIGUAMIENTO', 'EMBRAGUE', 'SISTEMA DE FRENOS',
-        'TANQUE DE GASOLINA', 'DISTRIBUIDOR', 'RADIADOR', 'VENTILADOR',
-        'BOMBA DE AGUA', 'BATERIA', 'AROS Y LLANTAS', 'SISTEMA DE DIRECCION',
-        'SISTEMA ELECTRICO', 'FUSIBLES', 'ALTERNADOR', 'VÁLVULAS DE ESCAPE', 'TURBO'
+        'MOTOR','CHASIS','CARROCERIA','COMPUTADORA',
+        'CAJA DE CAMBIO','AIRBAGS O BOLSAS DE AIRE','EJES Y DIFERENCIA',
+        'SUSPENSION Y AMORTIGUAMIENTO','EMBRAGUE','SISTEMA DE FRENOS',
+        'TANQUE DE GASOLINA','DISTRIBUIDOR','RADIADOR','VENTILADOR',
+        'BOMBA DE AGUA','BATERIA','AROS Y LLANTAS','SISTEMA DE DIRECCION',
+        'SISTEMA ELECTRICO','FUSIBLES','ALTERNADOR','VÁLVULAS DE ESCAPE','TURBO'
     ) NOT NULL,
     descripcion TEXT,
-    precio_costo DECIMAL(10,2) DEFAULT 0.00,
-    precio_venta DECIMAL(10,2) DEFAULT 0.00,
+
+    -- Precios
+    precio_costo   DECIMAL(10,2) DEFAULT 0.00,
+    precio_venta   DECIMAL(10,2) DEFAULT 0.00,
     precio_mayoreo DECIMAL(10,2) DEFAULT 0.00,
-    formula_15 DECIMAL(10,2) AS (precio_costo * 1.15) STORED,
-    formula_30 DECIMAL(10,2) AS (precio_costo * 1.30) STORED,
-    -- Ubicación física
-    bodega ENUM('0-', 'D-', 'C-'),
-    ubicado_en_vehiculo_1 ENUM('0-', 'REPUESTO EN VEHICULO'),
-    ubicado_en_vehiculo_2 VARCHAR(20),
-    zona ENUM('0-', 'Z1-', 'Z2-', 'Z3-', 'Z4-', 'Z5-', 'Z6-'),
-    pared ENUM('0-', 'PE-', 'PO-', 'PN-', 'PS-'),
-    malla ENUM(
+    formula_15     DECIMAL(10,2) AS (precio_costo * 1.15) STORED,
+    formula_30     DECIMAL(10,2) AS (precio_costo * 1.30) STORED,
+
+    -- ---------- UBICACIÓN FÍSICA COMPLETA ----------
+    bodega ENUM('0-','R-','D-','C-') DEFAULT '0-',                     -- añadido R-
+ 
+
+    zona ENUM(                                                          -- extendido hasta Z22-
+        '0-','Z1-','Z2-','Z3-','Z4-','Z5-','Z6-','Z7-','Z8-','Z9-','Z10-',
+        'Z11-','Z12-','Z13-','Z14-','Z15-','Z16-','Z17-','Z18-','Z19-',
+        'Z20-','Z21-','Z22-'
+    ) DEFAULT '0-',
+
+    pared ENUM('0-','PE-','PO-','PN-','PS-') DEFAULT '0-',
+
+    malla ENUM(                                                         -- ampliado de V1‑V45 a V1‑V200
+        '0-',
         'V1','V2','V3','V4','V5','V6','V7','V8','V9','V10',
         'V11','V12','V13','V14','V15','V16','V17','V18','V19','V20',
         'V21','V22','V23','V24','V25','V26','V27','V28','V29','V30',
         'V31','V32','V33','V34','V35','V36','V37','V38','V39','V40',
-        'V41','V42','V43','V44','V45'
-    ),
-    estante ENUM('E1', 'E2', 'E3', 'E4', 'E5', 'E6'),
-    piso ENUM(
+        'V41','V42','V43','V44','V45',
+        'V46','V47','V48','V49','V50','V51','V52','V53','V54','V55',
+        'V56','V57','V58','V59','V60','V61','V62','V63','V64','V65',
+        'V66','V67','V68','V69','V70','V71','V72','V73','V74','V75',
+        'V76','V77','V78','V79','V80','V81','V82','V83','V84','V85',
+        'V86','V87','V88','V89','V90','V91','V92','V93','V94','V95',
+        'V96','V97','V98','V99','V100',
+        'V101','V102','V103','V104','V105','V106','V107','V108','V109','V110',
+        'V111','V112','V113','V114','V115','V116','V117','V118','V119','V120',
+        'V121','V122','V123','V124','V125','V126','V127','V128','V129','V130',
+        'V131','V132','V133','V134','V135','V136','V137','V138','V139','V140',
+        'V141','V142','V143','V144','V145','V146','V147','V148','V149','V150',
+        'V151','V152','V153','V154','V155','V156','V157','V158','V159','V160',
+        'V161','V162','V163','V164','V165','V166','V167','V168','V169','V170',
+        'V171','V172','V173','V174','V175','V176','V177','V178','V179','V180',
+        'V181','V182','V183','V184','V185','V186','V187','V188','V189','V190',
+        'V191','V192','V193','V194','V195','V196','V197','V198','V199','V200'
+    ) DEFAULT '0-',
+
+    horizontal ENUM(                                                    -- NUEVO campo
+        '0-','HA-','HB-','HC-','HD-','HE-','HF-','HG-','HH-','HI-',
+        'HJ-','HK-','HL-','HM-','HN-','HO-','HP-','HQ-','HR-','HS-','HT-'
+    ) DEFAULT '0-',
+
+    estante ENUM('E1','E2','E3','E4','E5','E6','E7','E8','E9','E10','E11','E12','E13','E14') DEFAULT 'E1',  -- extendido a E14
+    nivel   ENUM(                                                      -- NUEVO campo para niveles
+        '0-','N1-','N2-','N3-','N4-','N5-','N6-','N7-','N8-','N9-','N10-',
+        'N11-','N12-','N13-','N14-','N15-','N16-','N17-','N18-','N19-','N20-','N21-','N22-'
+    ) DEFAULT '0-',
+
+    piso ENUM(                                                          -- añadido P20‑P21
         'P1-','P2-','P3-','P4-','P5-','P6-','P7-','P8-','P9-','P10-',
-        'P11-','P12-','P13-','P14-','P15-','P16-','P17-','P18-','P19-'
-    ),
-    plastica ENUM(
+        'P11-','P12-','P13-','P14-','P15-','P16-','P17-','P18-','P19-','P20-','P21-'
+    ) DEFAULT 'P1-',
+
+    plastica ENUM(  -- CP1‑CP52 ya estaba completo
         'CP1-','CP2-','CP3-','CP4-','CP5-','CP6-','CP7-','CP8-','CP9-','CP10-',
         'CP11-','CP12-','CP13-','CP14-','CP15-','CP16-','CP17-','CP18-','CP19-',
         'CP20-','CP21-','CP22-','CP23-','CP24-','CP25-','CP26-','CP27-','CP28-',
@@ -153,7 +198,8 @@ CREATE TABLE inventario_repuestos (
         'CP38-','CP39-','CP40-','CP41-','CP42-','CP43-','CP44-','CP45-','CP46-',
         'CP47-','CP48-','CP49-','CP50-','CP51-','CP52-'
     ),
-    carton ENUM(
+
+    carton ENUM(   -- MM1‑MM52 coincide con tu lista METAL‑MADERA
         'MM1-','MM2-','MM3-','MM4-','MM5-','MM6-','MM7-','MM8-','MM9-','MM10-',
         'MM11-','MM12-','MM13-','MM14-','MM15-','MM16-','MM17-','MM18-','MM19-','MM20-',
         'MM21-','MM22-','MM23-','MM24-','MM25-','MM26-','MM27-','MM28-','MM29-','MM30-',
@@ -161,13 +207,25 @@ CREATE TABLE inventario_repuestos (
         'MM41-','MM42-','MM43-','MM44-','MM45-','MM46-','MM47-','MM48-','MM49-','MM50-',
         'MM51-','MM52-'
     ),
+
     posicion VARCHAR(10),
-    estado ENUM('STOCK', 'VENDIDO', 'AGOTADO', 'DAÑADO', 'USADO_INTERNO') DEFAULT 'STOCK',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- ---------- CONTROL DE STOCK ----------
+    cantidad INT UNSIGNED NOT NULL DEFAULT 1,                           -- NUEVO
+
+    estado ENUM(                                                        -- añadido PROCESO
+        'STOCK','VENDIDO','PROCESO','AGOTADO','DAÑADO','USADO_INTERNO'
+    ) DEFAULT 'STOCK',
+	
+	condicion ENUM('100%-','50%-','0%-') DEFAULT '100%-',
+    -- Timestamps
+    fecha_creacion     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Relaciones e índices
     FOREIGN KEY (vehiculo_origen_id) REFERENCES vehiculos(id),
     INDEX idx_vehiculo_origen (vehiculo_origen_id),
-    INDEX idx_estado (estado),
+    INDEX idx_estado         (estado),
     INDEX idx_parte_vehiculo (parte_vehiculo),
     INDEX idx_fecha_registro (anio_registro, mes_registro)
 );
@@ -308,13 +366,143 @@ CREATE TRIGGER tr_generar_codigo_repuesto
 BEFORE INSERT ON inventario_repuestos
 FOR EACH ROW
 BEGIN
+    DECLARE gen_inicio INT;
+    DECLARE gen_fin INT;
     DECLARE contador INT;
-    SELECT COUNT(*) + 1 INTO contador FROM inventario_repuestos 
-    WHERE anio_registro = NEW.anio_registro AND mes_registro = NEW.mes_registro;
-    
-    SET NEW.codigo_repuesto = CONCAT('REP-', NEW.anio_registro, '-', LPAD(NEW.mes_registro, 2, '0'), '-', LPAD(contador, 4, '0'));
+
+    IF NEW.vehiculo_origen_id IS NOT NULL THEN
+        -- Obtener el rango de años de la generación asociada al vehículo
+        SELECT g.anio_inicio, g.anio_fin
+        INTO gen_inicio, gen_fin
+        FROM vehiculos v
+        JOIN generaciones g ON v.generacion_id = g.id
+        WHERE v.id = NEW.vehiculo_origen_id;
+
+        -- Contar cuántos repuestos ya hay asociados a esa generación
+        SELECT COUNT(*) + 1 INTO contador
+        FROM inventario_repuestos ir
+        JOIN vehiculos v2 ON ir.vehiculo_origen_id = v2.id
+        JOIN generaciones g2 ON v2.generacion_id = g2.id
+        WHERE g2.anio_inicio = gen_inicio AND g2.anio_fin = gen_fin;
+
+        SET NEW.codigo_repuesto = CONCAT('REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0'));
+    ELSE
+        -- Si no está asociado a un vehículo, genera un código temporal
+        SELECT COUNT(*) + 1 INTO contador
+        FROM inventario_repuestos 
+        WHERE anio_registro = NEW.anio_registro AND mes_registro = NEW.mes_registro;
+
+        SET NEW.codigo_repuesto = CONCAT('REP-TEMP-', NEW.anio_registro, '-', LPAD(NEW.mes_registro, 2, '0'), '-', LPAD(contador, 4, '0'));
+    END IF;
 END//
 DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_insertar_repuesto_sin_vehiculo(
+    IN p_generacion_id INT,
+    IN p_parte_vehiculo VARCHAR(100),
+    IN p_descripcion TEXT,
+    IN p_precio_costo DECIMAL(10,2),
+    IN p_precio_venta DECIMAL(10,2),
+    IN p_precio_mayoreo DECIMAL(10,2),
+    IN p_bodega VARCHAR(10),
+    IN p_zona VARCHAR(10),
+    IN p_pared VARCHAR(10),
+    IN p_malla VARCHAR(10),
+    IN p_estante VARCHAR(10),
+    IN p_piso VARCHAR(10),
+    IN p_estado VARCHAR(20),
+    IN p_condicion VARCHAR(10)
+)
+BEGIN
+    DECLARE gen_inicio INT;
+    DECLARE gen_fin INT;
+    DECLARE contador INT;
+    DECLARE codigo_generado VARCHAR(50);
+
+    -- Obtener rango de la generación
+    SELECT anio_inicio, anio_fin INTO gen_inicio, gen_fin
+    FROM generaciones WHERE id = p_generacion_id;
+
+    -- Contar repuestos existentes ligados a esa generación (a través de vehículos)
+    SELECT COUNT(*) + 1 INTO contador
+    FROM inventario_repuestos ir
+    JOIN vehiculos v ON ir.vehiculo_origen_id = v.id
+    JOIN generaciones g ON v.generacion_id = g.id
+    WHERE g.id = p_generacion_id;
+
+    -- Generar el código de repuesto usando el rango de la generación
+    SET codigo_generado = CONCAT('REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0'));
+
+    -- Insertar el nuevo repuesto
+    INSERT INTO inventario_repuestos (
+        codigo_repuesto, parte_vehiculo, descripcion,
+        precio_costo, precio_venta, precio_mayoreo,
+        bodega, zona, pared, malla, estante, piso,
+        estado, condicion, fecha_creacion
+    ) VALUES (
+        codigo_generado, p_parte_vehiculo, p_descripcion,
+        p_precio_costo, p_precio_venta, p_precio_mayoreo,
+        p_bodega, p_zona, p_pared, p_malla, p_estante, p_piso,
+        p_estado, p_condicion, NOW()
+    );
+END//
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE sp_insertar_repuesto_con_generacion(
+    IN p_generacion_id INT,
+    IN p_parte_vehiculo VARCHAR(100),
+    IN p_descripcion TEXT,
+    IN p_precio_costo DECIMAL(10,2),
+    IN p_precio_venta DECIMAL(10,2),
+    IN p_precio_mayoreo DECIMAL(10,2),
+    IN p_bodega VARCHAR(10),
+    IN p_zona VARCHAR(10),
+    IN p_pared VARCHAR(10),
+    IN p_malla VARCHAR(10),
+    IN p_estante VARCHAR(10),
+    IN p_piso VARCHAR(10),
+    IN p_estado VARCHAR(20),
+    IN p_condicion VARCHAR(10)
+)
+BEGIN
+    DECLARE gen_inicio INT;
+    DECLARE gen_fin INT;
+    DECLARE contador INT;
+    DECLARE nuevo_id INT;
+    DECLARE codigo_generado VARCHAR(50);
+
+    -- Obtener rango de la generación
+    SELECT anio_inicio, anio_fin INTO gen_inicio, gen_fin
+    FROM generaciones WHERE id = p_generacion_id;
+
+    -- Contar repuestos existentes ligados a esa generación
+    SELECT COUNT(*) + 1 INTO contador
+    FROM inventario_repuestos ir
+    JOIN vehiculos v ON ir.vehiculo_origen_id = v.id
+    JOIN generaciones g ON v.generacion_id = g.id
+    WHERE g.id = p_generacion_id;
+
+    -- Generar el código con años de generación
+    SET codigo_generado = CONCAT('REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0'));
+
+    -- Insertar el repuesto
+    INSERT INTO inventario_repuestos (
+        codigo_repuesto, parte_vehiculo, descripcion,
+        precio_costo, precio_venta, precio_mayoreo,
+        bodega, zona, pared, malla, estante, piso,
+        estado, condicion, fecha_creacion
+    ) VALUES (
+        codigo_generado, p_parte_vehiculo, p_descripcion,
+        p_precio_costo, p_precio_venta, p_precio_mayoreo,
+        p_bodega, p_zona, p_pared, p_malla, p_estante, p_piso,
+        p_estado, p_condicion, NOW()
+    );
+END//
+DELIMITER ;
+
 
 -- Trigger para generar código de ubicación
 DELIMITER //
@@ -342,66 +530,95 @@ DELIMITER ;
 
 -- Trigger para actualizar totales de generación
 DELIMITER //
+
 CREATE TRIGGER tr_actualizar_totales_generacion_insert
 AFTER INSERT ON transacciones_financieras
 FOR EACH ROW
 BEGIN
     IF NEW.generacion_id IS NOT NULL THEN
+
+        -- ✅ Solo contar 'Compra Vehículo' en total_inversion
         UPDATE generaciones g SET
             total_inversion = (
-                SELECT COALESCE(SUM(v.inversion_total),0)
-                FROM vehiculos v
-                WHERE v.generacion_id = NEW.generacion_id AND v.activo = TRUE
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
+                JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
+                WHERE tf.generacion_id = NEW.generacion_id
+                  AND tt.nombre = 'Compra Vehículo'
+                  AND tf.activo = TRUE
             ),
+
+            -- ✅ total_egresos: excluir 'Compra Vehículo' para evitar doble efecto
+            total_egresos = (
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
+                JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
+                WHERE tf.generacion_id = NEW.generacion_id
+                  AND tt.categoria = 'EGRESO'
+                  AND tt.nombre != 'Compra Vehículo'
+                  AND tf.activo = TRUE
+            ),
+
             total_ingresos = (
-                SELECT COALESCE(SUM(tf.monto),0)
+                SELECT COALESCE(SUM(tf.monto), 0)
                 FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
                 WHERE tf.generacion_id = NEW.generacion_id
                   AND tt.categoria = 'INGRESO'
                   AND tf.activo = TRUE
-            ),
-            total_egresos = (
-                SELECT COALESCE(SUM(tf.monto),0)
-                FROM transacciones_financieras tf
-                JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = NEW.generacion_id
-                  AND tt.categoria = 'EGRESO'
-                  AND tf.activo = TRUE
             )
         WHERE g.id = NEW.generacion_id;
 
+        -- Recalcular balance
         UPDATE generaciones
-        SET balance_neto = total_inversion + total_ingresos - total_egresos
+        SET balance_neto = total_ingresos - total_egresos - total_inversion
         WHERE id = NEW.generacion_id;
     END IF;
 END//
-DELIMITER ;
-
-
--- Trigger al registrar una venta completa, marca el vehículo como VENDIDO
-DELIMITER //
-
-CREATE TRIGGER tr_marcar_vehiculo_vendido
-AFTER INSERT ON transacciones_financieras
-FOR EACH ROW
-BEGIN
-    /* Solo cuando el tipo de transacción sea “Venta Vehículo”
-       (ajusta el id o usa nombre si prefieres)                */
-    IF NEW.tipo_transaccion_id = 1 THEN
-        UPDATE vehiculos
-        SET   estado      = 'VENDIDO',
-              precio_venta = NEW.monto,
-              fecha_venta  = NEW.fecha
-        WHERE id = NEW.vehiculo_id;
-    END IF;
-END//
 
 DELIMITER ;
+
 
 -- ========================================
 -- TRIGGERS ADICIONALES PARA MAYOR ROBUSTEZ
 -- ========================================
+
+DELIMITER //
+
+CREATE TRIGGER tr_insertar_compra_vehiculo
+AFTER INSERT ON vehiculos
+FOR EACH ROW
+BEGIN
+    DECLARE tipo_compra_id INT;
+
+    -- Obtener el ID de tipo de transacción 'Compra Vehículo'
+    SELECT id INTO tipo_compra_id 
+    FROM tipos_transacciones 
+    WHERE nombre = 'Compra Vehículo' 
+    LIMIT 1;
+
+    -- Insertar transacción contable
+    INSERT INTO transacciones_financieras (
+        fecha,
+        tipo_transaccion_id,
+        vehiculo_id,
+        generacion_id,
+        monto,
+        descripcion,
+        referencia
+    ) VALUES (
+        NEW.fecha_ingreso,
+        tipo_compra_id,
+        NEW.id,
+        NEW.generacion_id,
+        NEW.inversion_total,
+        CONCAT('Compra automática de vehículo ', NEW.codigo_vehiculo),
+        CONCAT('AUTO-COMPRA-', NEW.id)
+    );
+END//
+
+DELIMITER ;
+
 
 DELIMITER //
 
@@ -410,47 +627,73 @@ CREATE TRIGGER tr_actualizar_totales_generacion_update
 AFTER UPDATE ON transacciones_financieras
 FOR EACH ROW
 BEGIN
-    -- Actualizar generación anterior si cambió
+    -- Actualizar generación anterior
     IF OLD.generacion_id IS NOT NULL AND OLD.generacion_id != NEW.generacion_id THEN
         UPDATE generaciones g SET
-            total_ingresos = (
-                SELECT COALESCE(SUM(tf.monto), 0) 
-                FROM transacciones_financieras tf 
+            total_inversion = (
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = OLD.generacion_id AND tt.categoria = 'INGRESO' AND tf.activo = TRUE
+                WHERE tf.generacion_id = OLD.generacion_id
+                  AND tt.nombre = 'Compra Vehículo'
+                  AND tf.activo = TRUE
             ),
             total_egresos = (
-                SELECT COALESCE(SUM(tf.monto), 0) 
-                FROM transacciones_financieras tf 
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = OLD.generacion_id AND tt.categoria = 'EGRESO' AND tf.activo = TRUE
+                WHERE tf.generacion_id = OLD.generacion_id
+                  AND tt.categoria = 'EGRESO'
+                  AND tt.nombre != 'Compra Vehículo'
+                  AND tf.activo = TRUE
+            ),
+            total_ingresos = (
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
+                JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
+                WHERE tf.generacion_id = OLD.generacion_id
+                  AND tt.categoria = 'INGRESO'
+                  AND tf.activo = TRUE
             )
         WHERE g.id = OLD.generacion_id;
-        
-        UPDATE generaciones SET 
-            balance_neto = total_ingresos - total_egresos - total_inversion
+
+        UPDATE generaciones
+        SET balance_neto = total_ingresos - total_egresos - total_inversion
         WHERE id = OLD.generacion_id;
     END IF;
-    
+
     -- Actualizar generación nueva
     IF NEW.generacion_id IS NOT NULL THEN
         UPDATE generaciones g SET
-            total_ingresos = (
-                SELECT COALESCE(SUM(tf.monto), 0) 
-                FROM transacciones_financieras tf 
+            total_inversion = (
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = NEW.generacion_id AND tt.categoria = 'INGRESO' AND tf.activo = TRUE
+                WHERE tf.generacion_id = NEW.generacion_id
+                  AND tt.nombre = 'Compra Vehículo'
+                  AND tf.activo = TRUE
             ),
             total_egresos = (
-                SELECT COALESCE(SUM(tf.monto), 0) 
-                FROM transacciones_financieras tf 
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = NEW.generacion_id AND tt.categoria = 'EGRESO' AND tf.activo = TRUE
+                WHERE tf.generacion_id = NEW.generacion_id
+                  AND tt.categoria = 'EGRESO'
+                  AND tt.nombre != 'Compra Vehículo'
+                  AND tf.activo = TRUE
+            ),
+            total_ingresos = (
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
+                JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
+                WHERE tf.generacion_id = NEW.generacion_id
+                  AND tt.categoria = 'INGRESO'
+                  AND tf.activo = TRUE
             )
         WHERE g.id = NEW.generacion_id;
-        
-        UPDATE generaciones SET 
-            balance_neto = total_ingresos - total_egresos - total_inversion
+
+        UPDATE generaciones
+        SET balance_neto = total_ingresos - total_egresos - total_inversion
         WHERE id = NEW.generacion_id;
     END IF;
 END//
@@ -462,22 +705,35 @@ FOR EACH ROW
 BEGIN
     IF OLD.generacion_id IS NOT NULL THEN
         UPDATE generaciones g SET
-            total_ingresos = (
-                SELECT COALESCE(SUM(tf.monto), 0) 
-                FROM transacciones_financieras tf 
+            total_inversion = (
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = OLD.generacion_id AND tt.categoria = 'INGRESO' AND tf.activo = TRUE
+                WHERE tf.generacion_id = OLD.generacion_id
+                  AND tt.nombre = 'Compra Vehículo'
+                  AND tf.activo = TRUE
             ),
             total_egresos = (
-                SELECT COALESCE(SUM(tf.monto), 0) 
-                FROM transacciones_financieras tf 
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = OLD.generacion_id AND tt.categoria = 'EGRESO' AND tf.activo = TRUE
+                WHERE tf.generacion_id = OLD.generacion_id
+                  AND tt.categoria = 'EGRESO'
+                  AND tt.nombre != 'Compra Vehículo'
+                  AND tf.activo = TRUE
+            ),
+            total_ingresos = (
+                SELECT COALESCE(SUM(tf.monto), 0)
+                FROM transacciones_financieras tf
+                JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
+                WHERE tf.generacion_id = OLD.generacion_id
+                  AND tt.categoria = 'INGRESO'
+                  AND tf.activo = TRUE
             )
         WHERE g.id = OLD.generacion_id;
-        
-        UPDATE generaciones SET 
-            balance_neto = total_ingresos - total_egresos - total_inversion
+
+        UPDATE generaciones
+        SET balance_neto = total_ingresos - total_egresos - total_inversion
         WHERE id = OLD.generacion_id;
     END IF;
 END//
@@ -1380,66 +1636,214 @@ INSERT INTO vehiculos (generacion_id, anio, precio_compra, costo_grua, comisione
 (10, 2018, 3200000.00, 25000.00, 40000.00, '2023-02-08', 'VENDIDO', 3900000.00, '2023-03-22', 'Automático, muy económico'),
 (10, 2019, 3600000.00, 30000.00, 45000.00, '2023-03-02', 'DISPONIBLE', NULL, NULL, 'Bajo consumo de combustible'),
 (10, 2020, 4000000.00, 35000.00, 50000.00, '2023-03-20', 'DISPONIBLE', NULL, NULL, 'Perfecto para principiantes');
-
 -- ========================================
--- 7. POBLAR INVENTARIO DE REPUESTOS
+-- 7. POBLAR INVENTARIO DE REPUESTOS 
 -- ========================================
 
--- Repuestos del Toyota Corolla 2015 (vehiculo_id = 1)
-INSERT INTO inventario_repuestos (vehiculo_origen_id, anio_registro, mes_registro, parte_vehiculo, descripcion, precio_costo, precio_venta, precio_mayoreo, bodega, zona, pared, malla, estante, piso, estado) VALUES
-(1, 2023, 2, 'MOTOR', 'Motor completo 1.8L 2ZR-FE', 580000.00, 750000.00, 650000.00, 'D-', 'Z1-', 'PE-', 'V15', 'E1', 'P1-', 'STOCK'),
-(1, 2023, 2, 'CAJA DE CAMBIO', 'Transmisión automática CVT', 420000.00, 580000.00, 500000.00, 'D-', 'Z1-', 'PE-', 'V16', 'E1', 'P1-', 'STOCK'),
-(1, 2023, 2, 'COMPUTADORA', 'ECU módulo motor', 150000.00, 220000.00, 180000.00, 'D-', 'Z2-', 'PN-', 'V5', 'E2', 'P2-', 'STOCK'),
-(1, 2023, 2, 'SISTEMA DE FRENOS', 'Discos de freno delanteros', 45000.00, 75000.00, 60000.00, 'D-', 'Z2-', 'PN-', 'V6', 'E2', 'P2-', 'STOCK'),
-(1, 2023, 2, 'SUSPENSION Y AMORTIGUAMIENTO', 'Amortiguadores delanteros (par)', 85000.00, 125000.00, 105000.00, 'D-', 'Z2-', 'PN-', 'V7', 'E2', 'P3-', 'STOCK'),
-(1, 2023, 2, 'CARROCERIA', 'Puerta delantera derecha', 120000.00, 180000.00, 150000.00, 'C-', 'Z3-', 'PO-', 'V20', 'E3', 'P5-', 'STOCK'),
-(1, 2023, 2, 'SISTEMA ELECTRICO', 'Faros LED principales', 95000.00, 145000.00, 120000.00, 'D-', 'Z3-', 'PS-', 'V25', 'E3', 'P6-', 'STOCK'),
-(1, 2023, 2, 'AROS Y LLANTAS', 'Llantas 205/55R16 (juego)', 160000.00, 240000.00, 200000.00, 'C-', 'Z4-', 'PE-', 'V30', 'E4', 'P8-', 'STOCK');
+/* ---------- Toyota Corolla 2015 (vehiculo_id = 1) ---------- */
+INSERT INTO inventario_repuestos (
+    vehiculo_origen_id, parte_vehiculo, descripcion,
+    precio_costo, precio_venta, precio_mayoreo,
+    bodega, zona, pared, malla, estante, piso,
+    estado, condicion, fecha_creacion
+) VALUES
+(1,'MOTOR','Motor completo 1.8L 2ZR‑FE',
+ 580000.00,750000.00,650000.00,
+ 'D-','Z1-','PE-','V15','E1','P1-',
+ 'STOCK','50%-','2023-02-15'),
+(1,'CAJA DE CAMBIO','Transmisión automática CVT',
+ 420000.00,580000.00,500000.00,
+ 'D-','Z1-','PE-','V16','E1','P1-',
+ 'STOCK','50%-','2023-02-15'),
+(1,'COMPUTADORA','ECU módulo motor',
+ 150000.00,220000.00,180000.00,
+ 'D-','Z2-','PN-','V5','E2','P2-',
+ 'STOCK','100%-','2023-02-15'),
+(1,'SISTEMA DE FRENOS','Discos de freno delanteros',
+ 45000.00,75000.00,60000.00,
+ 'D-','Z2-','PN-','V6','E2','P2-',
+ 'STOCK','100%-','2023-02-15'),
+(1,'SUSPENSION Y AMORTIGUAMIENTO','Amortiguadores delanteros (par)',
+ 85000.00,125000.00,105000.00,
+ 'D-','Z2-','PN-','V7','E2','P3-',
+ 'STOCK','100%-','2023-02-15'),
+(1,'CARROCERIA','Puerta delantera derecha',
+ 120000.00,180000.00,150000.00,
+ 'C-','Z3-','PO-','V20','E3','P5-',
+ 'STOCK','100%-','2023-02-15'),
+(1,'SISTEMA ELECTRICO','Faros LED principales',
+ 95000.00,145000.00,120000.00,
+ 'D-','Z3-','PS-','V25','E3','P6-',
+ 'STOCK','100%-','2023-02-15'),
+(1,'AROS Y LLANTAS','Llantas 205/55R16 (juego)',
+ 160000.00,240000.00,200000.00,
+ 'C-','Z4-','PE-','V30','E4','P8-',
+ 'STOCK','50%-','2023-02-15');
 
--- Repuestos del Honda Civic 2017 (vehiculo_id = 10)
-INSERT INTO inventario_repuestos (vehiculo_origen_id, anio_registro, mes_registro, parte_vehiculo, descripcion, precio_costo, precio_venta, precio_mayoreo, bodega, zona, pared, malla, estante, piso, estado) VALUES
-(10, 2023, 3, 'MOTOR', 'Motor turbo 1.5L L15B7', 650000.00, 850000.00, 750000.00, 'D-', 'Z1-', 'PE-', 'V12', 'E1', 'P1-', 'STOCK'),
-(10, 2023, 3, 'CAJA DE CAMBIO', 'Transmisión CVT', 380000.00, 520000.00, 450000.00, 'D-', 'Z1-', 'PE-', 'V13', 'E1', 'P1-', 'STOCK'),
-(10, 2023, 3, 'TURBO', 'Turbocompresor completo', 280000.00, 420000.00, 350000.00, 'D-', 'Z2-', 'PN-', 'V8', 'E2', 'P2-', 'STOCK'),
-(10, 2023, 3, 'COMPUTADORA', 'PCM Honda Sensing', 180000.00, 280000.00, 230000.00, 'D-', 'Z2-', 'PN-', 'V9', 'E2', 'P2-', 'STOCK'),
-(10, 2023, 3, 'SISTEMA DE FRENOS', 'Calipers de freno Brembo', 120000.00, 180000.00, 150000.00, 'D-', 'Z2-', 'PN-', 'V10', 'E2', 'P3-', 'STOCK'),
-(10, 2023, 3, 'CARROCERIA', 'Capó con entradas de aire', 85000.00, 135000.00, 110000.00, 'C-', 'Z3-', 'PO-', 'V22', 'E3', 'P5-', 'STOCK'),
-(10, 2023, 3, 'SISTEMA ELECTRICO', 'Pantalla touch 7 pulgadas', 220000.00, 320000.00, 270000.00, 'D-', 'Z3-', 'PS-', 'V26', 'E3', 'P6-', 'STOCK'),
-(10, 2023, 3, 'AROS Y LLANTAS', 'Rines deportivos 18"', 180000.00, 280000.00, 230000.00, 'C-', 'Z4-', 'PE-', 'V32', 'E4', 'P8-', 'STOCK');
+/* ---------- Honda Civic 2017 (vehiculo_id = 10) ---------- */
+INSERT INTO inventario_repuestos (
+    vehiculo_origen_id, parte_vehiculo, descripcion,
+    precio_costo, precio_venta, precio_mayoreo,
+    bodega, zona, pared, malla, estante, piso,
+    estado, condicion, fecha_creacion
+) VALUES
+(10,'MOTOR','Motor turbo 1.5L L15B7',
+ 650000.00,850000.00,750000.00,
+ 'D-','Z1-','PE-','V12','E1','P1-',
+ 'STOCK','50%-','2023-03-10'),
+(10,'CAJA DE CAMBIO','Transmisión CVT',
+ 380000.00,520000.00,450000.00,
+ 'D-','Z1-','PE-','V13','E1','P1-',
+ 'STOCK','50%-','2023-03-10'),
+(10,'TURBO','Turbocompresor completo',
+ 280000.00,420000.00,350000.00,
+ 'D-','Z2-','PN-','V8','E2','P2-',
+ 'STOCK','50%-','2023-03-10'),
+(10,'COMPUTADORA','PCM Honda Sensing',
+ 180000.00,280000.00,230000.00,
+ 'D-','Z2-','PN-','V9','E2','P2-',
+ 'STOCK','100%-','2023-03-10'),
+(10,'SISTEMA DE FRENOS','Calipers de freno Brembo',
+ 120000.00,180000.00,150000.00,
+ 'D-','Z2-','PN-','V10','E2','P3-',
+ 'STOCK','100%-','2023-03-10'),
+(10,'CARROCERIA','Capó con entradas de aire',
+ 85000.00,135000.00,110000.00,
+ 'C-','Z3-','PO-','V22','E3','P5-',
+ 'STOCK','100%-','2023-03-10'),
+(10,'SISTEMA ELECTRICO','Pantalla touch 7 pulgadas',
+ 220000.00,320000.00,270000.00,
+ 'D-','Z3-','PS-','V26','E3','P6-',
+ 'STOCK','100%-','2023-03-10'),
+(10,'AROS Y LLANTAS','Rines deportivos 18"',
+ 180000.00,280000.00,230000.00,
+ 'C-','Z4-','PE-','V32','E4','P8-',
+ 'STOCK','50%-','2023-03-10');
 
--- Repuestos del Honda CR-V 2018 (vehiculo_id = 15)
-INSERT INTO inventario_repuestos (vehiculo_origen_id, anio_registro, mes_registro, parte_vehiculo, descripcion, precio_costo, precio_venta, precio_mayoreo, bodega, zona, pared, malla, estante, piso, estado) VALUES
-(15, 2023, 4, 'MOTOR', 'Motor 1.5L turbo K15B', 720000.00, 980000.00, 850000.00, 'D-', 'Z1-', 'PE-', 'V18', 'E1', 'P1-', 'STOCK'),
-(15, 2023, 4, 'SISTEMA DE DIRECCION', 'Dirección asistida eléctrica', 320000.00, 460000.00, 390000.00, 'D-', 'Z2-', 'PN-', 'V11', 'E2', 'P2-', 'STOCK'),
-(15, 2023, 4, 'EJES Y DIFERENCIA', 'Diferencial trasero AWD', 280000.00, 420000.00, 350000.00, 'D-', 'Z2-', 'PN-', 'V12', 'E2', 'P3-', 'STOCK'),
-(15, 2023, 4, 'CARROCERIA', 'Compuerta trasera eléctrica', 450000.00, 650000.00, 550000.00, 'C-', 'Z3-', 'PO-', 'V23', 'E3', 'P5-', 'STOCK'),
-(15, 2023, 4, 'AIRBAGS O BOLSAS DE AIRE', 'Airbags laterales (set)', 180000.00, 280000.00, 230000.00, 'D-', 'Z3-', 'PS-', 'V27', 'E3', 'P6-', 'STOCK'),
-(15, 2023, 4, 'SISTEMA ELECTRICO', 'Cámara 360° completa', 320000.00, 480000.00, 400000.00, 'D-', 'Z3-', 'PS-', 'V28', 'E3', 'P6-', 'STOCK');
+/* ---------- Honda CR‑V 2018 (vehiculo_id = 15) ---------- */
+INSERT INTO inventario_repuestos (
+    vehiculo_origen_id, parte_vehiculo, descripcion,
+    precio_costo, precio_venta, precio_mayoreo,
+    bodega, zona, pared, malla, estante, piso,
+    estado, condicion, fecha_creacion
+) VALUES
+(15,'MOTOR','Motor 1.5L turbo K15B',
+ 720000.00,980000.00,850000.00,
+ 'D-','Z1-','PE-','V18','E1','P1-',
+ 'STOCK','50%-','2023-04-01'),
+(15,'SISTEMA DE DIRECCION','Dirección asistida eléctrica',
+ 320000.00,460000.00,390000.00,
+ 'D-','Z2-','PN-','V11','E2','P2-',
+ 'STOCK','100%-','2023-04-01'),
+(15,'EJES Y DIFERENCIA','Diferencial trasero AWD',
+ 280000.00,420000.00,350000.00,
+ 'D-','Z2-','PN-','V12','E2','P3-',
+ 'STOCK','50%-','2023-04-01'),
+(15,'CARROCERIA','Compuerta trasera eléctrica',
+ 450000.00,650000.00,550000.00,
+ 'C-','Z3-','PO-','V23','E3','P5-',
+ 'STOCK','100%-','2023-04-01'),
+(15,'AIRBAGS O BOLSAS DE AIRE','Airbags laterales (set)',
+ 180000.00,280000.00,230000.00,
+ 'D-','Z3-','PS-','V27','E3','P6-',
+ 'STOCK','100%-','2023-04-01'),
+(15,'SISTEMA ELECTRICO','Cámara 360° completa',
+ 320000.00,480000.00,400000.00,
+ 'D-','Z3-','PS-','V28','E3','P6-',
+ 'STOCK','100%-','2023-04-01');
 
--- Nissan Sentra 2015 (vehiculo_id = 18, continuación)
-INSERT INTO inventario_repuestos (vehiculo_origen_id, anio_registro, mes_registro, parte_vehiculo, descripcion, precio_costo, precio_venta, precio_mayoreo, bodega, zona, pared, malla, estante, piso, estado) VALUES
-(18, 2023, 2, 'CARROCERIA', 'Puerta trasera izquierda', 95000.00, 145000.00, 120000.00, 'C-', 'Z4-', 'PE-', 'V33', 'E5', 'P7-', 'STOCK'),
-(18, 2023, 2, 'EMBRAGUE', 'Kit de embrague completo', 78000.00, 115000.00, 95000.00, 'D-', 'Z1-', 'PE-', 'V17', 'E1', 'P1-', 'STOCK'),
-(18, 2023, 2, 'AROS Y LLANTAS', 'Juegos de aros originales', 180000.00, 255000.00, 210000.00, 'D-', 'Z2-', 'PN-', 'V13', 'E2', 'P3-', 'STOCK');
+/* ---------- Nissan Sentra 2015 (vehiculo_id = 18) ---------- */
+INSERT INTO inventario_repuestos (
+    vehiculo_origen_id, parte_vehiculo, descripcion,
+    precio_costo, precio_venta, precio_mayoreo,
+    bodega, zona, pared, malla, estante, piso,
+    estado, condicion, fecha_creacion
+) VALUES
+(18,'CARROCERIA','Puerta trasera izquierda',
+ 95000.00,145000.00,120000.00,
+ 'C-','Z4-','PE-','V33','E5','P7-',
+ 'STOCK','100%-','2023-02-20'),
+(18,'EMBRAGUE','Kit de embrague completo',
+ 78000.00,115000.00,95000.00,
+ 'D-','Z1-','PE-','V17','E1','P1-',
+ 'STOCK','100%-','2023-02-20'),
+(18,'AROS Y LLANTAS','Juegos de aros originales',
+ 180000.00,255000.00,210000.00,
+ 'D-','Z2-','PN-','V13','E2','P3-',
+ 'STOCK','50%-','2023-02-20');
 
--- Hyundai Elantra 2019 (vehiculo_id = 23)
-INSERT INTO inventario_repuestos (vehiculo_origen_id, anio_registro, mes_registro, parte_vehiculo, descripcion, precio_costo, precio_venta, precio_mayoreo, bodega, zona, pared, malla, estante, piso, estado) VALUES
-(23, 2023, 3, 'MOTOR', 'Motor 2.0L Nu', 540000.00, 720000.00, 630000.00, 'C-', 'Z2-', 'PN-', 'V19', 'E2', 'P3-', 'STOCK'),
-(23, 2023, 3, 'COMPUTADORA', 'ECU principal', 132000.00, 195000.00, 165000.00, 'C-', 'Z2-', 'PN-', 'V21', 'E2', 'P3-', 'STOCK'),
-(23, 2023, 3, 'SUSPENSION Y AMORTIGUAMIENTO', 'Amortiguadores traseros', 70000.00, 110000.00, 90000.00, 'C-', 'Z2-', 'PN-', 'V24', 'E2', 'P4-', 'STOCK');
+/* ---------- Hyundai Elantra 2019 (vehiculo_id = 23) ---------- */
+INSERT INTO inventario_repuestos (
+    vehiculo_origen_id, parte_vehiculo, descripcion,
+    precio_costo, precio_venta, precio_mayoreo,
+    bodega, zona, pared, malla, estante, piso,
+    estado, condicion, fecha_creacion
+) VALUES
+(23,'MOTOR','Motor 2.0L Nu',
+ 540000.00,720000.00,630000.00,
+ 'C-','Z2-','PN-','V19','E2','P3-',
+ 'STOCK','50%-','2023-03-22'),
+(23,'COMPUTADORA','ECU principal',
+ 132000.00,195000.00,165000.00,
+ 'C-','Z2-','PN-','V21','E2','P3-',
+ 'STOCK','100%-','2023-03-22'),
+(23,'SUSPENSION Y AMORTIGUAMIENTO','Amortiguadores traseros',
+ 70000.00,110000.00,90000.00,
+ 'C-','Z2-','PN-','V24','E2','P4-',
+ 'STOCK','100%-','2023-03-22');
 
--- Chevrolet Spark 2019 (vehiculo_id = 27)
-INSERT INTO inventario_repuestos (vehiculo_origen_id, anio_registro, mes_registro, parte_vehiculo, descripcion, precio_costo, precio_venta, precio_mayoreo, bodega, zona, pared, malla, estante, piso, estado) VALUES
-(27, 2023, 2, 'MOTOR', 'Motor 1.2L S-TEC II', 310000.00, 420000.00, 350000.00, 'C-', 'Z3-', 'PO-', 'V20', 'E3', 'P6-', 'STOCK'),
-(27, 2023, 2, 'CARROCERIA', 'Parachoques delantero', 50000.00, 78000.00, 65000.00, 'C-', 'Z3-', 'PO-', 'V28', 'E3', 'P6-', 'STOCK'),
-(27, 2023, 2, 'SISTEMA ELECTRICO', 'Tablero principal', 74000.00, 110000.00, 90000.00, 'C-', 'Z3-', 'PO-', 'V29', 'E3', 'P6-', 'STOCK'),
-(27, 2023, 2, 'TANQUE DE GASOLINA', 'Tanque completo', 53000.00, 80000.00, 66000.00, 'C-', 'Z4-', 'PE-', 'V34', 'E5', 'P7-', 'STOCK');
+/* ---------- Chevrolet Spark 2019 (vehiculo_id = 27) ---------- */
+INSERT INTO inventario_repuestos (
+    vehiculo_origen_id, parte_vehiculo, descripcion,
+    precio_costo, precio_venta, precio_mayoreo,
+    bodega, zona, pared, malla, estante, piso,
+    estado, condicion, fecha_creacion
+) VALUES
+(27,'MOTOR','Motor 1.2L S‑TEC II',
+ 310000.00,420000.00,350000.00,
+ 'C-','Z3-','PO-','V20','E3','P6-',
+ 'STOCK','50%-','2023-02-10'),
+(27,'CARROCERIA','Parachoques delantero',
+ 50000.00,78000.00,65000.00,
+ 'C-','Z3-','PO-','V28','E3','P6-',
+ 'STOCK','100%-','2023-02-10'),
+(27,'SISTEMA ELECTRICO','Tablero principal',
+ 74000.00,110000.00,90000.00,
+ 'C-','Z3-','PO-','V29','E3','P6-',
+ 'STOCK','100%-','2023-02-10'),
+(27,'TANQUE DE GASOLINA','Tanque completo',
+ 53000.00,80000.00,66000.00,
+ 'C-','Z4-','PE-','V34','E5','P7-',
+ 'STOCK','100%-','2023-02-10');
 
--- Repuestos extra (sin vehículo de origen, compra directa)
-INSERT INTO inventario_repuestos (vehiculo_origen_id, anio_registro, mes_registro, parte_vehiculo, descripcion, precio_costo, precio_venta, precio_mayoreo, bodega, zona, pared, malla, estante, piso, estado) VALUES
-(NULL, 2023, 5, 'BATERIA', 'Batería nueva 12V 45Ah', 35000.00, 55000.00, 45000.00, 'C-', 'Z4-', 'PE-', 'V35', 'E6', 'P9-', 'STOCK'),
-(NULL, 2023, 5, 'ALTERNADOR', 'Alternador Bosch universal', 55000.00, 80000.00, 67000.00, 'C-', 'Z4-', 'PE-', 'V36', 'E6', 'P10-', 'STOCK'),
-(NULL, 2023, 5, 'FUSIBLES', 'Set de fusibles (10 unidades)', 8000.00, 15000.00, 12000.00, 'C-', 'Z4-', 'PE-', 'V37', 'E6', 'P11-', 'STOCK');
+/* ---------- Repuestos sueltos (sin vehículo de origen) ---------- */
+CALL sp_insertar_repuesto_sin_vehiculo(
+    3,  -- generación_id (Corolla 2020–2024)
+    'BATERIA',
+    'Batería nueva 12V 45Ah',
+    35000.00, 55000.00, 45000.00,
+    'C-', 'Z4-', 'PE-', 'V35', 'E6', 'P9-',
+    'STOCK', '100%-'
+);
+
+CALL sp_insertar_repuesto_sin_vehiculo(
+    3,
+    'ALTERNADOR',
+    'Alternador Bosch universal',
+    55000.00, 80000.00, 67000.00,
+    'C-', 'Z4-', 'PE-', 'V36', 'E6', 'P10-',
+    'STOCK', '100%-'
+);
+
+CALL sp_insertar_repuesto_sin_vehiculo(
+    3,
+    'FUSIBLES',
+    'Set de fusibles (10 unidades)',
+    8000.00, 15000.00, 12000.00,
+    'C-', 'Z4-', 'PE-', 'V37', 'E6', 'P11-',
+    'STOCK', '100%-'
+);
+
 
 -- ========================================
 -- 8. POBLAR TRANSACCIONES FINANCIERAS (orden lógico y correlativo)
@@ -1558,4 +1962,3 @@ SELECT * FROM vista_top_productos_vendidos;
 SELECT * FROM vista_transacciones_completas;
 SELECT * FROM vista_vehiculos_completa;
 SELECT * FROM vista_ventas_por_empleado;
-
