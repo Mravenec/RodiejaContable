@@ -75,7 +75,6 @@ CREATE TABLE generaciones (
     CHECK (anio_inicio <= anio_fin)
 );
 
--- Tabla principal de vehículos
 CREATE TABLE vehiculos (
     id INT PRIMARY KEY AUTO_INCREMENT,
     codigo_vehiculo VARCHAR(20) UNIQUE,
@@ -85,6 +84,12 @@ CREATE TABLE vehiculos (
     costo_grua DECIMAL(10,2) DEFAULT 0,
     comisiones DECIMAL(10,2) DEFAULT 0,
     inversion_total DECIMAL(12,2) AS (precio_compra + costo_grua + comisiones) STORED,
+    -- Recuperación: lo que ya se recuperó por venta de partes
+    costo_recuperado DECIMAL(12,2) NOT NULL DEFAULT 0,
+    -- Pendiente: lo que falta recuperar (inversión menos lo recuperado)
+    costo_pendiente DECIMAL(12,2) AS (
+        precio_compra + costo_grua + comisiones - costo_recuperado
+    ) STORED,
     fecha_ingreso DATE NOT NULL,
     estado ENUM('DISPONIBLE', 'VENDIDO', 'DESARMADO', 'REPARACION') DEFAULT 'DISPONIBLE',
     precio_venta DECIMAL(12,2) DEFAULT NULL,
@@ -99,6 +104,7 @@ CREATE TABLE vehiculos (
     INDEX idx_estado (estado),
     INDEX idx_anio (anio)
 );
+
 
 -- ========================================
 -- MÓDULO 2: INVENTARIO DE REPUESTOS
@@ -301,6 +307,29 @@ CREATE TABLE transacciones_financieras (
 -- TRIGGERS PARA AUTOMATIZACIÓN
 -- ========================================
 
+-- Trigger que actualiza automáticamente los abonos hechos al automovil.
+DELIMITER $$
+
+CREATE TRIGGER tr_abono_recuperacion_repuesto
+AFTER INSERT ON transacciones_financieras
+FOR EACH ROW
+BEGIN
+    DECLARE v_vehiculo_id INT;
+    -- Solo si es venta de repuesto
+    IF (NEW.tipo_transaccion_id = 2 AND NEW.repuesto_id IS NOT NULL) THEN
+        -- Busca el vehículo de origen del repuesto
+        SELECT vehiculo_origen_id INTO v_vehiculo_id
+        FROM inventario_repuestos WHERE id = NEW.repuesto_id;
+        -- Suma el ingreso al campo costo_recuperado del vehículo
+        UPDATE vehiculos
+        SET costo_recuperado = costo_recuperado + NEW.monto
+        WHERE id = v_vehiculo_id;
+    END IF;
+END $$
+DELIMITER ;
+
+
+
 -- Trigger que actualiza automáticamente el estado, precio_venta y fecha_venta  cuando se registra una transacción de tipo 'Venta Vehículo'
 DELIMITER //
 CREATE TRIGGER tr_venta_vehiculo_actualiza_estado
@@ -316,7 +345,7 @@ BEGIN
     WHERE nombre = 'Venta Vehículo'
     LIMIT 1;
 
-    -- Si es una venta de vehículo, actualiza su estado y precio_venta
+    -- Si es una venta de vehículo, actualiza estado, precio_venta y fecha_venta
     IF NEW.tipo_transaccion_id = tipo_venta_id AND NEW.vehiculo_id IS NOT NULL THEN
 
         -- Obtener el estado actual del vehículo
@@ -330,12 +359,13 @@ BEGIN
             SET MESSAGE_TEXT = 'Estado inválido para auditoría';
         END IF;
 
-        -- Actualizar estado, precio_venta y fecha_venta
+        -- Actualizar estado, precio_venta, fecha_venta **y costo_recuperado**
         UPDATE vehiculos
         SET 
             estado = 'VENDIDO',
             precio_venta = NEW.monto,
-            fecha_venta = NEW.fecha
+            fecha_venta = NEW.fecha,
+            costo_recuperado = costo_recuperado + NEW.monto
         WHERE id = NEW.vehiculo_id;
 
         -- Insertar en historial de auditoría
@@ -626,28 +656,15 @@ DELIMITER ;
 
 -- Trigger para actualizar totales de generación (versión mejorada)
 DELIMITER //
-
-DROP TRIGGER IF EXISTS tr_actualizar_totales_generacion_insert;
 CREATE TRIGGER tr_actualizar_totales_generacion_insert
 AFTER INSERT ON transacciones_financieras
 FOR EACH ROW
 BEGIN
     DECLARE gen_id INT;
+    -- El BEFORE INSERT se encarga de llenar NEW.generacion_id si hace falta
 
-    -- Si no se especificó generación pero sí vehículo, obtenerla automáticamente
-    IF NEW.generacion_id IS NULL AND NEW.vehiculo_id IS NOT NULL THEN
-        SELECT generacion_id INTO gen_id
-        FROM vehiculos
-        WHERE id = NEW.vehiculo_id;
-
-        -- Actualizar el registro con la generación detectada
-        UPDATE transacciones_financieras
-        SET generacion_id = gen_id
-        WHERE id = NEW.id;
-    ELSE
-        SET gen_id = NEW.generacion_id;
-    END IF;
-
+    SET gen_id = NEW.generacion_id;
+    
     -- Si tenemos generación válida, actualizar los totales
     IF gen_id IS NOT NULL THEN
         UPDATE generaciones g SET
@@ -685,7 +702,6 @@ BEGIN
     END IF;
 END;
 //
-
 DELIMITER ;
 
 
@@ -923,22 +939,35 @@ END//
 DELIMITER ;
 
 DELIMITER //
-
-DROP TRIGGER IF EXISTS tr_completar_generacion_id;
 CREATE TRIGGER tr_completar_generacion_id
 BEFORE INSERT ON transacciones_financieras
 FOR EACH ROW
 BEGIN
-    IF NEW.generacion_id IS NULL AND NEW.vehiculo_id IS NOT NULL THEN
-        SELECT generacion_id INTO @gen_id
-        FROM vehiculos
-        WHERE id = NEW.vehiculo_id;
-
-        SET NEW.generacion_id = @gen_id;
+    DECLARE gen_id_temp INT DEFAULT NULL;
+    -- Si es venta de repuesto y solo tiene repuesto_id
+    IF NEW.generacion_id IS NULL AND NEW.repuesto_id IS NOT NULL THEN
+        SELECT v.generacion_id INTO gen_id_temp
+        FROM inventario_repuestos ir
+        JOIN vehiculos v ON ir.vehiculo_origen_id = v.id
+        WHERE ir.id = NEW.repuesto_id
+        LIMIT 1;
+        IF gen_id_temp IS NOT NULL THEN
+            SET NEW.generacion_id = gen_id_temp;
+        END IF;
     END IF;
-END;
-//
+    -- Si es transacción de vehículo
+    IF NEW.generacion_id IS NULL AND NEW.vehiculo_id IS NOT NULL THEN
+        SELECT generacion_id INTO gen_id_temp
+        FROM vehiculos
+        WHERE id = NEW.vehiculo_id
+        LIMIT 1;
+        IF gen_id_temp IS NOT NULL THEN
+            SET NEW.generacion_id = gen_id_temp;
+        END IF;
+    END IF;
+END//
 DELIMITER ;
+
 
 
 -- ========================================
