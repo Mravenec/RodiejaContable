@@ -117,59 +117,63 @@ SELECT * FROM inventario_repuestos; -- Ver códigos generados automáticos
 -- 8. POBLAR TRANSACCIONES FINANCIERAS (2 datos)
 -- ========================================
 
-/* 8‑A) EGRESO: registro de la COMPRA del vehículo
-   (monto = precio_compra + costo_grua + comisiones = 10,150,000) */
-INSERT INTO transacciones_financieras
-        (fecha, tipo_transaccion_id, vehiculo_id, generacion_id,
-         monto, descripcion, referencia, estado)
-VALUES  ('2023-05-01',
-         1,                    -- id de “Compra Vehículo”
-         1,                    -- vehiculo_id
-         1,                    -- generacion_id
-         10250000.00,
-         'Compra Toyota Corolla gen12',
-         'Factura #C-2023-0001',
-         'COMPLETADA');
+-- A) Venta del repuesto (motor Civic 1.5L Turbo).
+INSERT INTO transacciones_financieras (
+    fecha, tipo_transaccion_id, empleado_id,
+    repuesto_id, monto, comision_empleado,
+    descripcion, referencia
+) VALUES (
+    '2023-06-01',         -- Fecha de la venta
+    2,                    -- tipo_transaccion_id = 2 (Venta Repuesto)
+    1,                    -- empleado_id = 1 (ACXEL)
+    1,                    -- repuesto_id = 1
+    1800000.00,           -- monto de venta
+    25000.00,             -- comisión al vendedor
+    'Venta Motor Civic 1.5L Turbo', 
+    'VENTA-REP-001'
+);
 
 
-/* Registramos la venta del repuesto */
-INSERT INTO transacciones_financieras
-        (fecha, tipo_transaccion_id, empleado_id,
-         vehiculo_id, repuesto_id, generacion_id,
-         monto, comision_empleado,
-         descripcion, referencia, estado)
-VALUES  (CURDATE(),             -- hoy
-         @id_venta_repuesto,    -- tipo “Venta Repuesto”
-         1,                     -- empleado que vendió
-         1,                     -- vehiculo_id para que sume al vehículo
-         1,                     -- repuesto_id
-         1,                     -- generacion_id
-         2_000_000.00,          -- precio de venta
-         100_000.00,            -- comisión al empleado
-         'Venta Motor 1.8L Turbo',
-         'Factura #VR-2025-0001',
-         'COMPLETADA');
+-- B) Venta del Toyota Corolla 2023 (vehiculo_id = 1)
 
+INSERT INTO transacciones_financieras (
+    fecha, tipo_transaccion_id, empleado_id,
+    vehiculo_id, monto, comision_empleado,
+    descripcion, referencia
+) VALUES (
+    '2023-06-05',          -- Fecha de venta
+    1,                     -- tipo_transaccion_id = 1 (Venta Vehículo)
+    2,                     -- empleado_id = 2 (ADRIANA)
+    1,                     -- vehiculo_id = 1 (Corolla)
+    12000000.00,           -- monto
+    60000.00,              -- comisión al vendedor
+    'Venta Toyota Corolla 2023',
+    'VENTA-COROLLA-001'
+);
 
 SELECT * FROM transacciones_financieras;  -- Ver códigos generados y campos calculados
 
 -- ========================================
 -- 9. EJEMPLOS DE REGISTROS EN HISTORIAL DE AUDITORÍA (2 datos)
 -- ========================================
--- Cambio de estado del vehículo
-UPDATE vehiculos SET estado = 'VENDIDO' WHERE id = 1;
-SELECT * FROM vehiculos;  -- Ver estado actualizado
 
-INSERT INTO historial_vehiculos (vehiculo_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario) 
-VALUES (1, 'UPDATE', 'estado', 'DISPONIBLE', 'VENDIDO', 'admin');
+-- Visualizar todos los cambios auditados (vehículos, repuestos y transacciones)
+SELECT * FROM vista_auditoria_completa;
 
--- Cambio de precio de repuesto
-UPDATE inventario_repuestos SET precio_venta = 2200000.00 WHERE id = 1;
-SELECT * FROM inventario_repuestos;  -- Ver precio actualizado
+-- 🔍 Filtrar por tipo de entidad si deseas:
 
-INSERT INTO historial_repuestos (repuesto_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario) 
-VALUES (1, 'UPDATE', 'precio_venta', '2000000.00', '2200000.00', 'admin');
+-- Cambios en vehículos (estado, precio_venta, etc.)
+SELECT * FROM vista_auditoria_completa WHERE tipo_entidad = 'Vehículo';
 
--- Ver registros de auditoría
-SELECT * FROM historial_vehiculos;
-SELECT * FROM historial_repuestos;
+-- Cambios en repuestos (estado, precio_venta)
+SELECT * FROM vista_auditoria_completa WHERE tipo_entidad = 'Repuesto';
+
+-- Cambios en transacciones (monto, comisiones, etc.)
+SELECT * FROM vista_auditoria_completa WHERE tipo_entidad = 'Transacción';
+
+-- 📘 Historial completo de un vehículo específico (por ID)
+CALL sp_historial_vehiculo(1);
+
+-- 🗓️ Actividad de auditoría entre fechas específicas
+CALL sp_actividad_auditoria_fecha('2023-05-01', '2023-07-01');
+

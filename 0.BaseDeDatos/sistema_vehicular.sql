@@ -1,5 +1,3 @@
-    
-
 /*
     =========================================
     CONEXIÓN SUGERIDA (MySQL/MariaDB)
@@ -303,6 +301,104 @@ CREATE TABLE transacciones_financieras (
 -- TRIGGERS PARA AUTOMATIZACIÓN
 -- ========================================
 
+-- Trigger que actualiza automáticamente el estado, precio_venta y fecha_venta  cuando se registra una transacción de tipo 'Venta Vehículo'
+DELIMITER //
+CREATE TRIGGER tr_venta_vehiculo_actualiza_estado
+AFTER INSERT ON transacciones_financieras
+FOR EACH ROW
+BEGIN
+    DECLARE tipo_venta_id INT;
+    DECLARE estado_anterior VARCHAR(20);
+
+    -- Buscar el ID del tipo de transacción 'Venta Vehículo'
+    SELECT id INTO tipo_venta_id
+    FROM tipos_transacciones
+    WHERE nombre = 'Venta Vehículo'
+    LIMIT 1;
+
+    -- Si es una venta de vehículo, actualiza su estado y precio_venta
+    IF NEW.tipo_transaccion_id = tipo_venta_id AND NEW.vehiculo_id IS NOT NULL THEN
+
+        -- Obtener el estado actual del vehículo
+        SELECT estado INTO estado_anterior 
+        FROM vehiculos 
+        WHERE id = NEW.vehiculo_id;
+
+        -- Validar que el estado está dentro de los valores ENUM permitidos
+        IF estado_anterior NOT IN ('DISPONIBLE', 'VENDIDO', 'DESARMADO', 'REPARACION') THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Estado inválido para auditoría';
+        END IF;
+
+        -- Actualizar estado, precio_venta y fecha_venta
+        UPDATE vehiculos
+        SET 
+            estado = 'VENDIDO',
+            precio_venta = NEW.monto,
+            fecha_venta = NEW.fecha
+        WHERE id = NEW.vehiculo_id;
+
+        -- Insertar en historial de auditoría
+        INSERT INTO historial_vehiculos (
+            vehiculo_id, accion, campo_modificado,
+            valor_anterior, valor_nuevo, usuario, observaciones
+        ) VALUES (
+            NEW.vehiculo_id, 'UPDATE', 'estado',
+            estado_anterior, 'VENDIDO', USER(), 'Cambio automático por trigger de venta'
+        );
+    END IF;
+END//
+DELIMITER ;
+
+-- Actualiza estado y cantidad del repuesto tras venta
+DELIMITER //
+CREATE TRIGGER tr_actualizar_estado_repuesto_por_venta
+AFTER INSERT ON transacciones_financieras
+FOR EACH ROW
+BEGIN
+    DECLARE tipo_venta_repuesto_id INT;
+
+    -- Obtener ID de tipo 'Venta Repuesto'
+    SELECT id INTO tipo_venta_repuesto_id
+    FROM tipos_transacciones
+    WHERE nombre = 'Venta Repuesto'
+    LIMIT 1;
+
+    -- Si es venta de repuesto, actualiza el estado
+    IF NEW.tipo_transaccion_id = tipo_venta_repuesto_id AND NEW.repuesto_id IS NOT NULL THEN
+        UPDATE inventario_repuestos
+        SET estado = 'VENDIDO',
+            cantidad = GREATEST(cantidad - 1, 0)
+        WHERE id = NEW.repuesto_id;
+    END IF;
+END//
+DELIMITER ;
+
+-- Reversión del estado del repuesto y stock si se registra un reembolso
+DELIMITER //
+CREATE TRIGGER tr_reembolso_repuesto
+AFTER INSERT ON transacciones_financieras
+FOR EACH ROW
+BEGIN
+    DECLARE tipo_reembolso_id INT;
+
+    -- Obtener ID del tipo 'Reembolso Repuesto'
+    SELECT id INTO tipo_reembolso_id
+    FROM tipos_transacciones
+    WHERE nombre = 'Reembolso Repuesto'
+    LIMIT 1;
+
+    -- Si es un reembolso de repuesto, revertir estado y cantidad
+    IF NEW.tipo_transaccion_id = tipo_reembolso_id AND NEW.repuesto_id IS NOT NULL THEN
+        UPDATE inventario_repuestos
+        SET estado = 'STOCK',
+            cantidad = cantidad + 1
+        WHERE id = NEW.repuesto_id;
+    END IF;
+END//
+DELIMITER ;
+
+
 -- Trigger para generar código de vehículo
 DELIMITER //
 
@@ -528,55 +624,70 @@ BEGIN
 END//
 DELIMITER ;
 
--- Trigger para actualizar totales de generación
+-- Trigger para actualizar totales de generación (versión mejorada)
 DELIMITER //
 
+DROP TRIGGER IF EXISTS tr_actualizar_totales_generacion_insert;
 CREATE TRIGGER tr_actualizar_totales_generacion_insert
 AFTER INSERT ON transacciones_financieras
 FOR EACH ROW
 BEGIN
-    IF NEW.generacion_id IS NOT NULL THEN
+    DECLARE gen_id INT;
 
-        -- ✅ Solo contar 'Compra Vehículo' en total_inversion
+    -- Si no se especificó generación pero sí vehículo, obtenerla automáticamente
+    IF NEW.generacion_id IS NULL AND NEW.vehiculo_id IS NOT NULL THEN
+        SELECT generacion_id INTO gen_id
+        FROM vehiculos
+        WHERE id = NEW.vehiculo_id;
+
+        -- Actualizar el registro con la generación detectada
+        UPDATE transacciones_financieras
+        SET generacion_id = gen_id
+        WHERE id = NEW.id;
+    ELSE
+        SET gen_id = NEW.generacion_id;
+    END IF;
+
+    -- Si tenemos generación válida, actualizar los totales
+    IF gen_id IS NOT NULL THEN
         UPDATE generaciones g SET
             total_inversion = (
                 SELECT COALESCE(SUM(tf.monto), 0)
                 FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = NEW.generacion_id
+                WHERE tf.generacion_id = gen_id
                   AND tt.nombre = 'Compra Vehículo'
                   AND tf.activo = TRUE
             ),
-
-            -- ✅ total_egresos: excluir 'Compra Vehículo' para evitar doble efecto
             total_egresos = (
                 SELECT COALESCE(SUM(tf.monto), 0)
                 FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = NEW.generacion_id
+                WHERE tf.generacion_id = gen_id
                   AND tt.categoria = 'EGRESO'
                   AND tt.nombre != 'Compra Vehículo'
                   AND tf.activo = TRUE
             ),
-
             total_ingresos = (
                 SELECT COALESCE(SUM(tf.monto), 0)
                 FROM transacciones_financieras tf
                 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-                WHERE tf.generacion_id = NEW.generacion_id
+                WHERE tf.generacion_id = gen_id
                   AND tt.categoria = 'INGRESO'
                   AND tf.activo = TRUE
             )
-        WHERE g.id = NEW.generacion_id;
+        WHERE g.id = gen_id;
 
         -- Recalcular balance
         UPDATE generaciones
         SET balance_neto = total_ingresos - total_egresos - total_inversion
-        WHERE id = NEW.generacion_id;
+        WHERE id = gen_id;
     END IF;
-END//
+END;
+//
 
 DELIMITER ;
+
 
 
 -- ========================================
@@ -810,6 +921,25 @@ BEGIN
 END//
 
 DELIMITER ;
+
+DELIMITER //
+
+DROP TRIGGER IF EXISTS tr_completar_generacion_id;
+CREATE TRIGGER tr_completar_generacion_id
+BEFORE INSERT ON transacciones_financieras
+FOR EACH ROW
+BEGIN
+    IF NEW.generacion_id IS NULL AND NEW.vehiculo_id IS NOT NULL THEN
+        SELECT generacion_id INTO @gen_id
+        FROM vehiculos
+        WHERE id = NEW.vehiculo_id;
+
+        SET NEW.generacion_id = @gen_id;
+    END IF;
+END;
+//
+DELIMITER ;
+
 
 -- ========================================
 -- VISTAS PRINCIPALES
@@ -1246,7 +1376,7 @@ DELIMITER ;
 -- VISTA DE AUDITORÍA COMPLETA
 -- ========================================
 
-CREATE VIEW vista_auditoria_completa AS
+CREATE OR REPLACE VIEW vista_auditoria_completa AS
 SELECT 
     'Vehículo' AS tipo_entidad,
     CONCAT('ID: ', hv.vehiculo_id) AS entidad_id,
@@ -1268,7 +1398,11 @@ SELECT
     'Repuesto' AS tipo_entidad,
     CONCAT('ID: ', hr.repuesto_id) AS entidad_id,
     vic.codigo_repuesto AS codigo_entidad,
-    CONCAT(vic.parte_vehiculo, ' - ', COALESCE(vic.descripcion, 'Sin desc.')) AS descripcion_entidad,
+    CONCAT(
+        vic.parte_vehiculo, ' - ', 
+        COALESCE(vic.descripcion, 'Sin descripción'),
+        ' (de ', COALESCE(vic.codigo_vehiculo, 'sin vehículo'), ')'
+    ) AS descripcion_entidad,
     hr.accion,
     hr.campo_modificado,
     hr.valor_anterior,
@@ -1285,7 +1419,14 @@ SELECT
     'Transacción' AS tipo_entidad,
     CONCAT('ID: ', ht.transaccion_id) AS entidad_id,
     vtc.codigo_transaccion AS codigo_entidad,
-    CONCAT(vtc.tipo_transaccion, ' - $', vtc.monto) AS descripcion_entidad,
+    CONCAT(
+        vtc.tipo_transaccion, ' - $', vtc.monto,
+        CASE 
+            WHEN vtc.codigo_vehiculo IS NOT NULL THEN CONCAT(' (Vehículo: ', vtc.codigo_vehiculo, ')')
+            WHEN vtc.codigo_repuesto IS NOT NULL THEN CONCAT(' (Repuesto: ', vtc.codigo_repuesto, ')')
+            ELSE ''
+        END
+    ) AS descripcion_entidad,
     ht.accion,
     ht.campo_modificado,
     ht.valor_anterior,
@@ -1297,6 +1438,7 @@ FROM historial_transacciones ht
 LEFT JOIN vista_transacciones_completas vtc ON ht.transaccion_id = vtc.id
 
 ORDER BY fecha_cambio DESC;
+
 
 -- ========================================
 -- PROCEDIMIENTOS PARA AUDITORÍA
