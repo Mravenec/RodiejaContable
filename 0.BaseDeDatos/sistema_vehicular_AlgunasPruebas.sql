@@ -177,3 +177,119 @@ CALL sp_historial_vehiculo(1);
 -- 🗓️ Actividad de auditoría entre fechas específicas
 CALL sp_actividad_auditoria_fecha('2023-05-01', '2023-07-01');
 
+-- ========================================
+-- Ejemplo de reparacion de automovil
+-- ========================================
+
+
+
+-- ========================================
+-- 1. Agregar Modelo y Generación Hilux
+-- ========================================
+
+-- Modelo Hilux para Toyota (marca_id = 1)
+INSERT INTO modelos (marca_id, nombre) VALUES
+(1, 'Hilux');           -- id = 3
+
+-- Generación gen8 de Hilux (supón 2016-2023)
+INSERT INTO generaciones (modelo_id, nombre, descripcion, anio_inicio, anio_fin)
+VALUES (3, 'gen8', 'Octava generación Hilux', 2016, 2023);  -- id = 3
+
+
+SELECT * FROM marcas;
+SELECT * FROM modelos;
+SELECT * FROM generaciones;
+
+-- ========================================
+-- 2. Ingresar el Vehículo Dañado
+-- ========================================
+-- Ingresar Hilux 2020 en estado REPARACION
+INSERT INTO vehiculos (
+    generacion_id, anio, precio_compra, costo_grua, comisiones,
+    fecha_ingreso, estado, notas
+) VALUES (
+    3, 2020, 8000000.00, 45000.00, 90000.00,   -- Ejemplo de costos
+    '2024-06-10', 'REPARACION',
+    'Vehículo ingresado con daño en motor y carrocería, apto para reparación'
+);
+
+SELECT * FROM vehiculos;
+
+
+-- (El trigger genera código y registra compra automáticamente)
+
+-- ========================================
+-- 3. Registrar Gastos de Reparación
+-- ========================================
+
+-- Supongamos 2 egresos: repuesto motor y repintado.
+
+-- Egreso: compra motor usado (egreso, sin repuesto ligado)
+INSERT INTO transacciones_financieras (
+    fecha, tipo_transaccion_id, vehiculo_id, generacion_id, monto,
+    descripcion, referencia
+) VALUES (
+    '2024-06-15', 
+    7,    -- tipo_transaccion_id = 7: 'Compra Repuesto'
+    3,    -- vehiculo_id = 3 (el Hilux)
+    3,    -- generacion_id = 3
+    600000.00, 
+    'Compra motor usado para Hilux reparación', 
+    'REP-HILUX-MOTOR-001'
+);
+
+-- Egreso: pintura completa (servicio externo)
+INSERT INTO transacciones_financieras (
+    fecha, tipo_transaccion_id, vehiculo_id, generacion_id, monto,
+    descripcion, referencia
+) VALUES (
+    '2024-06-18',
+    8,    -- tipo_transaccion_id = 8: 'Reparación Vehículo'
+    3,    -- vehiculo_id = 3
+    3,    -- generacion_id = 3
+    250000.00, 
+    'Pintura completa Hilux 2020', 
+    'SERV-PINTURA-001'
+);
+
+
+SELECT * FROM generaciones;
+SELECT * FROM vehiculos;
+SELECT * FROM transacciones_financieras; 
+-- ========================================
+-- 3. Cambiar el Estado del Vehículo a DISPONIBLE (opcional, para marcarlo listo para venta)
+-- ========================================
+SELECT * FROM vehiculos;
+SELECT * FROM generaciones;
+
+UPDATE vehiculos
+SET estado = 'DISPONIBLE',
+    notas = CONCAT(
+        COALESCE(notas, ''), 
+        '\n[2024-06-20] Reparación finalizada: motor y pintura. Vehículo listo para venta.'
+    )
+WHERE id = 3;
+
+-- ========================================
+-- 4. Registrar la Venta del Hilux Reparado
+-- ========================================
+INSERT INTO transacciones_financieras (
+    fecha, tipo_transaccion_id, empleado_id,
+    vehiculo_id, monto, comision_empleado,
+    descripcion, referencia
+) VALUES (
+    '2024-07-01',     -- Fecha de venta
+    1,                -- tipo_transaccion_id = 1 (Venta Vehículo)
+    5,                -- empleado_id = 5 (DIEGO)
+    3,                -- vehiculo_id = 3 (Hilux)
+    10900000.00,      -- monto de venta
+    50000.00,         -- comisión al vendedor
+    'Venta Hilux 2020 Reparado',
+    'VENTA-HILUX-2020-001'
+);
+SELECT * FROM generaciones;
+SELECT * FROM vehiculos;
+SELECT * FROM transacciones_financieras; 
+
+
+SELECT * FROM tipos_transacciones;

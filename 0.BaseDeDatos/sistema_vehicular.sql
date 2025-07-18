@@ -307,28 +307,60 @@ CREATE TABLE transacciones_financieras (
 -- TRIGGERS PARA AUTOMATIZACIÓN
 -- ========================================
 
--- Trigger que actualiza automáticamente los abonos hechos al automovil.
-DELIMITER $$
+-- Trigger que actualiza el campo costo_recuperado del vehículo según el tipo de transacción (suma en ingresos, resta en egresos)
 
-CREATE TRIGGER tr_abono_recuperacion_repuesto
-AFTER INSERT ON transacciones_financieras
+DELIMITER //
+
+CREATE TRIGGER tr_actualizar_costo_recuperado_vehiculo
+AFTER INSERT ON transacciones_financieras   
 FOR EACH ROW
 BEGIN
+    DECLARE categoria_transaccion VARCHAR(10);
     DECLARE v_vehiculo_id INT;
-    -- Solo si es venta de repuesto
-    IF (NEW.tipo_transaccion_id = 2 AND NEW.repuesto_id IS NOT NULL) THEN
-        -- Busca el vehículo de origen del repuesto
-        SELECT vehiculo_origen_id INTO v_vehiculo_id
-        FROM inventario_repuestos WHERE id = NEW.repuesto_id;
-        -- Suma el ingreso al campo costo_recuperado del vehículo
-        UPDATE vehiculos
-        SET costo_recuperado = costo_recuperado + NEW.monto
-        WHERE id = v_vehiculo_id;
+
+    -- Verificar si hay vehículo relacionado
+    IF NEW.vehiculo_id IS NOT NULL THEN
+        SET v_vehiculo_id = NEW.vehiculo_id;
+
+        -- Obtener categoría del tipo de transacción (INGRESO o EGRESO)
+        SELECT categoria INTO categoria_transaccion
+        FROM tipos_transacciones
+        WHERE id = NEW.tipo_transaccion_id;
+
+        -- Ingreso: sumar al costo_recuperado
+        IF categoria_transaccion = 'INGRESO' THEN
+            UPDATE vehiculos
+            SET costo_recuperado = costo_recuperado + NEW.monto
+            WHERE id = v_vehiculo_id;
+
+        -- Egreso: restar del costo_recuperado (excepto si es compra automática del trigger de inserción de vehículo)
+        ELSEIF categoria_transaccion = 'EGRESO' THEN
+            IF NEW.descripcion NOT LIKE 'Compra automática de vehículo%' THEN
+                UPDATE vehiculos
+                SET costo_recuperado = costo_recuperado - NEW.monto
+                WHERE id = v_vehiculo_id;
+            END IF;
+        END IF;
     END IF;
-END $$
+
+    -- Si es venta de repuesto, también aplica sobre el vehículo origen del repuesto
+    IF NEW.repuesto_id IS NOT NULL AND NEW.tipo_transaccion_id = (
+        SELECT id FROM tipos_transacciones WHERE nombre = 'Venta Repuesto' LIMIT 1
+    ) THEN
+        SELECT vehiculo_origen_id INTO v_vehiculo_id
+        FROM inventario_repuestos
+        WHERE id = NEW.repuesto_id;
+
+        IF v_vehiculo_id IS NOT NULL THEN
+            UPDATE vehiculos
+            SET costo_recuperado = costo_recuperado + NEW.monto
+            WHERE id = v_vehiculo_id;
+        END IF;
+    END IF;
+
+END//
+
 DELIMITER ;
-
-
 
 -- Trigger que actualiza automáticamente el estado, precio_venta y fecha_venta  cuando se registra una transacción de tipo 'Venta Vehículo'
 DELIMITER //
@@ -359,16 +391,15 @@ BEGIN
             SET MESSAGE_TEXT = 'Estado inválido para auditoría';
         END IF;
 
-        -- Actualizar estado, precio_venta, fecha_venta **y costo_recuperado**
+        -- ✅ CORREGIDO: ya no se suma NEW.monto al costo_recuperado aquí
         UPDATE vehiculos
         SET 
             estado = 'VENDIDO',
             precio_venta = NEW.monto,
-            fecha_venta = NEW.fecha,
-            costo_recuperado = costo_recuperado + NEW.monto
+            fecha_venta = NEW.fecha
         WHERE id = NEW.vehiculo_id;
 
-        -- Insertar en historial de auditoría
+        -- Registrar auditoría
         INSERT INTO historial_vehiculos (
             vehiculo_id, accion, campo_modificado,
             valor_anterior, valor_nuevo, usuario, observaciones
@@ -379,6 +410,7 @@ BEGIN
     END IF;
 END//
 DELIMITER ;
+
 
 -- Actualiza estado y cantidad del repuesto tras venta
 DELIMITER //
@@ -975,7 +1007,7 @@ DELIMITER ;
 -- ========================================
 
 -- Vista completa de vehículos
-CREATE VIEW vista_vehiculos_completa AS
+CREATE OR REPLACE VIEW vista_vehiculos_completa AS
 SELECT 
     v.id,
     v.codigo_vehiculo,
@@ -997,32 +1029,39 @@ SELECT
     g.anio_inicio,
     g.anio_fin,
     CONCAT(m.nombre, '-', mo.nombre, '-', g.nombre) AS clave_generacion,
+
     -- Totales financieros del vehículo
     COALESCE(ingresos.total_ingresos, 0) AS total_ingresos_vehiculo,
     COALESCE(egresos.total_egresos, 0) AS total_egresos_vehiculo,
     (COALESCE(ingresos.total_ingresos, 0) - COALESCE(egresos.total_egresos, 0) - v.inversion_total) AS balance_neto_vehiculo
+
 FROM vehiculos v
 JOIN generaciones g ON v.generacion_id = g.id
 JOIN modelos mo ON g.modelo_id = mo.id
 JOIN marcas m ON mo.marca_id = m.id
+
+-- Ingresos por vehículo
 LEFT JOIN (
     SELECT 
         vehiculo_id,
-        SUM(monto) AS total_ingresos
+        SUM(tf.monto) AS total_ingresos
     FROM transacciones_financieras tf
     JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-    WHERE tt.categoria = 'INGRESO' AND tf.activo = TRUE
+    WHERE tf.activo = TRUE AND tt.categoria = 'INGRESO' AND vehiculo_id IS NOT NULL
     GROUP BY vehiculo_id
 ) ingresos ON v.id = ingresos.vehiculo_id
+
+-- Egresos por vehículo
 LEFT JOIN (
     SELECT 
         vehiculo_id,
-        SUM(monto) AS total_egresos
+        SUM(tf.monto) AS total_egresos
     FROM transacciones_financieras tf
     JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
-    WHERE tt.categoria = 'EGRESO' AND tf.activo = TRUE
+    WHERE tf.activo = TRUE AND tt.categoria = 'EGRESO' AND vehiculo_id IS NOT NULL
     GROUP BY vehiculo_id
 ) egresos ON v.id = egresos.vehiculo_id;
+
 
 -- Vista resumen por generación
 CREATE VIEW vista_resumen_generaciones AS
@@ -1082,7 +1121,7 @@ LEFT JOIN vehiculos v ON ir.vehiculo_origen_id = v.id
 LEFT JOIN vista_vehiculos_completa vvc ON v.id = vvc.id;
 
 -- Vista de transacciones completas
-CREATE VIEW vista_transacciones_completas AS
+CREATE OR REPLACE VIEW vista_transacciones_completas AS
 SELECT 
     tf.id,
     tf.codigo_transaccion,
@@ -1106,8 +1145,10 @@ JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
 LEFT JOIN empleados e ON tf.empleado_id = e.id
 LEFT JOIN vehiculos v ON tf.vehiculo_id = v.id
 LEFT JOIN inventario_repuestos ir ON tf.repuesto_id = ir.id
-LEFT JOIN vista_vehiculos_completa vvc ON COALESCE(v.id, ir.vehiculo_origen_id) = vvc.id
+LEFT JOIN vista_vehiculos_completa vvc 
+    ON vvc.id = COALESCE(tf.vehiculo_id, ir.vehiculo_origen_id)
 WHERE tf.activo = TRUE;
+
 -- ========================================
 -- VISTAS ADICIONALES PARA REPORTES ESPECÍFICOS
 -- ========================================
