@@ -556,7 +556,7 @@ END//
 DELIMITER ;
 
 DELIMITER //
-CREATE PROCEDURE sp_insertar_repuesto_sin_vehiculo(
+CREATE PROCEDURE sp_insertar_repuesto_con_generacion_sin_vehiculo(
     IN p_generacion_id INT,
     IN p_parte_vehiculo VARCHAR(100),
     IN p_descripcion TEXT,
@@ -578,89 +578,39 @@ BEGIN
     DECLARE contador INT;
     DECLARE codigo_generado VARCHAR(50);
 
-    -- Obtener rango de la generación
-    SELECT anio_inicio, anio_fin INTO gen_inicio, gen_fin
-    FROM generaciones WHERE id = p_generacion_id;
+    -- 1. Rango de años de la generación
+    SELECT anio_inicio, anio_fin
+      INTO gen_inicio, gen_fin
+    FROM generaciones
+    WHERE id = p_generacion_id;
 
-    -- Contar repuestos existentes ligados a esa generación (a través de vehículos)
-    SELECT COUNT(*) + 1 INTO contador
+    -- 2. Cantidad de repuestos ya ligados a esa generación (vía vehículos)
+    SELECT COUNT(*) + 1
+      INTO contador
     FROM inventario_repuestos ir
-    JOIN vehiculos v ON ir.vehiculo_origen_id = v.id
-    JOIN generaciones g ON v.generacion_id = g.id
+    JOIN vehiculos v  ON ir.vehiculo_origen_id = v.id
+    JOIN generaciones g ON v.generacion_id   = g.id
     WHERE g.id = p_generacion_id;
 
-    -- Generar el código de repuesto usando el rango de la generación
-    SET codigo_generado = CONCAT('REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0'));
+    -- 3. Código REP-AAAA-BBBB-####
+    SET codigo_generado = CONCAT(
+        'REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0')
+    );
 
-    -- Insertar el nuevo repuesto
+    -- 4. Insertar el repuesto sin vehículo origen
     INSERT INTO inventario_repuestos (
         codigo_repuesto, parte_vehiculo, descripcion,
-        precio_costo, precio_venta, precio_mayoreo,
+        precio_costo,   precio_venta,   precio_mayoreo,
         bodega, zona, pared, malla, estante, piso,
         estado, condicion, fecha_creacion
     ) VALUES (
         codigo_generado, p_parte_vehiculo, p_descripcion,
-        p_precio_costo, p_precio_venta, p_precio_mayoreo,
+        p_precio_costo,  p_precio_venta,  p_precio_mayoreo,
         p_bodega, p_zona, p_pared, p_malla, p_estante, p_piso,
         p_estado, p_condicion, NOW()
     );
 END//
 DELIMITER ;
-
-
-DELIMITER //
-CREATE PROCEDURE sp_insertar_repuesto_con_generacion(
-    IN p_generacion_id INT,
-    IN p_parte_vehiculo VARCHAR(100),
-    IN p_descripcion TEXT,
-    IN p_precio_costo DECIMAL(10,2),
-    IN p_precio_venta DECIMAL(10,2),
-    IN p_precio_mayoreo DECIMAL(10,2),
-    IN p_bodega VARCHAR(10),
-    IN p_zona VARCHAR(10),
-    IN p_pared VARCHAR(10),
-    IN p_malla VARCHAR(10),
-    IN p_estante VARCHAR(10),
-    IN p_piso VARCHAR(10),
-    IN p_estado VARCHAR(20),
-    IN p_condicion VARCHAR(10)
-)
-BEGIN
-    DECLARE gen_inicio INT;
-    DECLARE gen_fin INT;
-    DECLARE contador INT;
-    DECLARE nuevo_id INT;
-    DECLARE codigo_generado VARCHAR(50);
-
-    -- Obtener rango de la generación
-    SELECT anio_inicio, anio_fin INTO gen_inicio, gen_fin
-    FROM generaciones WHERE id = p_generacion_id;
-
-    -- Contar repuestos existentes ligados a esa generación
-    SELECT COUNT(*) + 1 INTO contador
-    FROM inventario_repuestos ir
-    JOIN vehiculos v ON ir.vehiculo_origen_id = v.id
-    JOIN generaciones g ON v.generacion_id = g.id
-    WHERE g.id = p_generacion_id;
-
-    -- Generar el código con años de generación
-    SET codigo_generado = CONCAT('REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0'));
-
-    -- Insertar el repuesto
-    INSERT INTO inventario_repuestos (
-        codigo_repuesto, parte_vehiculo, descripcion,
-        precio_costo, precio_venta, precio_mayoreo,
-        bodega, zona, pared, malla, estante, piso,
-        estado, condicion, fecha_creacion
-    ) VALUES (
-        codigo_generado, p_parte_vehiculo, p_descripcion,
-        p_precio_costo, p_precio_venta, p_precio_mayoreo,
-        p_bodega, p_zona, p_pared, p_malla, p_estante, p_piso,
-        p_estado, p_condicion, NOW()
-    );
-END//
-DELIMITER ;
-
 
 -- Trigger para generar código de ubicación
 DELIMITER //
@@ -2029,7 +1979,7 @@ INSERT INTO inventario_repuestos (
  'STOCK','100%-','2023-02-10');
 
 /* ---------- Repuestos sueltos (sin vehículo de origen) ---------- */
-CALL sp_insertar_repuesto_sin_vehiculo(
+CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
     3,  -- generación_id (Corolla 2020–2024)
     'BATERIA',
     'Batería nueva 12V 45Ah',
@@ -2038,7 +1988,7 @@ CALL sp_insertar_repuesto_sin_vehiculo(
     'STOCK', '100%-'
 );
 
-CALL sp_insertar_repuesto_sin_vehiculo(
+CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
     3,
     'ALTERNADOR',
     'Alternador Bosch universal',
@@ -2047,7 +1997,7 @@ CALL sp_insertar_repuesto_sin_vehiculo(
     'STOCK', '100%-'
 );
 
-CALL sp_insertar_repuesto_sin_vehiculo(
+CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
     3,
     'FUSIBLES',
     'Set de fusibles (10 unidades)',
