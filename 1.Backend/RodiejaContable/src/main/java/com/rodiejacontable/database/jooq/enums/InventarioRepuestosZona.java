@@ -27,7 +27,39 @@ public enum InventarioRepuestosZona implements EnumType {
 
     Z5_("Z5-"),
 
-    Z6_("Z6-");
+    Z6_("Z6-"),
+
+    Z7_("Z7-"),
+
+    Z8_("Z8-"),
+
+    Z9_("Z9-"),
+
+    Z10_("Z10-"),
+
+    Z11_("Z11-"),
+
+    Z12_("Z12-"),
+
+    Z13_("Z13-"),
+
+    Z14_("Z14-"),
+
+    Z15_("Z15-"),
+
+    Z16_("Z16-"),
+
+    Z17_("Z17-"),
+
+    Z18_("Z18-"),
+
+    Z19_("Z19-"),
+
+    Z20_("Z20-"),
+
+    Z21_("Z21-"),
+
+    Z22_("Z22-");
 
     private final String literal;
 

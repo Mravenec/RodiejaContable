@@ -6,7 +6,9 @@ package com.rodiejacontable.database.jooq;
 
 import com.rodiejacontable.database.jooq.routines.SpActividadAuditoriaFecha;
 import com.rodiejacontable.database.jooq.routines.SpHistorialVehiculo;
+import com.rodiejacontable.database.jooq.routines.SpInsertarRepuestoConGeneracionSinVehiculo;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.jooq.Configuration;
@@ -43,6 +45,48 @@ public class Routines {
     ) {
         SpHistorialVehiculo p = new SpHistorialVehiculo();
         p.setPVehiculoId(pVehiculoId);
+
+        p.execute(configuration);
+    }
+
+    /**
+     * Call
+     * <code>sistema_vehicular.sp_insertar_repuesto_con_generacion_sin_vehiculo</code>
+     */
+    public static void spInsertarRepuestoConGeneracionSinVehiculo(
+          Configuration configuration
+        , Integer pGeneracionId
+        , String pMarcaNombre
+        , String pParteVehiculo
+        , String pDescripcion
+        , BigDecimal pPrecioCosto
+        , BigDecimal pPrecioVenta
+        , BigDecimal pPrecioMayoreo
+        , String pBodega
+        , String pZona
+        , String pPared
+        , String pMalla
+        , String pEstante
+        , String pPiso
+        , String pEstado
+        , String pCondicion
+    ) {
+        SpInsertarRepuestoConGeneracionSinVehiculo p = new SpInsertarRepuestoConGeneracionSinVehiculo();
+        p.setPGeneracionId(pGeneracionId);
+        p.setPMarcaNombre(pMarcaNombre);
+        p.setPParteVehiculo(pParteVehiculo);
+        p.setPDescripcion(pDescripcion);
+        p.setPPrecioCosto(pPrecioCosto);
+        p.setPPrecioVenta(pPrecioVenta);
+        p.setPPrecioMayoreo(pPrecioMayoreo);
+        p.setPBodega(pBodega);
+        p.setPZona(pZona);
+        p.setPPared(pPared);
+        p.setPMalla(pMalla);
+        p.setPEstante(pEstante);
+        p.setPPiso(pPiso);
+        p.setPEstado(pEstado);
+        p.setPCondicion(pCondicion);
 
         p.execute(configuration);
     }

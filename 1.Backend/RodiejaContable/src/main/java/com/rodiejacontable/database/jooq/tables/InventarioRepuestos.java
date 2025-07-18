@@ -9,14 +9,16 @@ import com.rodiejacontable.database.jooq.Keys;
 import com.rodiejacontable.database.jooq.SistemaVehicular;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosBodega;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosCarton;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosCondicion;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstado;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstante;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosHorizontal;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosMalla;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosNivel;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPared;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosParteVehiculo;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPiso;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPlastica;
-import com.rodiejacontable.database.jooq.enums.InventarioRepuestosUbicadoEnVehiculo_1;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosZona;
 import com.rodiejacontable.database.jooq.tables.records.InventarioRepuestosRecord;
 
@@ -39,6 +41,7 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
+import org.jooq.types.UInteger;
 
 
 /**
@@ -72,7 +75,7 @@ public class InventarioRepuestos extends TableImpl<InventarioRepuestosRecord> {
      * The column
      * <code>sistema_vehicular.inventario_repuestos.codigo_repuesto</code>.
      */
-    public final TableField<InventarioRepuestosRecord, String> CODIGO_REPUESTO = createField(DSL.name("codigo_repuesto"), SQLDataType.VARCHAR(20).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
+    public final TableField<InventarioRepuestosRecord, String> CODIGO_REPUESTO = createField(DSL.name("codigo_repuesto"), SQLDataType.VARCHAR(100).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
 
     /**
      * The column
@@ -84,13 +87,13 @@ public class InventarioRepuestos extends TableImpl<InventarioRepuestosRecord> {
      * The column
      * <code>sistema_vehicular.inventario_repuestos.anio_registro</code>.
      */
-    public final TableField<InventarioRepuestosRecord, Short> ANIO_REGISTRO = createField(DSL.name("anio_registro"), SQLDataType.SMALLINT.nullable(false), this, "");
+    public final TableField<InventarioRepuestosRecord, Short> ANIO_REGISTRO = createField(DSL.name("anio_registro"), SQLDataType.SMALLINT, this, "");
 
     /**
      * The column
      * <code>sistema_vehicular.inventario_repuestos.mes_registro</code>.
      */
-    public final TableField<InventarioRepuestosRecord, Byte> MES_REGISTRO = createField(DSL.name("mes_registro"), SQLDataType.TINYINT.nullable(false), this, "");
+    public final TableField<InventarioRepuestosRecord, Byte> MES_REGISTRO = createField(DSL.name("mes_registro"), SQLDataType.TINYINT, this, "");
 
     /**
      * The column
@@ -149,44 +152,43 @@ public class InventarioRepuestos extends TableImpl<InventarioRepuestosRecord> {
     /**
      * The column <code>sistema_vehicular.inventario_repuestos.bodega</code>.
      */
-    public final TableField<InventarioRepuestosRecord, InventarioRepuestosBodega> BODEGA = createField(DSL.name("bodega"), SQLDataType.VARCHAR(2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosBodega.class), this, "");
-
-    /**
-     * The column
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_1</code>.
-     */
-    public final TableField<InventarioRepuestosRecord, InventarioRepuestosUbicadoEnVehiculo_1> UBICADO_EN_VEHICULO_1 = createField(DSL.name("ubicado_en_vehiculo_1"), SQLDataType.VARCHAR(20).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosUbicadoEnVehiculo_1.class), this, "");
-
-    /**
-     * The column
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_2</code>.
-     */
-    public final TableField<InventarioRepuestosRecord, String> UBICADO_EN_VEHICULO_2 = createField(DSL.name("ubicado_en_vehiculo_2"), SQLDataType.VARCHAR(20).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosBodega> BODEGA = createField(DSL.name("bodega"), SQLDataType.VARCHAR(2).defaultValue(DSL.field(DSL.raw("'0-'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosBodega.class), this, "");
 
     /**
      * The column <code>sistema_vehicular.inventario_repuestos.zona</code>.
      */
-    public final TableField<InventarioRepuestosRecord, InventarioRepuestosZona> ZONA = createField(DSL.name("zona"), SQLDataType.VARCHAR(3).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosZona.class), this, "");
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosZona> ZONA = createField(DSL.name("zona"), SQLDataType.VARCHAR(4).defaultValue(DSL.field(DSL.raw("'0-'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosZona.class), this, "");
 
     /**
      * The column <code>sistema_vehicular.inventario_repuestos.pared</code>.
      */
-    public final TableField<InventarioRepuestosRecord, InventarioRepuestosPared> PARED = createField(DSL.name("pared"), SQLDataType.VARCHAR(3).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosPared.class), this, "");
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosPared> PARED = createField(DSL.name("pared"), SQLDataType.VARCHAR(3).defaultValue(DSL.field(DSL.raw("'0-'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosPared.class), this, "");
 
     /**
      * The column <code>sistema_vehicular.inventario_repuestos.malla</code>.
      */
-    public final TableField<InventarioRepuestosRecord, InventarioRepuestosMalla> MALLA = createField(DSL.name("malla"), SQLDataType.VARCHAR(3).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosMalla.class), this, "");
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosMalla> MALLA = createField(DSL.name("malla"), SQLDataType.VARCHAR(4).defaultValue(DSL.field(DSL.raw("'0-'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosMalla.class), this, "");
+
+    /**
+     * The column
+     * <code>sistema_vehicular.inventario_repuestos.horizontal</code>.
+     */
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosHorizontal> HORIZONTAL = createField(DSL.name("horizontal"), SQLDataType.VARCHAR(3).defaultValue(DSL.field(DSL.raw("'0-'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosHorizontal.class), this, "");
 
     /**
      * The column <code>sistema_vehicular.inventario_repuestos.estante</code>.
      */
-    public final TableField<InventarioRepuestosRecord, InventarioRepuestosEstante> ESTANTE = createField(DSL.name("estante"), SQLDataType.VARCHAR(2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstante.class), this, "");
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosEstante> ESTANTE = createField(DSL.name("estante"), SQLDataType.VARCHAR(3).defaultValue(DSL.field(DSL.raw("'E1'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstante.class), this, "");
+
+    /**
+     * The column <code>sistema_vehicular.inventario_repuestos.nivel</code>.
+     */
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosNivel> NIVEL = createField(DSL.name("nivel"), SQLDataType.VARCHAR(4).defaultValue(DSL.field(DSL.raw("'0-'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosNivel.class), this, "");
 
     /**
      * The column <code>sistema_vehicular.inventario_repuestos.piso</code>.
      */
-    public final TableField<InventarioRepuestosRecord, InventarioRepuestosPiso> PISO = createField(DSL.name("piso"), SQLDataType.VARCHAR(4).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosPiso.class), this, "");
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosPiso> PISO = createField(DSL.name("piso"), SQLDataType.VARCHAR(4).defaultValue(DSL.field(DSL.raw("'P1-'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosPiso.class), this, "");
 
     /**
      * The column <code>sistema_vehicular.inventario_repuestos.plastica</code>.
@@ -204,9 +206,19 @@ public class InventarioRepuestos extends TableImpl<InventarioRepuestosRecord> {
     public final TableField<InventarioRepuestosRecord, String> POSICION = createField(DSL.name("posicion"), SQLDataType.VARCHAR(10).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
 
     /**
+     * The column <code>sistema_vehicular.inventario_repuestos.cantidad</code>.
+     */
+    public final TableField<InventarioRepuestosRecord, UInteger> CANTIDAD = createField(DSL.name("cantidad"), SQLDataType.INTEGERUNSIGNED.nullable(false).defaultValue(DSL.field(DSL.raw("1"), SQLDataType.INTEGERUNSIGNED)), this, "");
+
+    /**
      * The column <code>sistema_vehicular.inventario_repuestos.estado</code>.
      */
     public final TableField<InventarioRepuestosRecord, InventarioRepuestosEstado> ESTADO = createField(DSL.name("estado"), SQLDataType.VARCHAR(13).defaultValue(DSL.field(DSL.raw("'STOCK'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstado.class), this, "");
+
+    /**
+     * The column <code>sistema_vehicular.inventario_repuestos.condicion</code>.
+     */
+    public final TableField<InventarioRepuestosRecord, InventarioRepuestosCondicion> CONDICION = createField(DSL.name("condicion"), SQLDataType.VARCHAR(5).defaultValue(DSL.field(DSL.raw("'100%-'"), SQLDataType.VARCHAR)).asEnumDataType(com.rodiejacontable.database.jooq.enums.InventarioRepuestosCondicion.class), this, "");
 
     /**
      * The column

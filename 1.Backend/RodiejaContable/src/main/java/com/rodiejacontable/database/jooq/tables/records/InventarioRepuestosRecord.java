@@ -6,14 +6,16 @@ package com.rodiejacontable.database.jooq.tables.records;
 
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosBodega;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosCarton;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosCondicion;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstado;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstante;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosHorizontal;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosMalla;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosNivel;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPared;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosParteVehiculo;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPiso;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPlastica;
-import com.rodiejacontable.database.jooq.enums.InventarioRepuestosUbicadoEnVehiculo_1;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosZona;
 import com.rodiejacontable.database.jooq.tables.InventarioRepuestos;
 
@@ -22,6 +24,7 @@ import java.time.LocalDateTime;
 
 import org.jooq.Record1;
 import org.jooq.impl.UpdatableRecordImpl;
+import org.jooq.types.UInteger;
 
 
 /**
@@ -284,44 +287,10 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
     }
 
     /**
-     * Setter for
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_1</code>.
-     */
-    public InventarioRepuestosRecord setUbicadoEnVehiculo_1(InventarioRepuestosUbicadoEnVehiculo_1 value) {
-        set(15, value);
-        return this;
-    }
-
-    /**
-     * Getter for
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_1</code>.
-     */
-    public InventarioRepuestosUbicadoEnVehiculo_1 getUbicadoEnVehiculo_1() {
-        return (InventarioRepuestosUbicadoEnVehiculo_1) get(15);
-    }
-
-    /**
-     * Setter for
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_2</code>.
-     */
-    public InventarioRepuestosRecord setUbicadoEnVehiculo_2(String value) {
-        set(16, value);
-        return this;
-    }
-
-    /**
-     * Getter for
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_2</code>.
-     */
-    public String getUbicadoEnVehiculo_2() {
-        return (String) get(16);
-    }
-
-    /**
      * Setter for <code>sistema_vehicular.inventario_repuestos.zona</code>.
      */
     public InventarioRepuestosRecord setZona(InventarioRepuestosZona value) {
-        set(17, value);
+        set(15, value);
         return this;
     }
 
@@ -329,14 +298,14 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * Getter for <code>sistema_vehicular.inventario_repuestos.zona</code>.
      */
     public InventarioRepuestosZona getZona() {
-        return (InventarioRepuestosZona) get(17);
+        return (InventarioRepuestosZona) get(15);
     }
 
     /**
      * Setter for <code>sistema_vehicular.inventario_repuestos.pared</code>.
      */
     public InventarioRepuestosRecord setPared(InventarioRepuestosPared value) {
-        set(18, value);
+        set(16, value);
         return this;
     }
 
@@ -344,14 +313,14 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * Getter for <code>sistema_vehicular.inventario_repuestos.pared</code>.
      */
     public InventarioRepuestosPared getPared() {
-        return (InventarioRepuestosPared) get(18);
+        return (InventarioRepuestosPared) get(16);
     }
 
     /**
      * Setter for <code>sistema_vehicular.inventario_repuestos.malla</code>.
      */
     public InventarioRepuestosRecord setMalla(InventarioRepuestosMalla value) {
-        set(19, value);
+        set(17, value);
         return this;
     }
 
@@ -359,14 +328,31 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * Getter for <code>sistema_vehicular.inventario_repuestos.malla</code>.
      */
     public InventarioRepuestosMalla getMalla() {
-        return (InventarioRepuestosMalla) get(19);
+        return (InventarioRepuestosMalla) get(17);
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.inventario_repuestos.horizontal</code>.
+     */
+    public InventarioRepuestosRecord setHorizontal(InventarioRepuestosHorizontal value) {
+        set(18, value);
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.inventario_repuestos.horizontal</code>.
+     */
+    public InventarioRepuestosHorizontal getHorizontal() {
+        return (InventarioRepuestosHorizontal) get(18);
     }
 
     /**
      * Setter for <code>sistema_vehicular.inventario_repuestos.estante</code>.
      */
     public InventarioRepuestosRecord setEstante(InventarioRepuestosEstante value) {
-        set(20, value);
+        set(19, value);
         return this;
     }
 
@@ -374,7 +360,22 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * Getter for <code>sistema_vehicular.inventario_repuestos.estante</code>.
      */
     public InventarioRepuestosEstante getEstante() {
-        return (InventarioRepuestosEstante) get(20);
+        return (InventarioRepuestosEstante) get(19);
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.inventario_repuestos.nivel</code>.
+     */
+    public InventarioRepuestosRecord setNivel(InventarioRepuestosNivel value) {
+        set(20, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.inventario_repuestos.nivel</code>.
+     */
+    public InventarioRepuestosNivel getNivel() {
+        return (InventarioRepuestosNivel) get(20);
     }
 
     /**
@@ -438,10 +439,25 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
     }
 
     /**
+     * Setter for <code>sistema_vehicular.inventario_repuestos.cantidad</code>.
+     */
+    public InventarioRepuestosRecord setCantidad(UInteger value) {
+        set(25, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.inventario_repuestos.cantidad</code>.
+     */
+    public UInteger getCantidad() {
+        return (UInteger) get(25);
+    }
+
+    /**
      * Setter for <code>sistema_vehicular.inventario_repuestos.estado</code>.
      */
     public InventarioRepuestosRecord setEstado(InventarioRepuestosEstado value) {
-        set(25, value);
+        set(26, value);
         return this;
     }
 
@@ -449,7 +465,22 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * Getter for <code>sistema_vehicular.inventario_repuestos.estado</code>.
      */
     public InventarioRepuestosEstado getEstado() {
-        return (InventarioRepuestosEstado) get(25);
+        return (InventarioRepuestosEstado) get(26);
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.inventario_repuestos.condicion</code>.
+     */
+    public InventarioRepuestosRecord setCondicion(InventarioRepuestosCondicion value) {
+        set(27, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.inventario_repuestos.condicion</code>.
+     */
+    public InventarioRepuestosCondicion getCondicion() {
+        return (InventarioRepuestosCondicion) get(27);
     }
 
     /**
@@ -457,7 +488,7 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * <code>sistema_vehicular.inventario_repuestos.fecha_creacion</code>.
      */
     public InventarioRepuestosRecord setFechaCreacion(LocalDateTime value) {
-        set(26, value);
+        set(28, value);
         return this;
     }
 
@@ -466,7 +497,7 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * <code>sistema_vehicular.inventario_repuestos.fecha_creacion</code>.
      */
     public LocalDateTime getFechaCreacion() {
-        return (LocalDateTime) get(26);
+        return (LocalDateTime) get(28);
     }
 
     /**
@@ -474,7 +505,7 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * <code>sistema_vehicular.inventario_repuestos.fecha_actualizacion</code>.
      */
     public InventarioRepuestosRecord setFechaActualizacion(LocalDateTime value) {
-        set(27, value);
+        set(29, value);
         return this;
     }
 
@@ -483,7 +514,7 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
      * <code>sistema_vehicular.inventario_repuestos.fecha_actualizacion</code>.
      */
     public LocalDateTime getFechaActualizacion() {
-        return (LocalDateTime) get(27);
+        return (LocalDateTime) get(29);
     }
 
     // -------------------------------------------------------------------------
@@ -509,7 +540,7 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
     /**
      * Create a detached, initialised InventarioRepuestosRecord
      */
-    public InventarioRepuestosRecord(Integer id, String codigoRepuesto, Integer vehiculoOrigenId, Short anioRegistro, Byte mesRegistro, String codigoUbicacion, String imagenUrl, InventarioRepuestosParteVehiculo parteVehiculo, String descripcion, BigDecimal precioCosto, BigDecimal precioVenta, BigDecimal precioMayoreo, BigDecimal formula_15, BigDecimal formula_30, InventarioRepuestosBodega bodega, InventarioRepuestosUbicadoEnVehiculo_1 ubicadoEnVehiculo_1, String ubicadoEnVehiculo_2, InventarioRepuestosZona zona, InventarioRepuestosPared pared, InventarioRepuestosMalla malla, InventarioRepuestosEstante estante, InventarioRepuestosPiso piso, InventarioRepuestosPlastica plastica, InventarioRepuestosCarton carton, String posicion, InventarioRepuestosEstado estado, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion) {
+    public InventarioRepuestosRecord(Integer id, String codigoRepuesto, Integer vehiculoOrigenId, Short anioRegistro, Byte mesRegistro, String codigoUbicacion, String imagenUrl, InventarioRepuestosParteVehiculo parteVehiculo, String descripcion, BigDecimal precioCosto, BigDecimal precioVenta, BigDecimal precioMayoreo, BigDecimal formula_15, BigDecimal formula_30, InventarioRepuestosBodega bodega, InventarioRepuestosZona zona, InventarioRepuestosPared pared, InventarioRepuestosMalla malla, InventarioRepuestosHorizontal horizontal, InventarioRepuestosEstante estante, InventarioRepuestosNivel nivel, InventarioRepuestosPiso piso, InventarioRepuestosPlastica plastica, InventarioRepuestosCarton carton, String posicion, UInteger cantidad, InventarioRepuestosEstado estado, InventarioRepuestosCondicion condicion, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion) {
         super(InventarioRepuestos.INVENTARIO_REPUESTOS);
 
         setId(id);
@@ -527,17 +558,19 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
         setFormula_15(formula_15);
         setFormula_30(formula_30);
         setBodega(bodega);
-        setUbicadoEnVehiculo_1(ubicadoEnVehiculo_1);
-        setUbicadoEnVehiculo_2(ubicadoEnVehiculo_2);
         setZona(zona);
         setPared(pared);
         setMalla(malla);
+        setHorizontal(horizontal);
         setEstante(estante);
+        setNivel(nivel);
         setPiso(piso);
         setPlastica(plastica);
         setCarton(carton);
         setPosicion(posicion);
+        setCantidad(cantidad);
         setEstado(estado);
+        setCondicion(condicion);
         setFechaCreacion(fechaCreacion);
         setFechaActualizacion(fechaActualizacion);
         resetChangedOnNotNull();
@@ -565,17 +598,19 @@ public class InventarioRepuestosRecord extends UpdatableRecordImpl<InventarioRep
             setFormula_15(value.getFormula_15());
             setFormula_30(value.getFormula_30());
             setBodega(value.getBodega());
-            setUbicadoEnVehiculo_1(value.getUbicadoEnVehiculo_1());
-            setUbicadoEnVehiculo_2(value.getUbicadoEnVehiculo_2());
             setZona(value.getZona());
             setPared(value.getPared());
             setMalla(value.getMalla());
+            setHorizontal(value.getHorizontal());
             setEstante(value.getEstante());
+            setNivel(value.getNivel());
             setPiso(value.getPiso());
             setPlastica(value.getPlastica());
             setCarton(value.getCarton());
             setPosicion(value.getPosicion());
+            setCantidad(value.getCantidad());
             setEstado(value.getEstado());
+            setCondicion(value.getCondicion());
             setFechaCreacion(value.getFechaCreacion());
             setFechaActualizacion(value.getFechaActualizacion());
             resetChangedOnNotNull();

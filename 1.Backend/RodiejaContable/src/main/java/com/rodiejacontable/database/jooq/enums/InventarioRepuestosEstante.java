@@ -25,7 +25,23 @@ public enum InventarioRepuestosEstante implements EnumType {
 
     E5("E5"),
 
-    E6("E6");
+    E6("E6"),
+
+    E7("E7"),
+
+    E8("E8"),
+
+    E9("E9"),
+
+    E10("E10"),
+
+    E11("E11"),
+
+    E12("E12"),
+
+    E13("E13"),
+
+    E14("E14");
 
     private final String literal;
 

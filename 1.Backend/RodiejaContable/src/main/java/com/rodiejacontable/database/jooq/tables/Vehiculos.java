@@ -19,13 +19,13 @@ import java.util.function.Function;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function16;
+import org.jooq.Function18;
 import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Records;
-import org.jooq.Row16;
+import org.jooq.Row18;
 import org.jooq.Schema;
 import org.jooq.SelectField;
 import org.jooq.Table;
@@ -97,6 +97,16 @@ public class Vehiculos extends TableImpl<VehiculosRecord> {
      * The column <code>sistema_vehicular.vehiculos.inversion_total</code>.
      */
     public final TableField<VehiculosRecord, BigDecimal> INVERSION_TOTAL = createField(DSL.name("inversion_total"), SQLDataType.DECIMAL(12, 2), this, "");
+
+    /**
+     * The column <code>sistema_vehicular.vehiculos.costo_recuperado</code>.
+     */
+    public final TableField<VehiculosRecord, BigDecimal> COSTO_RECUPERADO = createField(DSL.name("costo_recuperado"), SQLDataType.DECIMAL(12, 2).nullable(false).defaultValue(DSL.field(DSL.raw("0.00"), SQLDataType.DECIMAL)), this, "");
+
+    /**
+     * The column <code>sistema_vehicular.vehiculos.costo_pendiente</code>.
+     */
+    public final TableField<VehiculosRecord, BigDecimal> COSTO_PENDIENTE = createField(DSL.name("costo_pendiente"), SQLDataType.DECIMAL(12, 2), this, "");
 
     /**
      * The column <code>sistema_vehicular.vehiculos.fecha_ingreso</code>.
@@ -256,18 +266,18 @@ public class Vehiculos extends TableImpl<VehiculosRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row16 type methods
+    // Row18 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row16<Integer, String, Integer, Integer, BigDecimal, BigDecimal, BigDecimal, BigDecimal, LocalDate, VehiculosEstado, BigDecimal, LocalDate, Byte, String, LocalDateTime, LocalDateTime> fieldsRow() {
-        return (Row16) super.fieldsRow();
+    public Row18<Integer, String, Integer, Integer, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, LocalDate, VehiculosEstado, BigDecimal, LocalDate, Byte, String, LocalDateTime, LocalDateTime> fieldsRow() {
+        return (Row18) super.fieldsRow();
     }
 
     /**
      * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
      */
-    public <U> SelectField<U> mapping(Function16<? super Integer, ? super String, ? super Integer, ? super Integer, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super LocalDate, ? super VehiculosEstado, ? super BigDecimal, ? super LocalDate, ? super Byte, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
+    public <U> SelectField<U> mapping(Function18<? super Integer, ? super String, ? super Integer, ? super Integer, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super LocalDate, ? super VehiculosEstado, ? super BigDecimal, ? super LocalDate, ? super Byte, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
         return convertFrom(Records.mapping(from));
     }
 
@@ -275,7 +285,7 @@ public class Vehiculos extends TableImpl<VehiculosRecord> {
      * Convenience mapping calling {@link SelectField#convertFrom(Class,
      * Function)}.
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function16<? super Integer, ? super String, ? super Integer, ? super Integer, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super LocalDate, ? super VehiculosEstado, ? super BigDecimal, ? super LocalDate, ? super Byte, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
+    public <U> SelectField<U> mapping(Class<U> toType, Function18<? super Integer, ? super String, ? super Integer, ? super Integer, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super LocalDate, ? super VehiculosEstado, ? super BigDecimal, ? super LocalDate, ? super Byte, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
         return convertFrom(toType, Records.mapping(from));
     }
 }

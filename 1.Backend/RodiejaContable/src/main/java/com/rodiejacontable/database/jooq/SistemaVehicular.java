@@ -25,6 +25,7 @@ import com.rodiejacontable.database.jooq.tables.VistaResumenGeneraciones;
 import com.rodiejacontable.database.jooq.tables.VistaTopProductosVendidos;
 import com.rodiejacontable.database.jooq.tables.VistaTransaccionesCompletas;
 import com.rodiejacontable.database.jooq.tables.VistaVehiculosCompleta;
+import com.rodiejacontable.database.jooq.tables.VistaVentasEmpleadoMensual;
 import com.rodiejacontable.database.jooq.tables.VistaVentasPorEmpleado;
 
 import java.util.Arrays;
@@ -156,6 +157,11 @@ public class SistemaVehicular extends SchemaImpl {
     /**
      * VIEW
      */
+    public final VistaVentasEmpleadoMensual VISTA_VENTAS_EMPLEADO_MENSUAL = VistaVentasEmpleadoMensual.VISTA_VENTAS_EMPLEADO_MENSUAL;
+
+    /**
+     * VIEW
+     */
     public final VistaVentasPorEmpleado VISTA_VENTAS_POR_EMPLEADO = VistaVentasPorEmpleado.VISTA_VENTAS_POR_EMPLEADO;
 
     /**
@@ -195,6 +201,7 @@ public class SistemaVehicular extends SchemaImpl {
             VistaTopProductosVendidos.VISTA_TOP_PRODUCTOS_VENDIDOS,
             VistaTransaccionesCompletas.VISTA_TRANSACCIONES_COMPLETAS,
             VistaVehiculosCompleta.VISTA_VEHICULOS_COMPLETA,
+            VistaVentasEmpleadoMensual.VISTA_VENTAS_EMPLEADO_MENSUAL,
             VistaVentasPorEmpleado.VISTA_VENTAS_POR_EMPLEADO
         );
     }

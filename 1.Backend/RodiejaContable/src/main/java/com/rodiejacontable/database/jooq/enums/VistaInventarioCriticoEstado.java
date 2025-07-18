@@ -19,6 +19,8 @@ public enum VistaInventarioCriticoEstado implements EnumType {
 
     VENDIDO("VENDIDO"),
 
+    PROCESO("PROCESO"),
+
     AGOTADO("AGOTADO"),
 
     DAÑADO("DAÑADO"),

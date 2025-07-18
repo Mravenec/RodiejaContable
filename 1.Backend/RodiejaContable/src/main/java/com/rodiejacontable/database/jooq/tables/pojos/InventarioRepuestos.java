@@ -6,19 +6,23 @@ package com.rodiejacontable.database.jooq.tables.pojos;
 
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosBodega;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosCarton;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosCondicion;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstado;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstante;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosHorizontal;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosMalla;
+import com.rodiejacontable.database.jooq.enums.InventarioRepuestosNivel;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPared;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosParteVehiculo;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPiso;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosPlastica;
-import com.rodiejacontable.database.jooq.enums.InventarioRepuestosUbicadoEnVehiculo_1;
 import com.rodiejacontable.database.jooq.enums.InventarioRepuestosZona;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import org.jooq.types.UInteger;
 
 
 /**
@@ -44,17 +48,19 @@ public class InventarioRepuestos implements Serializable {
     private BigDecimal formula_15;
     private BigDecimal formula_30;
     private InventarioRepuestosBodega bodega;
-    private InventarioRepuestosUbicadoEnVehiculo_1 ubicadoEnVehiculo_1;
-    private String ubicadoEnVehiculo_2;
     private InventarioRepuestosZona zona;
     private InventarioRepuestosPared pared;
     private InventarioRepuestosMalla malla;
+    private InventarioRepuestosHorizontal horizontal;
     private InventarioRepuestosEstante estante;
+    private InventarioRepuestosNivel nivel;
     private InventarioRepuestosPiso piso;
     private InventarioRepuestosPlastica plastica;
     private InventarioRepuestosCarton carton;
     private String posicion;
+    private UInteger cantidad;
     private InventarioRepuestosEstado estado;
+    private InventarioRepuestosCondicion condicion;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
 
@@ -76,17 +82,19 @@ public class InventarioRepuestos implements Serializable {
         this.formula_15 = value.formula_15;
         this.formula_30 = value.formula_30;
         this.bodega = value.bodega;
-        this.ubicadoEnVehiculo_1 = value.ubicadoEnVehiculo_1;
-        this.ubicadoEnVehiculo_2 = value.ubicadoEnVehiculo_2;
         this.zona = value.zona;
         this.pared = value.pared;
         this.malla = value.malla;
+        this.horizontal = value.horizontal;
         this.estante = value.estante;
+        this.nivel = value.nivel;
         this.piso = value.piso;
         this.plastica = value.plastica;
         this.carton = value.carton;
         this.posicion = value.posicion;
+        this.cantidad = value.cantidad;
         this.estado = value.estado;
+        this.condicion = value.condicion;
         this.fechaCreacion = value.fechaCreacion;
         this.fechaActualizacion = value.fechaActualizacion;
     }
@@ -107,17 +115,19 @@ public class InventarioRepuestos implements Serializable {
         BigDecimal formula_15,
         BigDecimal formula_30,
         InventarioRepuestosBodega bodega,
-        InventarioRepuestosUbicadoEnVehiculo_1 ubicadoEnVehiculo_1,
-        String ubicadoEnVehiculo_2,
         InventarioRepuestosZona zona,
         InventarioRepuestosPared pared,
         InventarioRepuestosMalla malla,
+        InventarioRepuestosHorizontal horizontal,
         InventarioRepuestosEstante estante,
+        InventarioRepuestosNivel nivel,
         InventarioRepuestosPiso piso,
         InventarioRepuestosPlastica plastica,
         InventarioRepuestosCarton carton,
         String posicion,
+        UInteger cantidad,
         InventarioRepuestosEstado estado,
+        InventarioRepuestosCondicion condicion,
         LocalDateTime fechaCreacion,
         LocalDateTime fechaActualizacion
     ) {
@@ -136,17 +146,19 @@ public class InventarioRepuestos implements Serializable {
         this.formula_15 = formula_15;
         this.formula_30 = formula_30;
         this.bodega = bodega;
-        this.ubicadoEnVehiculo_1 = ubicadoEnVehiculo_1;
-        this.ubicadoEnVehiculo_2 = ubicadoEnVehiculo_2;
         this.zona = zona;
         this.pared = pared;
         this.malla = malla;
+        this.horizontal = horizontal;
         this.estante = estante;
+        this.nivel = nivel;
         this.piso = piso;
         this.plastica = plastica;
         this.carton = carton;
         this.posicion = posicion;
+        this.cantidad = cantidad;
         this.estado = estado;
+        this.condicion = condicion;
         this.fechaCreacion = fechaCreacion;
         this.fechaActualizacion = fechaActualizacion;
     }
@@ -403,40 +415,6 @@ public class InventarioRepuestos implements Serializable {
     }
 
     /**
-     * Getter for
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_1</code>.
-     */
-    public InventarioRepuestosUbicadoEnVehiculo_1 getUbicadoEnVehiculo_1() {
-        return this.ubicadoEnVehiculo_1;
-    }
-
-    /**
-     * Setter for
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_1</code>.
-     */
-    public InventarioRepuestos setUbicadoEnVehiculo_1(InventarioRepuestosUbicadoEnVehiculo_1 ubicadoEnVehiculo_1) {
-        this.ubicadoEnVehiculo_1 = ubicadoEnVehiculo_1;
-        return this;
-    }
-
-    /**
-     * Getter for
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_2</code>.
-     */
-    public String getUbicadoEnVehiculo_2() {
-        return this.ubicadoEnVehiculo_2;
-    }
-
-    /**
-     * Setter for
-     * <code>sistema_vehicular.inventario_repuestos.ubicado_en_vehiculo_2</code>.
-     */
-    public InventarioRepuestos setUbicadoEnVehiculo_2(String ubicadoEnVehiculo_2) {
-        this.ubicadoEnVehiculo_2 = ubicadoEnVehiculo_2;
-        return this;
-    }
-
-    /**
      * Getter for <code>sistema_vehicular.inventario_repuestos.zona</code>.
      */
     public InventarioRepuestosZona getZona() {
@@ -482,6 +460,23 @@ public class InventarioRepuestos implements Serializable {
     }
 
     /**
+     * Getter for
+     * <code>sistema_vehicular.inventario_repuestos.horizontal</code>.
+     */
+    public InventarioRepuestosHorizontal getHorizontal() {
+        return this.horizontal;
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.inventario_repuestos.horizontal</code>.
+     */
+    public InventarioRepuestos setHorizontal(InventarioRepuestosHorizontal horizontal) {
+        this.horizontal = horizontal;
+        return this;
+    }
+
+    /**
      * Getter for <code>sistema_vehicular.inventario_repuestos.estante</code>.
      */
     public InventarioRepuestosEstante getEstante() {
@@ -493,6 +488,21 @@ public class InventarioRepuestos implements Serializable {
      */
     public InventarioRepuestos setEstante(InventarioRepuestosEstante estante) {
         this.estante = estante;
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.inventario_repuestos.nivel</code>.
+     */
+    public InventarioRepuestosNivel getNivel() {
+        return this.nivel;
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.inventario_repuestos.nivel</code>.
+     */
+    public InventarioRepuestos setNivel(InventarioRepuestosNivel nivel) {
+        this.nivel = nivel;
         return this;
     }
 
@@ -557,6 +567,21 @@ public class InventarioRepuestos implements Serializable {
     }
 
     /**
+     * Getter for <code>sistema_vehicular.inventario_repuestos.cantidad</code>.
+     */
+    public UInteger getCantidad() {
+        return this.cantidad;
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.inventario_repuestos.cantidad</code>.
+     */
+    public InventarioRepuestos setCantidad(UInteger cantidad) {
+        this.cantidad = cantidad;
+        return this;
+    }
+
+    /**
      * Getter for <code>sistema_vehicular.inventario_repuestos.estado</code>.
      */
     public InventarioRepuestosEstado getEstado() {
@@ -568,6 +593,21 @@ public class InventarioRepuestos implements Serializable {
      */
     public InventarioRepuestos setEstado(InventarioRepuestosEstado estado) {
         this.estado = estado;
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.inventario_repuestos.condicion</code>.
+     */
+    public InventarioRepuestosCondicion getCondicion() {
+        return this.condicion;
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.inventario_repuestos.condicion</code>.
+     */
+    public InventarioRepuestos setCondicion(InventarioRepuestosCondicion condicion) {
+        this.condicion = condicion;
         return this;
     }
 
@@ -704,18 +744,6 @@ public class InventarioRepuestos implements Serializable {
         }
         else if (!this.bodega.equals(other.bodega))
             return false;
-        if (this.ubicadoEnVehiculo_1 == null) {
-            if (other.ubicadoEnVehiculo_1 != null)
-                return false;
-        }
-        else if (!this.ubicadoEnVehiculo_1.equals(other.ubicadoEnVehiculo_1))
-            return false;
-        if (this.ubicadoEnVehiculo_2 == null) {
-            if (other.ubicadoEnVehiculo_2 != null)
-                return false;
-        }
-        else if (!this.ubicadoEnVehiculo_2.equals(other.ubicadoEnVehiculo_2))
-            return false;
         if (this.zona == null) {
             if (other.zona != null)
                 return false;
@@ -734,11 +762,23 @@ public class InventarioRepuestos implements Serializable {
         }
         else if (!this.malla.equals(other.malla))
             return false;
+        if (this.horizontal == null) {
+            if (other.horizontal != null)
+                return false;
+        }
+        else if (!this.horizontal.equals(other.horizontal))
+            return false;
         if (this.estante == null) {
             if (other.estante != null)
                 return false;
         }
         else if (!this.estante.equals(other.estante))
+            return false;
+        if (this.nivel == null) {
+            if (other.nivel != null)
+                return false;
+        }
+        else if (!this.nivel.equals(other.nivel))
             return false;
         if (this.piso == null) {
             if (other.piso != null)
@@ -764,11 +804,23 @@ public class InventarioRepuestos implements Serializable {
         }
         else if (!this.posicion.equals(other.posicion))
             return false;
+        if (this.cantidad == null) {
+            if (other.cantidad != null)
+                return false;
+        }
+        else if (!this.cantidad.equals(other.cantidad))
+            return false;
         if (this.estado == null) {
             if (other.estado != null)
                 return false;
         }
         else if (!this.estado.equals(other.estado))
+            return false;
+        if (this.condicion == null) {
+            if (other.condicion != null)
+                return false;
+        }
+        else if (!this.condicion.equals(other.condicion))
             return false;
         if (this.fechaCreacion == null) {
             if (other.fechaCreacion != null)
@@ -804,17 +856,19 @@ public class InventarioRepuestos implements Serializable {
         result = prime * result + ((this.formula_15 == null) ? 0 : this.formula_15.hashCode());
         result = prime * result + ((this.formula_30 == null) ? 0 : this.formula_30.hashCode());
         result = prime * result + ((this.bodega == null) ? 0 : this.bodega.hashCode());
-        result = prime * result + ((this.ubicadoEnVehiculo_1 == null) ? 0 : this.ubicadoEnVehiculo_1.hashCode());
-        result = prime * result + ((this.ubicadoEnVehiculo_2 == null) ? 0 : this.ubicadoEnVehiculo_2.hashCode());
         result = prime * result + ((this.zona == null) ? 0 : this.zona.hashCode());
         result = prime * result + ((this.pared == null) ? 0 : this.pared.hashCode());
         result = prime * result + ((this.malla == null) ? 0 : this.malla.hashCode());
+        result = prime * result + ((this.horizontal == null) ? 0 : this.horizontal.hashCode());
         result = prime * result + ((this.estante == null) ? 0 : this.estante.hashCode());
+        result = prime * result + ((this.nivel == null) ? 0 : this.nivel.hashCode());
         result = prime * result + ((this.piso == null) ? 0 : this.piso.hashCode());
         result = prime * result + ((this.plastica == null) ? 0 : this.plastica.hashCode());
         result = prime * result + ((this.carton == null) ? 0 : this.carton.hashCode());
         result = prime * result + ((this.posicion == null) ? 0 : this.posicion.hashCode());
+        result = prime * result + ((this.cantidad == null) ? 0 : this.cantidad.hashCode());
         result = prime * result + ((this.estado == null) ? 0 : this.estado.hashCode());
+        result = prime * result + ((this.condicion == null) ? 0 : this.condicion.hashCode());
         result = prime * result + ((this.fechaCreacion == null) ? 0 : this.fechaCreacion.hashCode());
         result = prime * result + ((this.fechaActualizacion == null) ? 0 : this.fechaActualizacion.hashCode());
         return result;
@@ -839,17 +893,19 @@ public class InventarioRepuestos implements Serializable {
         sb.append(", ").append(formula_15);
         sb.append(", ").append(formula_30);
         sb.append(", ").append(bodega);
-        sb.append(", ").append(ubicadoEnVehiculo_1);
-        sb.append(", ").append(ubicadoEnVehiculo_2);
         sb.append(", ").append(zona);
         sb.append(", ").append(pared);
         sb.append(", ").append(malla);
+        sb.append(", ").append(horizontal);
         sb.append(", ").append(estante);
+        sb.append(", ").append(nivel);
         sb.append(", ").append(piso);
         sb.append(", ").append(plastica);
         sb.append(", ").append(carton);
         sb.append(", ").append(posicion);
+        sb.append(", ").append(cantidad);
         sb.append(", ").append(estado);
+        sb.append(", ").append(condicion);
         sb.append(", ").append(fechaCreacion);
         sb.append(", ").append(fechaActualizacion);
 

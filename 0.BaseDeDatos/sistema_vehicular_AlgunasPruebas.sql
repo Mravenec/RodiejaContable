@@ -291,5 +291,117 @@ SELECT * FROM generaciones;
 SELECT * FROM vehiculos;
 SELECT * FROM transacciones_financieras; 
 
+-- ========================================
+--  PROCESO: COMPRA → VENTA DE REPUESTOS SIN VEHÍCULO ORIGEN
+-- ========================================
+USE sistema_vehicular;
 
-SELECT * FROM tipos_transacciones;
+-- =========================================================
+-- A) “Bomba de Agua” (Corolla gen12) – SIN comisión
+-- =========================================================
+SELECT * FROM generaciones;
+SELECT * FROM vehiculos;
+SELECT * FROM inventario_repuestos;
+SELECT * FROM transacciones_financieras; 
+
+-- A-1. Compra automática + alta en inventario
+CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
+    1, 'Toyota',                            -- generación_id = 1 (Corolla)
+    'BOMBA DE AGUA',
+    'Bomba de agua OEM Toyota Corolla',
+    70000.00, 110000.00, 95000.00,          -- costo / precios
+    'R-', 'Z2-', 'PN-', 'V10', 'E2', 'P3-', -- ubicación
+    'STOCK', '100%-'
+);
+-- Crea:
+--   • inventario_repuestos (ej. id = 2)
+--   • transacciones_financieras (tipo = Compra Repuesto)
+
+-- A-2. Venta sin comisión – tipo 2 (Venta Repuesto)
+-- ⚠️ Incluye generación_id explícita para asegurar actualización correcta
+INSERT INTO transacciones_financieras (
+    fecha, tipo_transaccion_id,
+    empleado_id, repuesto_id, generacion_id,
+    monto, comision_empleado,
+    descripcion, referencia
+) VALUES (
+    '2025-08-05', 2,           -- Venta Repuesto
+    3, 2, 1,                   -- AMAURIS vende repuesto id = 2, generación = Corolla
+    110000.00, 0.00,
+    'Venta Bomba de Agua Corolla gen12',
+    'VENTA-REP-BA-COR-001'
+);
+
+-- =========================================================
+-- B) “Kit Embrague” (Civic gen10) – CON comisión
+-- =========================================================
+SELECT * FROM vista_ventas_por_empleado;
+SELECT * FROM generaciones;
+SELECT * FROM vehiculos;
+SELECT * FROM inventario_repuestos;
+SELECT * FROM transacciones_financieras; 
+
+
+-- B-1. Compra automática + alta (sin vehículo origen, con código único por generación)
+CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
+    2,                -- generación_id = 2 (Civic gen10)
+    'Honda',          -- marca asociada a la generación
+    'EMBRAGUE',       -- parte del vehículo
+    'Kit embrague original Honda Civic',  -- descripción
+    85000.00,         -- precio_costo
+    140000.00,        -- precio_venta
+    120000.00,        -- precio_mayoreo
+    'R-',             -- bodega
+    'Z3-',            -- zona
+    'PS-',            -- pared
+    'V12',            -- malla
+    'E3',             -- estante
+    'P3-',            -- piso
+    'STOCK',          -- estado inicial del repuesto
+    '100%-'           -- condición del repuesto
+);
+
+-- Crea repuesto id = 3
+
+-- B-2. Venta del repuesto con comisión al vendedor
+INSERT INTO transacciones_financieras (
+    fecha, tipo_transaccion_id,
+    empleado_id, repuesto_id, generacion_id,
+    monto, comision_empleado,
+    descripcion, referencia
+) VALUES (
+    '2025-07-25',     -- Fecha de la venta
+    2,                -- tipo_transaccion_id = 2 (Venta Repuesto)
+    4,                -- empleado_id = 4 (CACHORRO)
+    3,                -- repuesto_id = 3 (Kit embrague Civic)
+    2,                -- generacion_id = 2 (Civic gen10)
+    140000.00,        -- monto de venta
+    10000.00,         -- comisión al vendedor
+    'Venta Embrague Civic gen10',  -- descripción de la transacción
+    'VENTA-REP-EMB-CIV-001'        -- código de referencia personalizado
+);
+
+SELECT * FROM vista_ventas_por_empleado;
+SELECT * FROM vista_ventas_empleado_mensual WHERE anio = 2025 AND mes = 7;
+
+-- =========================================================
+-- C) CONSULTAS DE VERIFICACIÓN
+-- =========================================================
+
+-- Repuestos vendidos: deben tener estado = 'VENDIDO'
+SELECT id, codigo_repuesto, estado
+FROM inventario_repuestos
+WHERE id IN (2, 3);
+
+-- Últimas transacciones (venta y compra)
+SELECT id, codigo_transaccion, fecha, tipo_transaccion_id,
+       repuesto_id, empleado_id, monto, comision_empleado
+FROM transacciones_financieras
+ORDER BY id DESC
+LIMIT 10;
+
+-- Ver ingresos reflejados por generación (gen12 y gen10)
+SELECT *
+FROM vista_resumen_generaciones
+WHERE generacion_id IN (1, 2);
+

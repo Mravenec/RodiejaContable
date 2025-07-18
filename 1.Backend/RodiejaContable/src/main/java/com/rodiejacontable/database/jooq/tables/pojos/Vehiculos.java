@@ -28,6 +28,8 @@ public class Vehiculos implements Serializable {
     private BigDecimal costoGrua;
     private BigDecimal comisiones;
     private BigDecimal inversionTotal;
+    private BigDecimal costoRecuperado;
+    private BigDecimal costoPendiente;
     private LocalDate fechaIngreso;
     private VehiculosEstado estado;
     private BigDecimal precioVenta;
@@ -48,6 +50,8 @@ public class Vehiculos implements Serializable {
         this.costoGrua = value.costoGrua;
         this.comisiones = value.comisiones;
         this.inversionTotal = value.inversionTotal;
+        this.costoRecuperado = value.costoRecuperado;
+        this.costoPendiente = value.costoPendiente;
         this.fechaIngreso = value.fechaIngreso;
         this.estado = value.estado;
         this.precioVenta = value.precioVenta;
@@ -67,6 +71,8 @@ public class Vehiculos implements Serializable {
         BigDecimal costoGrua,
         BigDecimal comisiones,
         BigDecimal inversionTotal,
+        BigDecimal costoRecuperado,
+        BigDecimal costoPendiente,
         LocalDate fechaIngreso,
         VehiculosEstado estado,
         BigDecimal precioVenta,
@@ -84,6 +90,8 @@ public class Vehiculos implements Serializable {
         this.costoGrua = costoGrua;
         this.comisiones = comisiones;
         this.inversionTotal = inversionTotal;
+        this.costoRecuperado = costoRecuperado;
+        this.costoPendiente = costoPendiente;
         this.fechaIngreso = fechaIngreso;
         this.estado = estado;
         this.precioVenta = precioVenta;
@@ -211,6 +219,36 @@ public class Vehiculos implements Serializable {
      */
     public Vehiculos setInversionTotal(BigDecimal inversionTotal) {
         this.inversionTotal = inversionTotal;
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.vehiculos.costo_recuperado</code>.
+     */
+    public BigDecimal getCostoRecuperado() {
+        return this.costoRecuperado;
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.vehiculos.costo_recuperado</code>.
+     */
+    public Vehiculos setCostoRecuperado(BigDecimal costoRecuperado) {
+        this.costoRecuperado = costoRecuperado;
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.vehiculos.costo_pendiente</code>.
+     */
+    public BigDecimal getCostoPendiente() {
+        return this.costoPendiente;
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.vehiculos.costo_pendiente</code>.
+     */
+    public Vehiculos setCostoPendiente(BigDecimal costoPendiente) {
+        this.costoPendiente = costoPendiente;
         return this;
     }
 
@@ -391,6 +429,18 @@ public class Vehiculos implements Serializable {
         }
         else if (!this.inversionTotal.equals(other.inversionTotal))
             return false;
+        if (this.costoRecuperado == null) {
+            if (other.costoRecuperado != null)
+                return false;
+        }
+        else if (!this.costoRecuperado.equals(other.costoRecuperado))
+            return false;
+        if (this.costoPendiente == null) {
+            if (other.costoPendiente != null)
+                return false;
+        }
+        else if (!this.costoPendiente.equals(other.costoPendiente))
+            return false;
         if (this.fechaIngreso == null) {
             if (other.fechaIngreso != null)
                 return false;
@@ -454,6 +504,8 @@ public class Vehiculos implements Serializable {
         result = prime * result + ((this.costoGrua == null) ? 0 : this.costoGrua.hashCode());
         result = prime * result + ((this.comisiones == null) ? 0 : this.comisiones.hashCode());
         result = prime * result + ((this.inversionTotal == null) ? 0 : this.inversionTotal.hashCode());
+        result = prime * result + ((this.costoRecuperado == null) ? 0 : this.costoRecuperado.hashCode());
+        result = prime * result + ((this.costoPendiente == null) ? 0 : this.costoPendiente.hashCode());
         result = prime * result + ((this.fechaIngreso == null) ? 0 : this.fechaIngreso.hashCode());
         result = prime * result + ((this.estado == null) ? 0 : this.estado.hashCode());
         result = prime * result + ((this.precioVenta == null) ? 0 : this.precioVenta.hashCode());
@@ -477,6 +529,8 @@ public class Vehiculos implements Serializable {
         sb.append(", ").append(costoGrua);
         sb.append(", ").append(comisiones);
         sb.append(", ").append(inversionTotal);
+        sb.append(", ").append(costoRecuperado);
+        sb.append(", ").append(costoPendiente);
         sb.append(", ").append(fechaIngreso);
         sb.append(", ").append(estado);
         sb.append(", ").append(precioVenta);

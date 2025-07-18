@@ -51,7 +51,11 @@ public enum InventarioRepuestosPiso implements EnumType {
 
     P18_("P18-"),
 
-    P19_("P19-");
+    P19_("P19-"),
+
+    P20_("P20-"),
+
+    P21_("P21-");
 
     private final String literal;
 

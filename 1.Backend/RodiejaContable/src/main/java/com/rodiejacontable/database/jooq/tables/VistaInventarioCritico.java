@@ -55,7 +55,7 @@ public class VistaInventarioCritico extends TableImpl<VistaInventarioCriticoReco
      * The column
      * <code>sistema_vehicular.vista_inventario_critico.codigo_repuesto</code>.
      */
-    public final TableField<VistaInventarioCriticoRecord, String> CODIGO_REPUESTO = createField(DSL.name("codigo_repuesto"), SQLDataType.VARCHAR(20).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
+    public final TableField<VistaInventarioCriticoRecord, String> CODIGO_REPUESTO = createField(DSL.name("codigo_repuesto"), SQLDataType.VARCHAR(100).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
 
     /**
      * The column
@@ -127,13 +127,13 @@ public class VistaInventarioCritico extends TableImpl<VistaInventarioCriticoReco
      * The column
      * <code>sistema_vehicular.vista_inventario_critico.anio_registro</code>.
      */
-    public final TableField<VistaInventarioCriticoRecord, Short> ANIO_REGISTRO = createField(DSL.name("anio_registro"), SQLDataType.SMALLINT.nullable(false), this, "");
+    public final TableField<VistaInventarioCriticoRecord, Short> ANIO_REGISTRO = createField(DSL.name("anio_registro"), SQLDataType.SMALLINT.defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.SMALLINT)), this, "");
 
     /**
      * The column
      * <code>sistema_vehicular.vista_inventario_critico.mes_registro</code>.
      */
-    public final TableField<VistaInventarioCriticoRecord, Byte> MES_REGISTRO = createField(DSL.name("mes_registro"), SQLDataType.TINYINT.nullable(false), this, "");
+    public final TableField<VistaInventarioCriticoRecord, Byte> MES_REGISTRO = createField(DSL.name("mes_registro"), SQLDataType.TINYINT.defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.TINYINT)), this, "");
 
     /**
      * The column

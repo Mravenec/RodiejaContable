@@ -128,7 +128,7 @@ public class VistaTransaccionesCompletas extends TableImpl<VistaTransaccionesCom
      * The column
      * <code>sistema_vehicular.vista_transacciones_completas.codigo_repuesto</code>.
      */
-    public final TableField<VistaTransaccionesCompletasRecord, String> CODIGO_REPUESTO = createField(DSL.name("codigo_repuesto"), SQLDataType.VARCHAR(20).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
+    public final TableField<VistaTransaccionesCompletasRecord, String> CODIGO_REPUESTO = createField(DSL.name("codigo_repuesto"), SQLDataType.VARCHAR(100).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
 
     /**
      * The column
@@ -159,7 +159,7 @@ public class VistaTransaccionesCompletas extends TableImpl<VistaTransaccionesCom
     }
 
     private VistaTransaccionesCompletas(Name alias, Table<VistaTransaccionesCompletasRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment("VIEW"), TableOptions.view("create view `vista_transacciones_completas` as select `tf`.`id` AS `id`,`tf`.`codigo_transaccion` AS `codigo_transaccion`,`tf`.`fecha` AS `fecha`,`tf`.`monto` AS `monto`,`tf`.`comision_empleado` AS `comision_empleado`,`tf`.`descripcion` AS `descripcion`,`tf`.`referencia` AS `referencia`,`tf`.`estado` AS `estado`,`tt`.`nombre` AS `tipo_transaccion`,`tt`.`categoria` AS `categoria`,`e`.`nombre` AS `empleado`,`v`.`codigo_vehiculo` AS `codigo_vehiculo`,`ir`.`codigo_repuesto` AS `codigo_repuesto`,`vvc`.`marca` AS `marca`,`vvc`.`modelo` AS `modelo`,`vvc`.`generacion` AS `generacion`,`vvc`.`clave_generacion` AS `clave_generacion` from (((((`sistema_vehicular`.`transacciones_financieras` `tf` join `sistema_vehicular`.`tipos_transacciones` `tt` on(`tf`.`tipo_transaccion_id` = `tt`.`id`)) left join `sistema_vehicular`.`empleados` `e` on(`tf`.`empleado_id` = `e`.`id`)) left join `sistema_vehicular`.`vehiculos` `v` on(`tf`.`vehiculo_id` = `v`.`id`)) left join `sistema_vehicular`.`inventario_repuestos` `ir` on(`tf`.`repuesto_id` = `ir`.`id`)) left join `sistema_vehicular`.`vista_vehiculos_completa` `vvc` on(coalesce(`v`.`id`,`ir`.`vehiculo_origen_id`) = `vvc`.`id`)) where `tf`.`activo` = 1"));
+        super(alias, null, aliased, parameters, DSL.comment("VIEW"), TableOptions.view("create view `vista_transacciones_completas` as select `tf`.`id` AS `id`,`tf`.`codigo_transaccion` AS `codigo_transaccion`,`tf`.`fecha` AS `fecha`,`tf`.`monto` AS `monto`,`tf`.`comision_empleado` AS `comision_empleado`,`tf`.`descripcion` AS `descripcion`,`tf`.`referencia` AS `referencia`,`tf`.`estado` AS `estado`,`tt`.`nombre` AS `tipo_transaccion`,`tt`.`categoria` AS `categoria`,`e`.`nombre` AS `empleado`,`v`.`codigo_vehiculo` AS `codigo_vehiculo`,`ir`.`codigo_repuesto` AS `codigo_repuesto`,`vvc`.`marca` AS `marca`,`vvc`.`modelo` AS `modelo`,`vvc`.`generacion` AS `generacion`,`vvc`.`clave_generacion` AS `clave_generacion` from (((((`sistema_vehicular`.`transacciones_financieras` `tf` join `sistema_vehicular`.`tipos_transacciones` `tt` on(`tf`.`tipo_transaccion_id` = `tt`.`id`)) left join `sistema_vehicular`.`empleados` `e` on(`tf`.`empleado_id` = `e`.`id`)) left join `sistema_vehicular`.`vehiculos` `v` on(`tf`.`vehiculo_id` = `v`.`id`)) left join `sistema_vehicular`.`inventario_repuestos` `ir` on(`tf`.`repuesto_id` = `ir`.`id`)) left join `sistema_vehicular`.`vista_vehiculos_completa` `vvc` on(`vvc`.`id` = coalesce(`tf`.`vehiculo_id`,`ir`.`vehiculo_origen_id`))) where `tf`.`activo` = 1"));
     }
 
     /**

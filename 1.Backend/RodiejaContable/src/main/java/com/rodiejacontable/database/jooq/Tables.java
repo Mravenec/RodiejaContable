@@ -25,6 +25,7 @@ import com.rodiejacontable.database.jooq.tables.VistaResumenGeneraciones;
 import com.rodiejacontable.database.jooq.tables.VistaTopProductosVendidos;
 import com.rodiejacontable.database.jooq.tables.VistaTransaccionesCompletas;
 import com.rodiejacontable.database.jooq.tables.VistaVehiculosCompleta;
+import com.rodiejacontable.database.jooq.tables.VistaVentasEmpleadoMensual;
 import com.rodiejacontable.database.jooq.tables.VistaVentasPorEmpleado;
 
 
@@ -138,6 +139,11 @@ public class Tables {
      * VIEW
      */
     public static final VistaVehiculosCompleta VISTA_VEHICULOS_COMPLETA = VistaVehiculosCompleta.VISTA_VEHICULOS_COMPLETA;
+
+    /**
+     * VIEW
+     */
+    public static final VistaVentasEmpleadoMensual VISTA_VENTAS_EMPLEADO_MENSUAL = VistaVentasEmpleadoMensual.VISTA_VENTAS_EMPLEADO_MENSUAL;
 
     /**
      * VIEW

@@ -528,76 +528,95 @@ BEGIN
     DECLARE gen_fin INT;
     DECLARE contador INT;
 
-    IF NEW.vehiculo_origen_id IS NOT NULL THEN
-        -- Obtener el rango de años de la generación asociada al vehículo
-        SELECT g.anio_inicio, g.anio_fin
-        INTO gen_inicio, gen_fin
-        FROM vehiculos v
-        JOIN generaciones g ON v.generacion_id = g.id
-        WHERE v.id = NEW.vehiculo_origen_id;
+    -- ✅ Solo genera el código si NO viene definido
+    IF NEW.codigo_repuesto IS NULL OR NEW.codigo_repuesto = '' THEN
 
-        -- Contar cuántos repuestos ya hay asociados a esa generación
-        SELECT COUNT(*) + 1 INTO contador
-        FROM inventario_repuestos ir
-        JOIN vehiculos v2 ON ir.vehiculo_origen_id = v2.id
-        JOIN generaciones g2 ON v2.generacion_id = g2.id
-        WHERE g2.anio_inicio = gen_inicio AND g2.anio_fin = gen_fin;
+        IF NEW.vehiculo_origen_id IS NOT NULL THEN
+            -- Obtener rango de años de la generación del vehículo
+            SELECT g.anio_inicio, g.anio_fin
+            INTO gen_inicio, gen_fin
+            FROM vehiculos v
+            JOIN generaciones g ON v.generacion_id = g.id
+            WHERE v.id = NEW.vehiculo_origen_id;
 
-        SET NEW.codigo_repuesto = CONCAT('REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0'));
-    ELSE
-        -- Si no está asociado a un vehículo, genera un código temporal
-        SELECT COUNT(*) + 1 INTO contador
-        FROM inventario_repuestos 
-        WHERE anio_registro = NEW.anio_registro AND mes_registro = NEW.mes_registro;
+            -- Contar repuestos asociados a esa generación
+            SELECT COUNT(*) + 1 INTO contador
+            FROM inventario_repuestos ir
+            JOIN vehiculos v2 ON ir.vehiculo_origen_id = v2.id
+            JOIN generaciones g2 ON v2.generacion_id = g2.id
+            WHERE g2.anio_inicio = gen_inicio AND g2.anio_fin = gen_fin;
 
-        SET NEW.codigo_repuesto = CONCAT('REP-TEMP-', NEW.anio_registro, '-', LPAD(NEW.mes_registro, 2, '0'), '-', LPAD(contador, 4, '0'));
+            SET NEW.codigo_repuesto = CONCAT('REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0'));
+
+        ELSE
+            -- Código temporal por año/mes
+            SELECT COUNT(*) + 1 INTO contador
+            FROM inventario_repuestos 
+            WHERE anio_registro = NEW.anio_registro AND mes_registro = NEW.mes_registro;
+
+            SET NEW.codigo_repuesto = CONCAT('REP-TEMP-', NEW.anio_registro, '-', LPAD(NEW.mes_registro, 2, '0'), '-', LPAD(contador, 4, '0'));
+        END IF;
+
     END IF;
-END//
+END;
+//
 DELIMITER ;
 
-DELIMITER //
+
+-- Inserta un repuesto sin vehículo origen, generando código único por generación y registrando el egreso automáticamente.
+DELIMITER $$ 
+
 CREATE PROCEDURE sp_insertar_repuesto_con_generacion_sin_vehiculo(
-    IN p_generacion_id INT,
-    IN p_parte_vehiculo VARCHAR(100),
-    IN p_descripcion TEXT,
-    IN p_precio_costo DECIMAL(10,2),
-    IN p_precio_venta DECIMAL(10,2),
-    IN p_precio_mayoreo DECIMAL(10,2),
-    IN p_bodega VARCHAR(10),
-    IN p_zona VARCHAR(10),
-    IN p_pared VARCHAR(10),
-    IN p_malla VARCHAR(10),
-    IN p_estante VARCHAR(10),
-    IN p_piso VARCHAR(10),
-    IN p_estado VARCHAR(20),
-    IN p_condicion VARCHAR(10)
+    IN p_generacion_id   INT,
+    IN p_marca_nombre    VARCHAR(50),
+    IN p_parte_vehiculo  VARCHAR(100),
+    IN p_descripcion     TEXT,
+    IN p_precio_costo    DECIMAL(10,2),
+    IN p_precio_venta    DECIMAL(10,2),
+    IN p_precio_mayoreo  DECIMAL(10,2),
+    IN p_bodega          VARCHAR(10),
+    IN p_zona            VARCHAR(10),
+    IN p_pared           VARCHAR(10),
+    IN p_malla           VARCHAR(10),
+    IN p_estante         VARCHAR(10),
+    IN p_piso            VARCHAR(10),
+    IN p_estado          VARCHAR(20),
+    IN p_condicion       VARCHAR(10)
 )
 BEGIN
     DECLARE gen_inicio INT;
-    DECLARE gen_fin INT;
-    DECLARE contador INT;
-    DECLARE codigo_generado VARCHAR(50);
+    DECLARE gen_fin    INT;
+    DECLARE contador   INT;
+    DECLARE codigo_generado VARCHAR(100);
+    DECLARE v_repuesto_id   INT;
+    DECLARE v_tipo_compra_id INT;
 
-    -- 1. Rango de años de la generación
+    /*-----------------------------------
+      1. Datos de la generación
+    -----------------------------------*/
     SELECT anio_inicio, anio_fin
       INTO gen_inicio, gen_fin
     FROM generaciones
     WHERE id = p_generacion_id;
 
-    -- 2. Cantidad de repuestos ya ligados a esa generación (vía vehículos)
-    SELECT COUNT(*) + 1
-      INTO contador
-    FROM inventario_repuestos ir
-    JOIN vehiculos v  ON ir.vehiculo_origen_id = v.id
-    JOIN generaciones g ON v.generacion_id   = g.id
-    WHERE g.id = p_generacion_id;
+    /*-----------------------------------
+      2. Correlativo robusto por código
+    -----------------------------------*/
+    SELECT COUNT(*) + 1 INTO contador
+    FROM inventario_repuestos
+    WHERE codigo_repuesto LIKE CONCAT(
+        'REP-', REPLACE(p_marca_nombre, ' ', ''), '-', gen_inicio, '-', gen_fin, '-%');
 
-    -- 3. Código REP-AAAA-BBBB-####
+    /*-----------------------------------
+      3. Generar código único
+    -----------------------------------*/
     SET codigo_generado = CONCAT(
-        'REP-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0')
+        'REP-', REPLACE(p_marca_nombre, ' ', ''), '-', gen_inicio, '-', gen_fin, '-', LPAD(contador, 4, '0')
     );
 
-    -- 4. Insertar el repuesto sin vehículo origen
+    /*-----------------------------------
+      4. Insertar el repuesto
+    -----------------------------------*/
     INSERT INTO inventario_repuestos (
         codigo_repuesto, parte_vehiculo, descripcion,
         precio_costo,   precio_venta,   precio_mayoreo,
@@ -609,8 +628,33 @@ BEGIN
         p_bodega, p_zona, p_pared, p_malla, p_estante, p_piso,
         p_estado, p_condicion, NOW()
     );
-END//
+
+    SET v_repuesto_id = LAST_INSERT_ID();
+
+    /*-----------------------------------
+      5. Insertar transacción “Compra Repuesto”
+    -----------------------------------*/
+    SELECT id INTO v_tipo_compra_id
+    FROM tipos_transacciones
+    WHERE nombre = 'Compra Repuesto'
+    LIMIT 1;
+
+    INSERT INTO transacciones_financieras (
+        fecha, tipo_transaccion_id,
+        repuesto_id, generacion_id,
+        monto, descripcion, referencia
+    ) VALUES (
+        CURDATE(),
+        v_tipo_compra_id,
+        v_repuesto_id, p_generacion_id,
+        p_precio_costo,
+        CONCAT('Compra automática de repuesto ', codigo_generado),
+        CONCAT('AUTO-COMP-REP-', LPAD(v_repuesto_id, 6, '0'))
+    );
+END$$
+
 DELIMITER ;
+
 
 -- Trigger para generar código de ubicación
 DELIMITER //
@@ -920,35 +964,74 @@ END//
 
 DELIMITER ;
 
+-- Completa automáticamente el generacion_id en transacciones si no se proporciona.
 DELIMITER //
 CREATE TRIGGER tr_completar_generacion_id
 BEFORE INSERT ON transacciones_financieras
 FOR EACH ROW
 BEGIN
     DECLARE gen_id_temp INT DEFAULT NULL;
-    -- Si es venta de repuesto y solo tiene repuesto_id
-    IF NEW.generacion_id IS NULL AND NEW.repuesto_id IS NOT NULL THEN
-        SELECT v.generacion_id INTO gen_id_temp
-        FROM inventario_repuestos ir
-        JOIN vehiculos v ON ir.vehiculo_origen_id = v.id
-        WHERE ir.id = NEW.repuesto_id
-        LIMIT 1;
-        IF gen_id_temp IS NOT NULL THEN
-            SET NEW.generacion_id = gen_id_temp;
+    DECLARE anio_inicio INT;
+    DECLARE anio_fin INT;
+    DECLARE marca_codigo VARCHAR(50);
+    DECLARE cod_repuesto VARCHAR(100);
+
+    -- Si ya viene con generacion_id, no hacemos nada
+    IF NEW.generacion_id IS NULL THEN
+
+        -- Intentar deducir desde el repuesto
+        IF NEW.repuesto_id IS NOT NULL THEN
+            -- 1. Intentar por vehículo origen
+            SELECT v.generacion_id INTO gen_id_temp
+            FROM inventario_repuestos ir
+            JOIN vehiculos v ON ir.vehiculo_origen_id = v.id
+            WHERE ir.id = NEW.repuesto_id
+            LIMIT 1;
+
+            -- 2. Si no tiene vehículo, deducir desde código
+            IF gen_id_temp IS NULL THEN
+                SELECT codigo_repuesto INTO cod_repuesto
+                FROM inventario_repuestos
+                WHERE id = NEW.repuesto_id;
+
+                -- Formato esperado: REP-Toyota-2020-2024-0001
+                IF cod_repuesto REGEXP '^REP-[A-Za-z]+-[0-9]{4}-[0-9]{4}-' THEN
+                    -- Extraer marca
+                    SET marca_codigo = SUBSTRING_INDEX(SUBSTRING_INDEX(cod_repuesto, '-', 3), '-', -1);
+                    
+                    -- Extraer años con substring robusto
+                    SET anio_inicio = CAST(SUBSTRING(cod_repuesto, LOCATE('-', cod_repuesto, LOCATE('-', cod_repuesto) + 1) + 1, 4) AS UNSIGNED);
+                    SET anio_fin    = CAST(SUBSTRING(cod_repuesto, LOCATE('-', cod_repuesto, LOCATE('-', cod_repuesto, LOCATE('-', cod_repuesto) + 1) + 1) + 1, 4) AS UNSIGNED);
+
+                    -- Buscar generación que coincida con marca y rango de años
+                    SELECT g.id INTO gen_id_temp
+                    FROM generaciones g
+                    JOIN modelos mo ON g.modelo_id = mo.id
+                    JOIN marcas m ON mo.marca_id = m.id
+                    WHERE REPLACE(m.nombre, ' ', '') = marca_codigo
+                      AND g.anio_inicio = anio_inicio
+                      AND g.anio_fin = anio_fin
+                    LIMIT 1;
+                END IF;
+            END IF;
         END IF;
-    END IF;
-    -- Si es transacción de vehículo
-    IF NEW.generacion_id IS NULL AND NEW.vehiculo_id IS NOT NULL THEN
-        SELECT generacion_id INTO gen_id_temp
-        FROM vehiculos
-        WHERE id = NEW.vehiculo_id
-        LIMIT 1;
+
+        -- Intentar desde el vehículo (por si es venta directa)
+        IF gen_id_temp IS NULL AND NEW.vehiculo_id IS NOT NULL THEN
+            SELECT generacion_id INTO gen_id_temp
+            FROM vehiculos
+            WHERE id = NEW.vehiculo_id
+            LIMIT 1;
+        END IF;
+
+        -- Asignar si se encontró
         IF gen_id_temp IS NOT NULL THEN
             SET NEW.generacion_id = gen_id_temp;
         END IF;
     END IF;
 END//
 DELIMITER ;
+
 
 
 
@@ -1458,6 +1541,26 @@ FROM historial_transacciones ht
 LEFT JOIN vista_transacciones_completas vtc ON ht.transaccion_id = vtc.id
 
 ORDER BY fecha_cambio DESC;
+
+-- Vista de ventas de empleado por mes.
+CREATE OR REPLACE VIEW vista_ventas_empleado_mensual AS
+SELECT 
+    e.nombre AS empleado,
+    YEAR(tf.fecha) AS anio,
+    MONTH(tf.fecha) AS mes,
+    MONTHNAME(tf.fecha) AS nombre_mes,
+    COUNT(tf.id) AS transacciones_venta,
+    SUM(tf.monto) AS total_ventas,
+    SUM(tf.comision_empleado) AS total_comisiones,
+    ROUND(AVG(tf.monto), 2) AS promedio_venta,
+    ROUND(SUM(tf.comision_empleado) / NULLIF(SUM(tf.monto), 0) * 100, 2) AS porcentaje_comision
+FROM transacciones_financieras tf
+JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
+JOIN empleados e ON tf.empleado_id = e.id
+WHERE tt.categoria = 'INGRESO' AND tf.activo = TRUE
+GROUP BY e.id, anio, mes
+ORDER BY anio DESC, mes DESC, e.nombre;
+
 
 
 -- ========================================
@@ -1980,7 +2083,7 @@ INSERT INTO inventario_repuestos (
 
 /* ---------- Repuestos sueltos (sin vehículo de origen) ---------- */
 CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
-    3,  -- generación_id (Corolla 2020–2024)
+    3, 'Toyota',  -- generación_id, marca_nombre
     'BATERIA',
     'Batería nueva 12V 45Ah',
     35000.00, 55000.00, 45000.00,
@@ -1989,7 +2092,7 @@ CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
 );
 
 CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
-    3,
+    3, 'Toyota',
     'ALTERNADOR',
     'Alternador Bosch universal',
     55000.00, 80000.00, 67000.00,
@@ -1998,14 +2101,13 @@ CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
 );
 
 CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
-    3,
+    3, 'Toyota',
     'FUSIBLES',
     'Set de fusibles (10 unidades)',
     8000.00, 15000.00, 12000.00,
     'C-', 'Z4-', 'PE-', 'V37', 'E6', 'P11-',
     'STOCK', '100%-'
 );
-
 
 -- ========================================
 -- 8. POBLAR TRANSACCIONES FINANCIERAS (orden lógico y correlativo)
@@ -2124,3 +2226,4 @@ SELECT * FROM vista_top_productos_vendidos;
 SELECT * FROM vista_transacciones_completas;
 SELECT * FROM vista_vehiculos_completa;
 SELECT * FROM vista_ventas_por_empleado;
+SELECT * FROM vista_ventas_empleado_mensual;

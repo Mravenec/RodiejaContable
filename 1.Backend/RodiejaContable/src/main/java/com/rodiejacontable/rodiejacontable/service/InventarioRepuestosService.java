@@ -80,12 +80,8 @@ public class InventarioRepuestosService {
         if (repuestoActualizado.getBodega() != null) {
             repuestoExistente.setBodega(repuestoActualizado.getBodega());
         }
-        if (repuestoActualizado.getUbicadoEnVehiculo_1() != null) {
-            repuestoExistente.setUbicadoEnVehiculo_1(repuestoActualizado.getUbicadoEnVehiculo_1());
-        }
-        if (repuestoActualizado.getUbicadoEnVehiculo_2() != null) {
-            repuestoExistente.setUbicadoEnVehiculo_2(repuestoActualizado.getUbicadoEnVehiculo_2());
-        }
+        // Los campos ubicadoEnVehiculo_1 y ubicadoEnVehiculo_2 no existen en la tabla inventario_repuestos
+        // Si son necesarios, deben ser agregados a la tabla y regeneradas las clases JOOQ
         if (repuestoActualizado.getZona() != null) {
             repuestoExistente.setZona(repuestoActualizado.getZona());
         }
