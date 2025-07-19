@@ -22,16 +22,32 @@ public class InventarioRepuestosService {
 
     @Transactional
     public InventarioRepuestos crearRepuesto(InventarioRepuestos repuesto) {
-        if (inventarioRepuestosRepository.existsByCodigoRepuesto(repuesto.getCodigoRepuesto())) {
-            throw new IllegalStateException("Ya existe un repuesto con el código: " + repuesto.getCodigoRepuesto());
+        // Validate required fields
+        if (repuesto.getVehiculoOrigenId() == null) {
+            throw new IllegalStateException("El ID del vehículo de origen es requerido");
         }
         
-        repuesto.setFechaCreacion(LocalDateTime.now());
-        repuesto.setFechaActualizacion(LocalDateTime.now());
+        // Set default values for required enums if not provided
+        if (repuesto.getEstado() == null) {
+            repuesto.setEstado(com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstado.STOCK);
+        }
+        if (repuesto.getCondicion() == null) {
+            repuesto.setCondicion(com.rodiejacontable.database.jooq.enums.InventarioRepuestosCondicion._100_25_);
+        }
+        
+        // Set timestamps
+        LocalDateTime now = LocalDateTime.now();
+        if (repuesto.getFechaCreacion() == null) {
+            repuesto.setFechaCreacion(now);
+        }
+        repuesto.setFechaActualizacion(now);
+        
+        // Let the database handle the codigo_repuesto generation
+        repuesto.setCodigoRepuesto(null);
         
         return inventarioRepuestosRepository.save(repuesto);
     }
-
+    
     @Transactional
     public InventarioRepuestos actualizarRepuesto(Integer id, InventarioRepuestos repuestoActualizado) {
         InventarioRepuestos repuestoExistente = obtenerPorId(id)

@@ -304,8 +304,8 @@ Content-Type: application/json
 ### Obtener todo el inventario de repuestos
 GET {{baseUrl}}/inventario-repuestos
 
-### Insertar Motor Honda Civic 1.5L Turbo VTEC
-POST {{baseUrl}}/inventario-repuestos
+### Crear un nuevo repuesto
+POST http://localhost:8080/api/inventario-repuestos
 Content-Type: application/json
 
 {
@@ -315,15 +315,32 @@ Content-Type: application/json
   "precioCosto": 1200000.00,
   "precioVenta": 1800000.00,
   "precioMayoreo": 1500000.00,
-  "bodega": "C-",
-  "zona": "Z1-",
-  "pared": "PE-",
+  "bodega": "C_",
+  "zona": "Z1_",
+  "pared": "PE_",
   "malla": "V5",
-  "estante": "E1",
-  "piso": "P2-",
   "estado": "STOCK",
-  "condicion": "50%-",
-  "fechaCreacion": "2023-05-12"
+  "condicion": "_50_25_",
+  "estante": "E1",
+  "nivel": "N1_",
+  "piso": "P1_",
+  "plastica": "CP1_",
+  "horizontal": "HA_"
+}
+
+### Registrar venta del repuesto (motor Civic 1.5L Turbo)
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-06-01",
+  "tipoTransaccionId": 2,
+  "empleadoId": 1,
+  "repuestoId": 1,
+  "monto": 1800000.00,
+  "comisionEmpleado": 25000.00,
+  "descripcion": "Venta Motor Civic 1.5L Turbo",
+  "referencia": "VENTA-REP-001"
 }
 
 ### ========================================

@@ -24,6 +24,10 @@ public class InventarioRepuestosRepository {
     public InventarioRepuestos save(InventarioRepuestos repuesto) {
         InventarioRepuestosRecord record = dslContext.newRecord(INVENTARIO_REPUESTOS, repuesto);
         record.store();
+        // Refresh the record to get database-generated values
+        record = dslContext.selectFrom(INVENTARIO_REPUESTOS)
+                .where(INVENTARIO_REPUESTOS.ID.eq(record.getId()))
+                .fetchOne();
         return record.into(InventarioRepuestos.class);
     }
 
@@ -69,5 +73,18 @@ public class InventarioRepuestosRepository {
         dslContext.deleteFrom(INVENTARIO_REPUESTOS)
                 .where(INVENTARIO_REPUESTOS.ID.eq(id))
                 .execute();
+    }
+
+    /**
+     * Find all repuesto codes that start with the given prefix
+     * @param codePrefix The prefix to search for
+     * @return List of matching repuesto codes
+     */
+    public List<String> findByCodeStartingWith(String codePrefix) {
+        return dslContext.select(INVENTARIO_REPUESTOS.CODIGO_REPUESTO)
+                .from(INVENTARIO_REPUESTOS)
+                .where(INVENTARIO_REPUESTOS.CODIGO_REPUESTO.startsWithIgnoreCase(codePrefix))
+                .fetch()
+                .into(String.class);
     }
 }
