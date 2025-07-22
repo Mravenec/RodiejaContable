@@ -1843,8 +1843,10 @@ INSERT INTO tipos_transacciones (nombre, descripcion, categoria) VALUES
 ('Combustible', 'Egreso por combustible', 'EGRESO'),
 ('Servicios Públicos', 'Egreso por electricidad, agua, teléfono', 'EGRESO'),
 ('Impuestos', 'Egreso por impuestos y patentes', 'EGRESO'),
+('Salarios', 'Egreso por planillas y cargas sociales', 'EGRESO'),
 ('Otros Ingresos', 'Otros ingresos diversos', 'INGRESO'),
 ('Otros Egresos', 'Otros egresos diversos', 'EGRESO');
+
 
 -- ========================================
 -- 6. POBLAR VEHÍCULOS (Datos realistas de CR)

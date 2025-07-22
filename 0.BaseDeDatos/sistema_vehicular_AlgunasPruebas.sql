@@ -58,9 +58,12 @@ INSERT INTO tipos_transacciones (nombre, descripcion, categoria) VALUES
 ('Combustible', 'Egreso por combustible', 'EGRESO'),
 ('Servicios Públicos', 'Egreso por electricidad, agua, teléfono', 'EGRESO'),
 ('Impuestos', 'Egreso por impuestos y patentes', 'EGRESO'),
+('Salarios', 'Egreso por planillas y cargas sociales', 'EGRESO'),
 ('Otros Ingresos', 'Otros ingresos diversos', 'INGRESO'),
 ('Otros Egresos', 'Otros egresos diversos', 'EGRESO');
+
 SELECT * FROM tipos_transacciones;
+
 
 -- ========================================
 -- 6. POBLAR VEHÍCULOS 
@@ -404,4 +407,124 @@ LIMIT 10;
 SELECT *
 FROM vista_resumen_generaciones
 WHERE generacion_id IN (1, 2);
+
+
+
+-- ========================================
+-- 8B. TRANSACCIONES DE GASTOS FIJOS GLOBALES (NO VINCULADOS A VEHÍCULOS)
+-- ========================================
+
+-- Gasto: Patente
+INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
+VALUES (
+    '2025-07-01',
+    (SELECT id FROM tipos_transacciones WHERE nombre = 'Impuestos' LIMIT 1),
+    20000.00,
+    'Pago de patente municipal',
+    'EGRESO-PATENTE-JUL25'
+);
+
+-- Gasto: Impuesto municipal
+INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
+VALUES (
+    '2025-07-01',
+    (SELECT id FROM tipos_transacciones WHERE nombre = 'Impuestos' LIMIT 1),
+    15000.00,
+    'Pago de impuesto municipal julio',
+    'EGRESO-IMP-MUN-JUL25'
+);
+
+-- Gasto: Servicios públicos
+INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
+VALUES (
+    '2025-07-01',
+    (SELECT id FROM tipos_transacciones WHERE nombre = 'Servicios Públicos' LIMIT 1),
+    105000.00,
+    'Pago de electricidad, agua y teléfono',
+    'EGRESO-SERVPUB-JUL25'
+);
+
+-- Gasto: CCSS
+INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
+VALUES (
+    '2025-07-01',
+    (SELECT id FROM tipos_transacciones WHERE nombre = 'Salarios' LIMIT 1),
+    227000.00,
+    'Aporte patronal CCSS',
+    'EGRESO-CCSS-JUL25'
+);
+
+-- Gasto: Salarios
+INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
+VALUES (
+    '2025-07-01',
+    (SELECT id FROM tipos_transacciones WHERE nombre = 'Salarios' LIMIT 1),
+    2120000.00,
+    'Pago de salarios',
+    'EGRESO-SALARIOS-JUL25'
+);
+
+-- Gasto: Préstamo bancario
+INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
+VALUES (
+    '2025-07-01',
+    (SELECT id FROM tipos_transacciones WHERE nombre = 'Otros Egresos' LIMIT 1),
+    1000000.00,
+    'Pago de préstamo bancario',
+    'EGRESO-PRESTAMO-JUL25'
+);
+
+-- Gasto: Contadora externa
+INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
+VALUES (
+    '2025-07-01',
+    (SELECT id FROM tipos_transacciones WHERE nombre = 'Otros Egresos' LIMIT 1),
+    56500.00,
+    'Honorarios contadora externa',
+    'EGRESO-CONTADORA-JUL25'
+);
+
+-- Gasto: Seguro de riesgos del trabajo
+INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
+VALUES (
+    '2025-07-01',
+    (SELECT id FROM tipos_transacciones WHERE nombre = 'Otros Egresos' LIMIT 1),
+    35000.00,
+    'Pago seguro riesgos del trabajo',
+    'EGRESO-CERO-RIESGOS-JUL25'
+);
+
+-- VISTAS
+
+-- Todo el mes:
+SELECT *
+FROM vista_transacciones_completas
+WHERE YEAR(fecha) = YEAR(CURRENT_DATE())
+  AND MONTH(fecha) = MONTH(CURRENT_DATE())
+ORDER BY fecha DESC;
+
+-- Solo egresos
+SELECT * FROM vista_transacciones_completas
+WHERE categoria = 'EGRESO'
+  AND YEAR(fecha) = YEAR(CURRENT_DATE())
+  AND MONTH(fecha) = MONTH(CURRENT_DATE());
+
+-- Solo ingresos
+SELECT * FROM vista_transacciones_completas
+WHERE categoria = 'INGRESO'
+  AND YEAR(fecha) = YEAR(CURRENT_DATE())
+  AND MONTH(fecha) = MONTH(CURRENT_DATE());
+  
+  
+-- Analisis financiero del mes:
+SELECT 
+    anio, mes, nombre_mes,
+    total_ingresos,
+    total_egresos,
+    balance_neto,
+    total_comisiones
+FROM vista_analisis_financiero_mensual
+WHERE anio = YEAR(CURRENT_DATE()) AND mes = MONTH(CURRENT_DATE());
+
+
 
