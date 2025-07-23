@@ -9,8 +9,8 @@ import com.rodiejacontable.database.jooq.tables.VistaVentasEmpleadoMensual;
 import java.math.BigDecimal;
 
 import org.jooq.Field;
-import org.jooq.Record9;
-import org.jooq.Row9;
+import org.jooq.Record10;
+import org.jooq.Row10;
 import org.jooq.impl.TableRecordImpl;
 
 
@@ -18,7 +18,7 @@ import org.jooq.impl.TableRecordImpl;
  * VIEW
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
-public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVentasEmpleadoMensualRecord> implements Record9<String, Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal> {
+public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVentasEmpleadoMensualRecord> implements Record10<String, Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal> {
 
     private static final long serialVersionUID = 1L;
 
@@ -143,10 +143,27 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
 
     /**
      * Setter for
+     * <code>sistema_vehicular.vista_ventas_empleado_mensual.contribucion_neta</code>.
+     */
+    public VistaVentasEmpleadoMensualRecord setContribucionNeta(BigDecimal value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_ventas_empleado_mensual.contribucion_neta</code>.
+     */
+    public BigDecimal getContribucionNeta() {
+        return (BigDecimal) get(7);
+    }
+
+    /**
+     * Setter for
      * <code>sistema_vehicular.vista_ventas_empleado_mensual.promedio_venta</code>.
      */
     public VistaVentasEmpleadoMensualRecord setPromedioVenta(BigDecimal value) {
-        set(7, value);
+        set(8, value);
         return this;
     }
 
@@ -155,7 +172,7 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
      * <code>sistema_vehicular.vista_ventas_empleado_mensual.promedio_venta</code>.
      */
     public BigDecimal getPromedioVenta() {
-        return (BigDecimal) get(7);
+        return (BigDecimal) get(8);
     }
 
     /**
@@ -163,7 +180,7 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
      * <code>sistema_vehicular.vista_ventas_empleado_mensual.porcentaje_comision</code>.
      */
     public VistaVentasEmpleadoMensualRecord setPorcentajeComision(BigDecimal value) {
-        set(8, value);
+        set(9, value);
         return this;
     }
 
@@ -172,21 +189,21 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
      * <code>sistema_vehicular.vista_ventas_empleado_mensual.porcentaje_comision</code>.
      */
     public BigDecimal getPorcentajeComision() {
-        return (BigDecimal) get(8);
+        return (BigDecimal) get(9);
     }
 
     // -------------------------------------------------------------------------
-    // Record9 type implementation
+    // Record10 type implementation
     // -------------------------------------------------------------------------
 
     @Override
-    public Row9<String, Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal> fieldsRow() {
-        return (Row9) super.fieldsRow();
+    public Row10<String, Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal> fieldsRow() {
+        return (Row10) super.fieldsRow();
     }
 
     @Override
-    public Row9<String, Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal> valuesRow() {
-        return (Row9) super.valuesRow();
+    public Row10<String, Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal> valuesRow() {
+        return (Row10) super.valuesRow();
     }
 
     @Override
@@ -226,11 +243,16 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
 
     @Override
     public Field<BigDecimal> field8() {
-        return VistaVentasEmpleadoMensual.VISTA_VENTAS_EMPLEADO_MENSUAL.PROMEDIO_VENTA;
+        return VistaVentasEmpleadoMensual.VISTA_VENTAS_EMPLEADO_MENSUAL.CONTRIBUCION_NETA;
     }
 
     @Override
     public Field<BigDecimal> field9() {
+        return VistaVentasEmpleadoMensual.VISTA_VENTAS_EMPLEADO_MENSUAL.PROMEDIO_VENTA;
+    }
+
+    @Override
+    public Field<BigDecimal> field10() {
         return VistaVentasEmpleadoMensual.VISTA_VENTAS_EMPLEADO_MENSUAL.PORCENTAJE_COMISION;
     }
 
@@ -271,11 +293,16 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
 
     @Override
     public BigDecimal component8() {
-        return getPromedioVenta();
+        return getContribucionNeta();
     }
 
     @Override
     public BigDecimal component9() {
+        return getPromedioVenta();
+    }
+
+    @Override
+    public BigDecimal component10() {
         return getPorcentajeComision();
     }
 
@@ -316,11 +343,16 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
 
     @Override
     public BigDecimal value8() {
-        return getPromedioVenta();
+        return getContribucionNeta();
     }
 
     @Override
     public BigDecimal value9() {
+        return getPromedioVenta();
+    }
+
+    @Override
+    public BigDecimal value10() {
         return getPorcentajeComision();
     }
 
@@ -368,18 +400,24 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
 
     @Override
     public VistaVentasEmpleadoMensualRecord value8(BigDecimal value) {
-        setPromedioVenta(value);
+        setContribucionNeta(value);
         return this;
     }
 
     @Override
     public VistaVentasEmpleadoMensualRecord value9(BigDecimal value) {
+        setPromedioVenta(value);
+        return this;
+    }
+
+    @Override
+    public VistaVentasEmpleadoMensualRecord value10(BigDecimal value) {
         setPorcentajeComision(value);
         return this;
     }
 
     @Override
-    public VistaVentasEmpleadoMensualRecord values(String value1, Integer value2, Integer value3, String value4, Long value5, BigDecimal value6, BigDecimal value7, BigDecimal value8, BigDecimal value9) {
+    public VistaVentasEmpleadoMensualRecord values(String value1, Integer value2, Integer value3, String value4, Long value5, BigDecimal value6, BigDecimal value7, BigDecimal value8, BigDecimal value9, BigDecimal value10) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -389,6 +427,7 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
         value7(value7);
         value8(value8);
         value9(value9);
+        value10(value10);
         return this;
     }
 
@@ -406,7 +445,7 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
     /**
      * Create a detached, initialised VistaVentasEmpleadoMensualRecord
      */
-    public VistaVentasEmpleadoMensualRecord(String empleado, Integer anio, Integer mes, String nombreMes, Long transaccionesVenta, BigDecimal totalVentas, BigDecimal totalComisiones, BigDecimal promedioVenta, BigDecimal porcentajeComision) {
+    public VistaVentasEmpleadoMensualRecord(String empleado, Integer anio, Integer mes, String nombreMes, Long transaccionesVenta, BigDecimal totalVentas, BigDecimal totalComisiones, BigDecimal contribucionNeta, BigDecimal promedioVenta, BigDecimal porcentajeComision) {
         super(VistaVentasEmpleadoMensual.VISTA_VENTAS_EMPLEADO_MENSUAL);
 
         setEmpleado(empleado);
@@ -416,6 +455,7 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
         setTransaccionesVenta(transaccionesVenta);
         setTotalVentas(totalVentas);
         setTotalComisiones(totalComisiones);
+        setContribucionNeta(contribucionNeta);
         setPromedioVenta(promedioVenta);
         setPorcentajeComision(porcentajeComision);
         resetChangedOnNotNull();
@@ -435,6 +475,7 @@ public class VistaVentasEmpleadoMensualRecord extends TableRecordImpl<VistaVenta
             setTransaccionesVenta(value.getTransaccionesVenta());
             setTotalVentas(value.getTotalVentas());
             setTotalComisiones(value.getTotalComisiones());
+            setContribucionNeta(value.getContribucionNeta());
             setPromedioVenta(value.getPromedioVenta());
             setPorcentajeComision(value.getPorcentajeComision());
             resetChangedOnNotNull();

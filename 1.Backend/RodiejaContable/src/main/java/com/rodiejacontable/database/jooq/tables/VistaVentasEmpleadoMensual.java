@@ -12,11 +12,11 @@ import java.util.function.Function;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function9;
+import org.jooq.Function10;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Records;
-import org.jooq.Row9;
+import org.jooq.Row10;
 import org.jooq.Schema;
 import org.jooq.SelectField;
 import org.jooq.Table;
@@ -93,6 +93,12 @@ public class VistaVentasEmpleadoMensual extends TableImpl<VistaVentasEmpleadoMen
 
     /**
      * The column
+     * <code>sistema_vehicular.vista_ventas_empleado_mensual.contribucion_neta</code>.
+     */
+    public final TableField<VistaVentasEmpleadoMensualRecord, BigDecimal> CONTRIBUCION_NETA = createField(DSL.name("contribucion_neta"), SQLDataType.DECIMAL(35, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
+
+    /**
+     * The column
      * <code>sistema_vehicular.vista_ventas_empleado_mensual.promedio_venta</code>.
      */
     public final TableField<VistaVentasEmpleadoMensualRecord, BigDecimal> PROMEDIO_VENTA = createField(DSL.name("promedio_venta"), SQLDataType.DECIMAL(13, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
@@ -108,7 +114,7 @@ public class VistaVentasEmpleadoMensual extends TableImpl<VistaVentasEmpleadoMen
     }
 
     private VistaVentasEmpleadoMensual(Name alias, Table<VistaVentasEmpleadoMensualRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment("VIEW"), TableOptions.view("create view `vista_ventas_empleado_mensual` as select `e`.`nombre` AS `empleado`,year(`tf`.`fecha`) AS `anio`,month(`tf`.`fecha`) AS `mes`,monthname(`tf`.`fecha`) AS `nombre_mes`,count(`tf`.`id`) AS `transacciones_venta`,sum(`tf`.`monto`) AS `total_ventas`,sum(`tf`.`comision_empleado`) AS `total_comisiones`,round(avg(`tf`.`monto`),2) AS `promedio_venta`,round(sum(`tf`.`comision_empleado`) / nullif(sum(`tf`.`monto`),0) * 100,2) AS `porcentaje_comision` from ((`sistema_vehicular`.`transacciones_financieras` `tf` join `sistema_vehicular`.`tipos_transacciones` `tt` on(`tf`.`tipo_transaccion_id` = `tt`.`id`)) join `sistema_vehicular`.`empleados` `e` on(`tf`.`empleado_id` = `e`.`id`)) where `tt`.`categoria` = 'INGRESO' and `tf`.`activo` = 1 group by `e`.`id`,`tf`.`anio`,`tf`.`mes` order by year(`tf`.`fecha`) desc,month(`tf`.`fecha`) desc,`e`.`nombre`"));
+        super(alias, null, aliased, parameters, DSL.comment("VIEW"), TableOptions.view("create view `vista_ventas_empleado_mensual` as select `e`.`nombre` AS `empleado`,year(`tf`.`fecha`) AS `anio`,month(`tf`.`fecha`) AS `mes`,monthname(`tf`.`fecha`) AS `nombre_mes`,count(`tf`.`id`) AS `transacciones_venta`,sum(`tf`.`monto`) AS `total_ventas`,sum(`tf`.`comision_empleado`) AS `total_comisiones`,sum(`tf`.`monto`) - sum(`tf`.`comision_empleado`) AS `contribucion_neta`,round(avg(`tf`.`monto`),2) AS `promedio_venta`,round(sum(`tf`.`comision_empleado`) / nullif(sum(`tf`.`monto`),0) * 100,2) AS `porcentaje_comision` from ((`sistema_vehicular`.`transacciones_financieras` `tf` join `sistema_vehicular`.`tipos_transacciones` `tt` on(`tf`.`tipo_transaccion_id` = `tt`.`id`)) join `sistema_vehicular`.`empleados` `e` on(`tf`.`empleado_id` = `e`.`id`)) where `tt`.`categoria` = 'INGRESO' and `tf`.`activo` = 1 and `tf`.`empleado_id` is not null group by `e`.`id`,`e`.`nombre`,year(`tf`.`fecha`),month(`tf`.`fecha`),monthname(`tf`.`fecha`) order by year(`tf`.`fecha`) desc,month(`tf`.`fecha`) desc,sum(`tf`.`monto`) - sum(`tf`.`comision_empleado`) desc"));
     }
 
     /**
@@ -186,18 +192,18 @@ public class VistaVentasEmpleadoMensual extends TableImpl<VistaVentasEmpleadoMen
     }
 
     // -------------------------------------------------------------------------
-    // Row9 type methods
+    // Row10 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row9<String, Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal> fieldsRow() {
-        return (Row9) super.fieldsRow();
+    public Row10<String, Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal> fieldsRow() {
+        return (Row10) super.fieldsRow();
     }
 
     /**
      * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
      */
-    public <U> SelectField<U> mapping(Function9<? super String, ? super Integer, ? super Integer, ? super String, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? extends U> from) {
+    public <U> SelectField<U> mapping(Function10<? super String, ? super Integer, ? super Integer, ? super String, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? extends U> from) {
         return convertFrom(Records.mapping(from));
     }
 
@@ -205,7 +211,7 @@ public class VistaVentasEmpleadoMensual extends TableImpl<VistaVentasEmpleadoMen
      * Convenience mapping calling {@link SelectField#convertFrom(Class,
      * Function)}.
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function9<? super String, ? super Integer, ? super Integer, ? super String, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? extends U> from) {
+    public <U> SelectField<U> mapping(Class<U> toType, Function10<? super String, ? super Integer, ? super Integer, ? super String, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? extends U> from) {
         return convertFrom(toType, Records.mapping(from));
     }
 }

@@ -9,8 +9,8 @@ import com.rodiejacontable.database.jooq.tables.VistaAnalisisFinancieroMensual;
 import java.math.BigDecimal;
 
 import org.jooq.Field;
-import org.jooq.Record12;
-import org.jooq.Row12;
+import org.jooq.Record15;
+import org.jooq.Row15;
 import org.jooq.impl.TableRecordImpl;
 
 
@@ -18,7 +18,7 @@ import org.jooq.impl.TableRecordImpl;
  * VIEW
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
-public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaAnalisisFinancieroMensualRecord> implements Record12<Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, Long, Long, BigDecimal, BigDecimal> {
+public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaAnalisisFinancieroMensualRecord> implements Record15<Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, Long, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal> {
 
     private static final long serialVersionUID = 1L;
 
@@ -92,18 +92,18 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     /**
      * Setter for
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos</code>.
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_brutos</code>.
      */
-    public VistaAnalisisFinancieroMensualRecord setTotalIngresos(BigDecimal value) {
+    public VistaAnalisisFinancieroMensualRecord setTotalIngresosBrutos(BigDecimal value) {
         set(4, value);
         return this;
     }
 
     /**
      * Getter for
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos</code>.
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_brutos</code>.
      */
-    public BigDecimal getTotalIngresos() {
+    public BigDecimal getTotalIngresosBrutos() {
         return (BigDecimal) get(4);
     }
 
@@ -126,27 +126,10 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     /**
      * Setter for
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
-     */
-    public VistaAnalisisFinancieroMensualRecord setBalanceNeto(BigDecimal value) {
-        set(6, value);
-        return this;
-    }
-
-    /**
-     * Getter for
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
-     */
-    public BigDecimal getBalanceNeto() {
-        return (BigDecimal) get(6);
-    }
-
-    /**
-     * Setter for
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_comisiones</code>.
      */
     public VistaAnalisisFinancieroMensualRecord setTotalComisiones(BigDecimal value) {
-        set(7, value);
+        set(6, value);
         return this;
     }
 
@@ -155,7 +138,41 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_comisiones</code>.
      */
     public BigDecimal getTotalComisiones() {
+        return (BigDecimal) get(6);
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_netos</code>.
+     */
+    public VistaAnalisisFinancieroMensualRecord setTotalIngresosNetos(BigDecimal value) {
+        set(7, value);
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_netos</code>.
+     */
+    public BigDecimal getTotalIngresosNetos() {
         return (BigDecimal) get(7);
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
+     */
+    public VistaAnalisisFinancieroMensualRecord setBalanceNeto(BigDecimal value) {
+        set(8, value);
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
+     */
+    public BigDecimal getBalanceNeto() {
+        return (BigDecimal) get(8);
     }
 
     /**
@@ -163,7 +180,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.vehiculos_vendidos</code>.
      */
     public VistaAnalisisFinancieroMensualRecord setVehiculosVendidos(Long value) {
-        set(8, value);
+        set(9, value);
         return this;
     }
 
@@ -172,7 +189,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.vehiculos_vendidos</code>.
      */
     public Long getVehiculosVendidos() {
-        return (Long) get(8);
+        return (Long) get(9);
     }
 
     /**
@@ -180,7 +197,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.repuestos_vendidos</code>.
      */
     public VistaAnalisisFinancieroMensualRecord setRepuestosVendidos(Long value) {
-        set(9, value);
+        set(10, value);
         return this;
     }
 
@@ -189,7 +206,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.repuestos_vendidos</code>.
      */
     public Long getRepuestosVendidos() {
-        return (Long) get(9);
+        return (Long) get(10);
     }
 
     /**
@@ -197,7 +214,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.promedio_venta</code>.
      */
     public VistaAnalisisFinancieroMensualRecord setPromedioVenta(BigDecimal value) {
-        set(10, value);
+        set(11, value);
         return this;
     }
 
@@ -206,7 +223,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.promedio_venta</code>.
      */
     public BigDecimal getPromedioVenta() {
-        return (BigDecimal) get(10);
+        return (BigDecimal) get(11);
     }
 
     /**
@@ -214,7 +231,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.ratio_ingresos_egresos</code>.
      */
     public VistaAnalisisFinancieroMensualRecord setRatioIngresosEgresos(BigDecimal value) {
-        set(11, value);
+        set(12, value);
         return this;
     }
 
@@ -223,21 +240,55 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.ratio_ingresos_egresos</code>.
      */
     public BigDecimal getRatioIngresosEgresos() {
-        return (BigDecimal) get(11);
+        return (BigDecimal) get(12);
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.porcentaje_comisiones</code>.
+     */
+    public VistaAnalisisFinancieroMensualRecord setPorcentajeComisiones(BigDecimal value) {
+        set(13, value);
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.porcentaje_comisiones</code>.
+     */
+    public BigDecimal getPorcentajeComisiones() {
+        return (BigDecimal) get(13);
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.margen_utilidad_porcentaje</code>.
+     */
+    public VistaAnalisisFinancieroMensualRecord setMargenUtilidadPorcentaje(BigDecimal value) {
+        set(14, value);
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.margen_utilidad_porcentaje</code>.
+     */
+    public BigDecimal getMargenUtilidadPorcentaje() {
+        return (BigDecimal) get(14);
     }
 
     // -------------------------------------------------------------------------
-    // Record12 type implementation
+    // Record15 type implementation
     // -------------------------------------------------------------------------
 
     @Override
-    public Row12<Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, Long, Long, BigDecimal, BigDecimal> fieldsRow() {
-        return (Row12) super.fieldsRow();
+    public Row15<Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, Long, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal> fieldsRow() {
+        return (Row15) super.fieldsRow();
     }
 
     @Override
-    public Row12<Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, Long, Long, BigDecimal, BigDecimal> valuesRow() {
-        return (Row12) super.valuesRow();
+    public Row15<Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, Long, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal> valuesRow() {
+        return (Row15) super.valuesRow();
     }
 
     @Override
@@ -262,7 +313,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     @Override
     public Field<BigDecimal> field5() {
-        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.TOTAL_INGRESOS;
+        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.TOTAL_INGRESOS_BRUTOS;
     }
 
     @Override
@@ -272,32 +323,47 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     @Override
     public Field<BigDecimal> field7() {
-        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.BALANCE_NETO;
-    }
-
-    @Override
-    public Field<BigDecimal> field8() {
         return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.TOTAL_COMISIONES;
     }
 
     @Override
-    public Field<Long> field9() {
-        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.VEHICULOS_VENDIDOS;
+    public Field<BigDecimal> field8() {
+        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.TOTAL_INGRESOS_NETOS;
+    }
+
+    @Override
+    public Field<BigDecimal> field9() {
+        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.BALANCE_NETO;
     }
 
     @Override
     public Field<Long> field10() {
+        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.VEHICULOS_VENDIDOS;
+    }
+
+    @Override
+    public Field<Long> field11() {
         return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.REPUESTOS_VENDIDOS;
     }
 
     @Override
-    public Field<BigDecimal> field11() {
+    public Field<BigDecimal> field12() {
         return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.PROMEDIO_VENTA;
     }
 
     @Override
-    public Field<BigDecimal> field12() {
+    public Field<BigDecimal> field13() {
         return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.RATIO_INGRESOS_EGRESOS;
+    }
+
+    @Override
+    public Field<BigDecimal> field14() {
+        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.PORCENTAJE_COMISIONES;
+    }
+
+    @Override
+    public Field<BigDecimal> field15() {
+        return VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL.MARGEN_UTILIDAD_PORCENTAJE;
     }
 
     @Override
@@ -322,7 +388,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     @Override
     public BigDecimal component5() {
-        return getTotalIngresos();
+        return getTotalIngresosBrutos();
     }
 
     @Override
@@ -332,32 +398,47 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     @Override
     public BigDecimal component7() {
-        return getBalanceNeto();
-    }
-
-    @Override
-    public BigDecimal component8() {
         return getTotalComisiones();
     }
 
     @Override
-    public Long component9() {
-        return getVehiculosVendidos();
+    public BigDecimal component8() {
+        return getTotalIngresosNetos();
+    }
+
+    @Override
+    public BigDecimal component9() {
+        return getBalanceNeto();
     }
 
     @Override
     public Long component10() {
+        return getVehiculosVendidos();
+    }
+
+    @Override
+    public Long component11() {
         return getRepuestosVendidos();
     }
 
     @Override
-    public BigDecimal component11() {
+    public BigDecimal component12() {
         return getPromedioVenta();
     }
 
     @Override
-    public BigDecimal component12() {
+    public BigDecimal component13() {
         return getRatioIngresosEgresos();
+    }
+
+    @Override
+    public BigDecimal component14() {
+        return getPorcentajeComisiones();
+    }
+
+    @Override
+    public BigDecimal component15() {
+        return getMargenUtilidadPorcentaje();
     }
 
     @Override
@@ -382,7 +463,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     @Override
     public BigDecimal value5() {
-        return getTotalIngresos();
+        return getTotalIngresosBrutos();
     }
 
     @Override
@@ -392,32 +473,47 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     @Override
     public BigDecimal value7() {
-        return getBalanceNeto();
-    }
-
-    @Override
-    public BigDecimal value8() {
         return getTotalComisiones();
     }
 
     @Override
-    public Long value9() {
-        return getVehiculosVendidos();
+    public BigDecimal value8() {
+        return getTotalIngresosNetos();
+    }
+
+    @Override
+    public BigDecimal value9() {
+        return getBalanceNeto();
     }
 
     @Override
     public Long value10() {
+        return getVehiculosVendidos();
+    }
+
+    @Override
+    public Long value11() {
         return getRepuestosVendidos();
     }
 
     @Override
-    public BigDecimal value11() {
+    public BigDecimal value12() {
         return getPromedioVenta();
     }
 
     @Override
-    public BigDecimal value12() {
+    public BigDecimal value13() {
         return getRatioIngresosEgresos();
+    }
+
+    @Override
+    public BigDecimal value14() {
+        return getPorcentajeComisiones();
+    }
+
+    @Override
+    public BigDecimal value15() {
+        return getMargenUtilidadPorcentaje();
     }
 
     @Override
@@ -446,7 +542,7 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     @Override
     public VistaAnalisisFinancieroMensualRecord value5(BigDecimal value) {
-        setTotalIngresos(value);
+        setTotalIngresosBrutos(value);
         return this;
     }
 
@@ -458,42 +554,60 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
 
     @Override
     public VistaAnalisisFinancieroMensualRecord value7(BigDecimal value) {
-        setBalanceNeto(value);
-        return this;
-    }
-
-    @Override
-    public VistaAnalisisFinancieroMensualRecord value8(BigDecimal value) {
         setTotalComisiones(value);
         return this;
     }
 
     @Override
-    public VistaAnalisisFinancieroMensualRecord value9(Long value) {
-        setVehiculosVendidos(value);
+    public VistaAnalisisFinancieroMensualRecord value8(BigDecimal value) {
+        setTotalIngresosNetos(value);
+        return this;
+    }
+
+    @Override
+    public VistaAnalisisFinancieroMensualRecord value9(BigDecimal value) {
+        setBalanceNeto(value);
         return this;
     }
 
     @Override
     public VistaAnalisisFinancieroMensualRecord value10(Long value) {
+        setVehiculosVendidos(value);
+        return this;
+    }
+
+    @Override
+    public VistaAnalisisFinancieroMensualRecord value11(Long value) {
         setRepuestosVendidos(value);
         return this;
     }
 
     @Override
-    public VistaAnalisisFinancieroMensualRecord value11(BigDecimal value) {
+    public VistaAnalisisFinancieroMensualRecord value12(BigDecimal value) {
         setPromedioVenta(value);
         return this;
     }
 
     @Override
-    public VistaAnalisisFinancieroMensualRecord value12(BigDecimal value) {
+    public VistaAnalisisFinancieroMensualRecord value13(BigDecimal value) {
         setRatioIngresosEgresos(value);
         return this;
     }
 
     @Override
-    public VistaAnalisisFinancieroMensualRecord values(Integer value1, Integer value2, String value3, Long value4, BigDecimal value5, BigDecimal value6, BigDecimal value7, BigDecimal value8, Long value9, Long value10, BigDecimal value11, BigDecimal value12) {
+    public VistaAnalisisFinancieroMensualRecord value14(BigDecimal value) {
+        setPorcentajeComisiones(value);
+        return this;
+    }
+
+    @Override
+    public VistaAnalisisFinancieroMensualRecord value15(BigDecimal value) {
+        setMargenUtilidadPorcentaje(value);
+        return this;
+    }
+
+    @Override
+    public VistaAnalisisFinancieroMensualRecord values(Integer value1, Integer value2, String value3, Long value4, BigDecimal value5, BigDecimal value6, BigDecimal value7, BigDecimal value8, BigDecimal value9, Long value10, Long value11, BigDecimal value12, BigDecimal value13, BigDecimal value14, BigDecimal value15) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -506,6 +620,9 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
         value10(value10);
         value11(value11);
         value12(value12);
+        value13(value13);
+        value14(value14);
+        value15(value15);
         return this;
     }
 
@@ -523,21 +640,24 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
     /**
      * Create a detached, initialised VistaAnalisisFinancieroMensualRecord
      */
-    public VistaAnalisisFinancieroMensualRecord(Integer anio, Integer mes, String nombreMes, Long totalTransacciones, BigDecimal totalIngresos, BigDecimal totalEgresos, BigDecimal balanceNeto, BigDecimal totalComisiones, Long vehiculosVendidos, Long repuestosVendidos, BigDecimal promedioVenta, BigDecimal ratioIngresosEgresos) {
+    public VistaAnalisisFinancieroMensualRecord(Integer anio, Integer mes, String nombreMes, Long totalTransacciones, BigDecimal totalIngresosBrutos, BigDecimal totalEgresos, BigDecimal totalComisiones, BigDecimal totalIngresosNetos, BigDecimal balanceNeto, Long vehiculosVendidos, Long repuestosVendidos, BigDecimal promedioVenta, BigDecimal ratioIngresosEgresos, BigDecimal porcentajeComisiones, BigDecimal margenUtilidadPorcentaje) {
         super(VistaAnalisisFinancieroMensual.VISTA_ANALISIS_FINANCIERO_MENSUAL);
 
         setAnio(anio);
         setMes(mes);
         setNombreMes(nombreMes);
         setTotalTransacciones(totalTransacciones);
-        setTotalIngresos(totalIngresos);
+        setTotalIngresosBrutos(totalIngresosBrutos);
         setTotalEgresos(totalEgresos);
-        setBalanceNeto(balanceNeto);
         setTotalComisiones(totalComisiones);
+        setTotalIngresosNetos(totalIngresosNetos);
+        setBalanceNeto(balanceNeto);
         setVehiculosVendidos(vehiculosVendidos);
         setRepuestosVendidos(repuestosVendidos);
         setPromedioVenta(promedioVenta);
         setRatioIngresosEgresos(ratioIngresosEgresos);
+        setPorcentajeComisiones(porcentajeComisiones);
+        setMargenUtilidadPorcentaje(margenUtilidadPorcentaje);
         resetChangedOnNotNull();
     }
 
@@ -552,14 +672,17 @@ public class VistaAnalisisFinancieroMensualRecord extends TableRecordImpl<VistaA
             setMes(value.getMes());
             setNombreMes(value.getNombreMes());
             setTotalTransacciones(value.getTotalTransacciones());
-            setTotalIngresos(value.getTotalIngresos());
+            setTotalIngresosBrutos(value.getTotalIngresosBrutos());
             setTotalEgresos(value.getTotalEgresos());
-            setBalanceNeto(value.getBalanceNeto());
             setTotalComisiones(value.getTotalComisiones());
+            setTotalIngresosNetos(value.getTotalIngresosNetos());
+            setBalanceNeto(value.getBalanceNeto());
             setVehiculosVendidos(value.getVehiculosVendidos());
             setRepuestosVendidos(value.getRepuestosVendidos());
             setPromedioVenta(value.getPromedioVenta());
             setRatioIngresosEgresos(value.getRatioIngresosEgresos());
+            setPorcentajeComisiones(value.getPorcentajeComisiones());
+            setMargenUtilidadPorcentaje(value.getMargenUtilidadPorcentaje());
             resetChangedOnNotNull();
         }
     }

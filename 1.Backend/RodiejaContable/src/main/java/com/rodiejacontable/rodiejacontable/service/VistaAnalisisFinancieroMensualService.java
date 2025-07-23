@@ -44,7 +44,7 @@ public class VistaAnalisisFinancieroMensualService {
         }
         
         BigDecimal totalIngresosAnual = datosAnuales.stream()
-                .map(VistaAnalisisFinancieroMensual::getTotalIngresos)
+                .map(VistaAnalisisFinancieroMensual::getTotalIngresosBrutos)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
                 
         BigDecimal totalEgresosAnual = datosAnuales.stream()
@@ -99,7 +99,7 @@ public class VistaAnalisisFinancieroMensualService {
                     List<VistaAnalisisFinancieroMensual> datos = entry.getValue();
                     
                     BigDecimal ingresos = datos.stream()
-                            .map(VistaAnalisisFinancieroMensual::getTotalIngresos)
+                            .map(VistaAnalisisFinancieroMensual::getTotalIngresosBrutos)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
                             
                     BigDecimal egresos = datos.stream()

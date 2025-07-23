@@ -20,14 +20,17 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
     private Integer mes;
     private String nombreMes;
     private Long totalTransacciones;
-    private BigDecimal totalIngresos;
+    private BigDecimal totalIngresosBrutos;
     private BigDecimal totalEgresos;
-    private BigDecimal balanceNeto;
     private BigDecimal totalComisiones;
+    private BigDecimal totalIngresosNetos;
+    private BigDecimal balanceNeto;
     private Long vehiculosVendidos;
     private Long repuestosVendidos;
     private BigDecimal promedioVenta;
     private BigDecimal ratioIngresosEgresos;
+    private BigDecimal porcentajeComisiones;
+    private BigDecimal margenUtilidadPorcentaje;
 
     public VistaAnalisisFinancieroMensual() {}
 
@@ -36,14 +39,17 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
         this.mes = value.mes;
         this.nombreMes = value.nombreMes;
         this.totalTransacciones = value.totalTransacciones;
-        this.totalIngresos = value.totalIngresos;
+        this.totalIngresosBrutos = value.totalIngresosBrutos;
         this.totalEgresos = value.totalEgresos;
-        this.balanceNeto = value.balanceNeto;
         this.totalComisiones = value.totalComisiones;
+        this.totalIngresosNetos = value.totalIngresosNetos;
+        this.balanceNeto = value.balanceNeto;
         this.vehiculosVendidos = value.vehiculosVendidos;
         this.repuestosVendidos = value.repuestosVendidos;
         this.promedioVenta = value.promedioVenta;
         this.ratioIngresosEgresos = value.ratioIngresosEgresos;
+        this.porcentajeComisiones = value.porcentajeComisiones;
+        this.margenUtilidadPorcentaje = value.margenUtilidadPorcentaje;
     }
 
     public VistaAnalisisFinancieroMensual(
@@ -51,27 +57,33 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
         Integer mes,
         String nombreMes,
         Long totalTransacciones,
-        BigDecimal totalIngresos,
+        BigDecimal totalIngresosBrutos,
         BigDecimal totalEgresos,
-        BigDecimal balanceNeto,
         BigDecimal totalComisiones,
+        BigDecimal totalIngresosNetos,
+        BigDecimal balanceNeto,
         Long vehiculosVendidos,
         Long repuestosVendidos,
         BigDecimal promedioVenta,
-        BigDecimal ratioIngresosEgresos
+        BigDecimal ratioIngresosEgresos,
+        BigDecimal porcentajeComisiones,
+        BigDecimal margenUtilidadPorcentaje
     ) {
         this.anio = anio;
         this.mes = mes;
         this.nombreMes = nombreMes;
         this.totalTransacciones = totalTransacciones;
-        this.totalIngresos = totalIngresos;
+        this.totalIngresosBrutos = totalIngresosBrutos;
         this.totalEgresos = totalEgresos;
-        this.balanceNeto = balanceNeto;
         this.totalComisiones = totalComisiones;
+        this.totalIngresosNetos = totalIngresosNetos;
+        this.balanceNeto = balanceNeto;
         this.vehiculosVendidos = vehiculosVendidos;
         this.repuestosVendidos = repuestosVendidos;
         this.promedioVenta = promedioVenta;
         this.ratioIngresosEgresos = ratioIngresosEgresos;
+        this.porcentajeComisiones = porcentajeComisiones;
+        this.margenUtilidadPorcentaje = margenUtilidadPorcentaje;
     }
 
     /**
@@ -144,18 +156,18 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
 
     /**
      * Getter for
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos</code>.
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_brutos</code>.
      */
-    public BigDecimal getTotalIngresos() {
-        return this.totalIngresos;
+    public BigDecimal getTotalIngresosBrutos() {
+        return this.totalIngresosBrutos;
     }
 
     /**
      * Setter for
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos</code>.
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_brutos</code>.
      */
-    public VistaAnalisisFinancieroMensual setTotalIngresos(BigDecimal totalIngresos) {
-        this.totalIngresos = totalIngresos;
+    public VistaAnalisisFinancieroMensual setTotalIngresosBrutos(BigDecimal totalIngresosBrutos) {
+        this.totalIngresosBrutos = totalIngresosBrutos;
         return this;
     }
 
@@ -178,23 +190,6 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
 
     /**
      * Getter for
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
-     */
-    public BigDecimal getBalanceNeto() {
-        return this.balanceNeto;
-    }
-
-    /**
-     * Setter for
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
-     */
-    public VistaAnalisisFinancieroMensual setBalanceNeto(BigDecimal balanceNeto) {
-        this.balanceNeto = balanceNeto;
-        return this;
-    }
-
-    /**
-     * Getter for
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_comisiones</code>.
      */
     public BigDecimal getTotalComisiones() {
@@ -207,6 +202,40 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
      */
     public VistaAnalisisFinancieroMensual setTotalComisiones(BigDecimal totalComisiones) {
         this.totalComisiones = totalComisiones;
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_netos</code>.
+     */
+    public BigDecimal getTotalIngresosNetos() {
+        return this.totalIngresosNetos;
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_netos</code>.
+     */
+    public VistaAnalisisFinancieroMensual setTotalIngresosNetos(BigDecimal totalIngresosNetos) {
+        this.totalIngresosNetos = totalIngresosNetos;
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
+     */
+    public BigDecimal getBalanceNeto() {
+        return this.balanceNeto;
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
+     */
+    public VistaAnalisisFinancieroMensual setBalanceNeto(BigDecimal balanceNeto) {
+        this.balanceNeto = balanceNeto;
         return this;
     }
 
@@ -278,6 +307,40 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
         return this;
     }
 
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.porcentaje_comisiones</code>.
+     */
+    public BigDecimal getPorcentajeComisiones() {
+        return this.porcentajeComisiones;
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.porcentaje_comisiones</code>.
+     */
+    public VistaAnalisisFinancieroMensual setPorcentajeComisiones(BigDecimal porcentajeComisiones) {
+        this.porcentajeComisiones = porcentajeComisiones;
+        return this;
+    }
+
+    /**
+     * Getter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.margen_utilidad_porcentaje</code>.
+     */
+    public BigDecimal getMargenUtilidadPorcentaje() {
+        return this.margenUtilidadPorcentaje;
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.margen_utilidad_porcentaje</code>.
+     */
+    public VistaAnalisisFinancieroMensual setMargenUtilidadPorcentaje(BigDecimal margenUtilidadPorcentaje) {
+        this.margenUtilidadPorcentaje = margenUtilidadPorcentaje;
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -311,11 +374,11 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
         }
         else if (!this.totalTransacciones.equals(other.totalTransacciones))
             return false;
-        if (this.totalIngresos == null) {
-            if (other.totalIngresos != null)
+        if (this.totalIngresosBrutos == null) {
+            if (other.totalIngresosBrutos != null)
                 return false;
         }
-        else if (!this.totalIngresos.equals(other.totalIngresos))
+        else if (!this.totalIngresosBrutos.equals(other.totalIngresosBrutos))
             return false;
         if (this.totalEgresos == null) {
             if (other.totalEgresos != null)
@@ -323,17 +386,23 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
         }
         else if (!this.totalEgresos.equals(other.totalEgresos))
             return false;
-        if (this.balanceNeto == null) {
-            if (other.balanceNeto != null)
-                return false;
-        }
-        else if (!this.balanceNeto.equals(other.balanceNeto))
-            return false;
         if (this.totalComisiones == null) {
             if (other.totalComisiones != null)
                 return false;
         }
         else if (!this.totalComisiones.equals(other.totalComisiones))
+            return false;
+        if (this.totalIngresosNetos == null) {
+            if (other.totalIngresosNetos != null)
+                return false;
+        }
+        else if (!this.totalIngresosNetos.equals(other.totalIngresosNetos))
+            return false;
+        if (this.balanceNeto == null) {
+            if (other.balanceNeto != null)
+                return false;
+        }
+        else if (!this.balanceNeto.equals(other.balanceNeto))
             return false;
         if (this.vehiculosVendidos == null) {
             if (other.vehiculosVendidos != null)
@@ -359,6 +428,18 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
         }
         else if (!this.ratioIngresosEgresos.equals(other.ratioIngresosEgresos))
             return false;
+        if (this.porcentajeComisiones == null) {
+            if (other.porcentajeComisiones != null)
+                return false;
+        }
+        else if (!this.porcentajeComisiones.equals(other.porcentajeComisiones))
+            return false;
+        if (this.margenUtilidadPorcentaje == null) {
+            if (other.margenUtilidadPorcentaje != null)
+                return false;
+        }
+        else if (!this.margenUtilidadPorcentaje.equals(other.margenUtilidadPorcentaje))
+            return false;
         return true;
     }
 
@@ -370,14 +451,17 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
         result = prime * result + ((this.mes == null) ? 0 : this.mes.hashCode());
         result = prime * result + ((this.nombreMes == null) ? 0 : this.nombreMes.hashCode());
         result = prime * result + ((this.totalTransacciones == null) ? 0 : this.totalTransacciones.hashCode());
-        result = prime * result + ((this.totalIngresos == null) ? 0 : this.totalIngresos.hashCode());
+        result = prime * result + ((this.totalIngresosBrutos == null) ? 0 : this.totalIngresosBrutos.hashCode());
         result = prime * result + ((this.totalEgresos == null) ? 0 : this.totalEgresos.hashCode());
-        result = prime * result + ((this.balanceNeto == null) ? 0 : this.balanceNeto.hashCode());
         result = prime * result + ((this.totalComisiones == null) ? 0 : this.totalComisiones.hashCode());
+        result = prime * result + ((this.totalIngresosNetos == null) ? 0 : this.totalIngresosNetos.hashCode());
+        result = prime * result + ((this.balanceNeto == null) ? 0 : this.balanceNeto.hashCode());
         result = prime * result + ((this.vehiculosVendidos == null) ? 0 : this.vehiculosVendidos.hashCode());
         result = prime * result + ((this.repuestosVendidos == null) ? 0 : this.repuestosVendidos.hashCode());
         result = prime * result + ((this.promedioVenta == null) ? 0 : this.promedioVenta.hashCode());
         result = prime * result + ((this.ratioIngresosEgresos == null) ? 0 : this.ratioIngresosEgresos.hashCode());
+        result = prime * result + ((this.porcentajeComisiones == null) ? 0 : this.porcentajeComisiones.hashCode());
+        result = prime * result + ((this.margenUtilidadPorcentaje == null) ? 0 : this.margenUtilidadPorcentaje.hashCode());
         return result;
     }
 
@@ -389,14 +473,17 @@ public class VistaAnalisisFinancieroMensual implements Serializable {
         sb.append(", ").append(mes);
         sb.append(", ").append(nombreMes);
         sb.append(", ").append(totalTransacciones);
-        sb.append(", ").append(totalIngresos);
+        sb.append(", ").append(totalIngresosBrutos);
         sb.append(", ").append(totalEgresos);
-        sb.append(", ").append(balanceNeto);
         sb.append(", ").append(totalComisiones);
+        sb.append(", ").append(totalIngresosNetos);
+        sb.append(", ").append(balanceNeto);
         sb.append(", ").append(vehiculosVendidos);
         sb.append(", ").append(repuestosVendidos);
         sb.append(", ").append(promedioVenta);
         sb.append(", ").append(ratioIngresosEgresos);
+        sb.append(", ").append(porcentajeComisiones);
+        sb.append(", ").append(margenUtilidadPorcentaje);
 
         sb.append(")");
         return sb.toString();

@@ -23,6 +23,7 @@ public class VistaVentasEmpleadoMensual implements Serializable {
     private Long transaccionesVenta;
     private BigDecimal totalVentas;
     private BigDecimal totalComisiones;
+    private BigDecimal contribucionNeta;
     private BigDecimal promedioVenta;
     private BigDecimal porcentajeComision;
 
@@ -36,6 +37,7 @@ public class VistaVentasEmpleadoMensual implements Serializable {
         this.transaccionesVenta = value.transaccionesVenta;
         this.totalVentas = value.totalVentas;
         this.totalComisiones = value.totalComisiones;
+        this.contribucionNeta = value.contribucionNeta;
         this.promedioVenta = value.promedioVenta;
         this.porcentajeComision = value.porcentajeComision;
     }
@@ -48,6 +50,7 @@ public class VistaVentasEmpleadoMensual implements Serializable {
         Long transaccionesVenta,
         BigDecimal totalVentas,
         BigDecimal totalComisiones,
+        BigDecimal contribucionNeta,
         BigDecimal promedioVenta,
         BigDecimal porcentajeComision
     ) {
@@ -58,6 +61,7 @@ public class VistaVentasEmpleadoMensual implements Serializable {
         this.transaccionesVenta = transaccionesVenta;
         this.totalVentas = totalVentas;
         this.totalComisiones = totalComisiones;
+        this.contribucionNeta = contribucionNeta;
         this.promedioVenta = promedioVenta;
         this.porcentajeComision = porcentajeComision;
     }
@@ -183,6 +187,23 @@ public class VistaVentasEmpleadoMensual implements Serializable {
 
     /**
      * Getter for
+     * <code>sistema_vehicular.vista_ventas_empleado_mensual.contribucion_neta</code>.
+     */
+    public BigDecimal getContribucionNeta() {
+        return this.contribucionNeta;
+    }
+
+    /**
+     * Setter for
+     * <code>sistema_vehicular.vista_ventas_empleado_mensual.contribucion_neta</code>.
+     */
+    public VistaVentasEmpleadoMensual setContribucionNeta(BigDecimal contribucionNeta) {
+        this.contribucionNeta = contribucionNeta;
+        return this;
+    }
+
+    /**
+     * Getter for
      * <code>sistema_vehicular.vista_ventas_empleado_mensual.promedio_venta</code>.
      */
     public BigDecimal getPromedioVenta() {
@@ -266,6 +287,12 @@ public class VistaVentasEmpleadoMensual implements Serializable {
         }
         else if (!this.totalComisiones.equals(other.totalComisiones))
             return false;
+        if (this.contribucionNeta == null) {
+            if (other.contribucionNeta != null)
+                return false;
+        }
+        else if (!this.contribucionNeta.equals(other.contribucionNeta))
+            return false;
         if (this.promedioVenta == null) {
             if (other.promedioVenta != null)
                 return false;
@@ -292,6 +319,7 @@ public class VistaVentasEmpleadoMensual implements Serializable {
         result = prime * result + ((this.transaccionesVenta == null) ? 0 : this.transaccionesVenta.hashCode());
         result = prime * result + ((this.totalVentas == null) ? 0 : this.totalVentas.hashCode());
         result = prime * result + ((this.totalComisiones == null) ? 0 : this.totalComisiones.hashCode());
+        result = prime * result + ((this.contribucionNeta == null) ? 0 : this.contribucionNeta.hashCode());
         result = prime * result + ((this.promedioVenta == null) ? 0 : this.promedioVenta.hashCode());
         result = prime * result + ((this.porcentajeComision == null) ? 0 : this.porcentajeComision.hashCode());
         return result;
@@ -308,6 +336,7 @@ public class VistaVentasEmpleadoMensual implements Serializable {
         sb.append(", ").append(transaccionesVenta);
         sb.append(", ").append(totalVentas);
         sb.append(", ").append(totalComisiones);
+        sb.append(", ").append(contribucionNeta);
         sb.append(", ").append(promedioVenta);
         sb.append(", ").append(porcentajeComision);
 

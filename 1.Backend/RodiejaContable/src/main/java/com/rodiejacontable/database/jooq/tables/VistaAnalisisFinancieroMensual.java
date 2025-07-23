@@ -12,11 +12,11 @@ import java.util.function.Function;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
-import org.jooq.Function12;
+import org.jooq.Function15;
 import org.jooq.Name;
 import org.jooq.Record;
 import org.jooq.Records;
-import org.jooq.Row12;
+import org.jooq.Row15;
 import org.jooq.Schema;
 import org.jooq.SelectField;
 import org.jooq.Table;
@@ -75,9 +75,9 @@ public class VistaAnalisisFinancieroMensual extends TableImpl<VistaAnalisisFinan
 
     /**
      * The column
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos</code>.
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_brutos</code>.
      */
-    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> TOTAL_INGRESOS = createField(DSL.name("total_ingresos"), SQLDataType.DECIMAL(34, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
+    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> TOTAL_INGRESOS_BRUTOS = createField(DSL.name("total_ingresos_brutos"), SQLDataType.DECIMAL(34, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
 
     /**
      * The column
@@ -87,15 +87,21 @@ public class VistaAnalisisFinancieroMensual extends TableImpl<VistaAnalisisFinan
 
     /**
      * The column
-     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
-     */
-    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> BALANCE_NETO = createField(DSL.name("balance_neto"), SQLDataType.DECIMAL(34, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
-
-    /**
-     * The column
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_comisiones</code>.
      */
     public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> TOTAL_COMISIONES = createField(DSL.name("total_comisiones"), SQLDataType.DECIMAL(34, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
+
+    /**
+     * The column
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.total_ingresos_netos</code>.
+     */
+    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> TOTAL_INGRESOS_NETOS = createField(DSL.name("total_ingresos_netos"), SQLDataType.DECIMAL(35, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
+
+    /**
+     * The column
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.balance_neto</code>.
+     */
+    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> BALANCE_NETO = createField(DSL.name("balance_neto"), SQLDataType.DECIMAL(36, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
 
     /**
      * The column
@@ -119,14 +125,26 @@ public class VistaAnalisisFinancieroMensual extends TableImpl<VistaAnalisisFinan
      * The column
      * <code>sistema_vehicular.vista_analisis_financiero_mensual.ratio_ingresos_egresos</code>.
      */
-    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> RATIO_INGRESOS_EGRESOS = createField(DSL.name("ratio_ingresos_egresos"), SQLDataType.DECIMAL(37, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
+    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> RATIO_INGRESOS_EGRESOS = createField(DSL.name("ratio_ingresos_egresos"), SQLDataType.DECIMAL(38, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
+
+    /**
+     * The column
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.porcentaje_comisiones</code>.
+     */
+    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> PORCENTAJE_COMISIONES = createField(DSL.name("porcentaje_comisiones"), SQLDataType.DECIMAL(40, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
+
+    /**
+     * The column
+     * <code>sistema_vehicular.vista_analisis_financiero_mensual.margen_utilidad_porcentaje</code>.
+     */
+    public final TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal> MARGEN_UTILIDAD_PORCENTAJE = createField(DSL.name("margen_utilidad_porcentaje"), SQLDataType.DECIMAL(42, 2).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.DECIMAL)), this, "");
 
     private VistaAnalisisFinancieroMensual(Name alias, Table<VistaAnalisisFinancieroMensualRecord> aliased) {
         this(alias, aliased, null);
     }
 
     private VistaAnalisisFinancieroMensual(Name alias, Table<VistaAnalisisFinancieroMensualRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment("VIEW"), TableOptions.view("create view `vista_analisis_financiero_mensual` as select year(`tf`.`fecha`) AS `anio`,month(`tf`.`fecha`) AS `mes`,monthname(`tf`.`fecha`) AS `nombre_mes`,count(distinct `tf`.`id`) AS `total_transacciones`,sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end) AS `total_ingresos`,sum(case when `tt`.`categoria` = 'EGRESO' then `tf`.`monto` else 0 end) AS `total_egresos`,sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else -`tf`.`monto` end) AS `balance_neto`,sum(`tf`.`comision_empleado`) AS `total_comisiones`,count(distinct case when `tt`.`categoria` = 'INGRESO' then `tf`.`vehiculo_id` end) AS `vehiculos_vendidos`,count(distinct case when `tt`.`categoria` = 'INGRESO' then `tf`.`repuesto_id` end) AS `repuestos_vendidos`,round(avg(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` end),2) AS `promedio_venta`,round(sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end) / nullif(sum(case when `tt`.`categoria` = 'EGRESO' then `tf`.`monto` else 0 end),0),2) AS `ratio_ingresos_egresos` from (`sistema_vehicular`.`transacciones_financieras` `tf` join `sistema_vehicular`.`tipos_transacciones` `tt` on(`tf`.`tipo_transaccion_id` = `tt`.`id`)) where `tf`.`activo` = 1 group by year(`tf`.`fecha`),month(`tf`.`fecha`),monthname(`tf`.`fecha`) order by year(`tf`.`fecha`) desc,month(`tf`.`fecha`) desc"));
+        super(alias, null, aliased, parameters, DSL.comment("VIEW"), TableOptions.view("create view `vista_analisis_financiero_mensual` as select year(`tf`.`fecha`) AS `anio`,month(`tf`.`fecha`) AS `mes`,monthname(`tf`.`fecha`) AS `nombre_mes`,count(distinct `tf`.`id`) AS `total_transacciones`,sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end) AS `total_ingresos_brutos`,sum(case when `tt`.`categoria` = 'EGRESO' then `tf`.`monto` else 0 end) AS `total_egresos`,sum(`tf`.`comision_empleado`) AS `total_comisiones`,sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end) - sum(`tf`.`comision_empleado`) AS `total_ingresos_netos`,sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end) - sum(`tf`.`comision_empleado`) - sum(case when `tt`.`categoria` = 'EGRESO' then `tf`.`monto` else 0 end) AS `balance_neto`,count(distinct case when `tt`.`categoria` = 'INGRESO' then `tf`.`vehiculo_id` end) AS `vehiculos_vendidos`,count(distinct case when `tt`.`categoria` = 'INGRESO' then `tf`.`repuesto_id` end) AS `repuestos_vendidos`,round(avg(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` end),2) AS `promedio_venta`,round((sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end) - sum(`tf`.`comision_empleado`)) / nullif(sum(case when `tt`.`categoria` = 'EGRESO' then `tf`.`monto` else 0 end),0),2) AS `ratio_ingresos_egresos`,round(sum(`tf`.`comision_empleado`) / nullif(sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end),0) * 100,2) AS `porcentaje_comisiones`,round((sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end) - sum(`tf`.`comision_empleado`) - sum(case when `tt`.`categoria` = 'EGRESO' then `tf`.`monto` else 0 end)) / nullif(sum(case when `tt`.`categoria` = 'INGRESO' then `tf`.`monto` else 0 end),0) * 100,2) AS `margen_utilidad_porcentaje` from (`sistema_vehicular`.`transacciones_financieras` `tf` join `sistema_vehicular`.`tipos_transacciones` `tt` on(`tf`.`tipo_transaccion_id` = `tt`.`id`)) where `tf`.`activo` = 1 group by year(`tf`.`fecha`),month(`tf`.`fecha`),monthname(`tf`.`fecha`) order by year(`tf`.`fecha`) desc,month(`tf`.`fecha`) desc"));
     }
 
     /**
@@ -204,18 +222,18 @@ public class VistaAnalisisFinancieroMensual extends TableImpl<VistaAnalisisFinan
     }
 
     // -------------------------------------------------------------------------
-    // Row12 type methods
+    // Row15 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row12<Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, Long, Long, BigDecimal, BigDecimal> fieldsRow() {
-        return (Row12) super.fieldsRow();
+    public Row15<Integer, Integer, String, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, Long, Long, BigDecimal, BigDecimal, BigDecimal, BigDecimal> fieldsRow() {
+        return (Row15) super.fieldsRow();
     }
 
     /**
      * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
      */
-    public <U> SelectField<U> mapping(Function12<? super Integer, ? super Integer, ? super String, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super Long, ? super Long, ? super BigDecimal, ? super BigDecimal, ? extends U> from) {
+    public <U> SelectField<U> mapping(Function15<? super Integer, ? super Integer, ? super String, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super Long, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? extends U> from) {
         return convertFrom(Records.mapping(from));
     }
 
@@ -223,7 +241,7 @@ public class VistaAnalisisFinancieroMensual extends TableImpl<VistaAnalisisFinan
      * Convenience mapping calling {@link SelectField#convertFrom(Class,
      * Function)}.
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function12<? super Integer, ? super Integer, ? super String, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super Long, ? super Long, ? super BigDecimal, ? super BigDecimal, ? extends U> from) {
+    public <U> SelectField<U> mapping(Class<U> toType, Function15<? super Integer, ? super Integer, ? super String, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super Long, ? super Long, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? extends U> from) {
         return convertFrom(toType, Records.mapping(from));
     }
 }
