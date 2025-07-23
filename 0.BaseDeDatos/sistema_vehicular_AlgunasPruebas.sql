@@ -74,7 +74,7 @@ INSERT INTO vehiculos (
     fecha_ingreso, estado
 ) VALUES (
     1, 2023, 10000000.00, 50000.00, 100000.00,
-    '2023-05-01', 'DISPONIBLE'
+    CURRENT_DATE(), 'DISPONIBLE'
 );
 
 /* Vehículo 2 – Honda Civic gen10 (para repuestos) */
@@ -83,7 +83,7 @@ INSERT INTO vehiculos (
     fecha_ingreso, estado
 ) VALUES (
     2, 2018, 6000000.00, 40000.00, 80000.00,
-    '2023-04-15', 'DESARMADO'
+    CURRENT_DATE(), 'DESARMADO'
 );
 SELECT * FROM vehiculos;
 
@@ -97,12 +97,12 @@ INSERT INTO inventario_repuestos (
     bodega, zona, pared, malla, estante, piso,
     estado, condicion, fecha_creacion
 ) VALUES (
-    2,                               -- vehiculo_origen_id (Honda Civic 2018)
+    2,                               -- vehiculo_origen_id (Honda Civic 2018)
     'MOTOR',                         -- parte_vehiculo
-    'Motor 1.5 L Turbo VTEC',        -- descripcion
+    'Motor 1.5 L Turbo VTEC',        -- descripcion
     1200000.00,                      -- precio_costo
     1800000.00,                      -- precio_venta
-    1500000.00,                      -- precio_mayoreo (ejemplo ± 25 %)
+    1500000.00,                      -- precio_mayoreo (ejemplo ± 25 %)
     'C-',                            -- bodega
     'Z1-',                           -- zona
     'PE-',                           -- pared
@@ -111,7 +111,7 @@ INSERT INTO inventario_repuestos (
     'P2-',                           -- piso
     'STOCK',                         -- estado
     '50%-',                          -- condicion (usado en buen estado)
-    '2023-05-12'                     -- fecha_creacion (triggers calculan año/mes)
+    CURRENT_DATE()                   -- fecha_creacion (triggers calculan año/mes)
 );
 
 SELECT * FROM inventario_repuestos; -- Ver códigos generados automáticos
@@ -126,7 +126,7 @@ INSERT INTO transacciones_financieras (
     repuesto_id, monto, comision_empleado,
     descripcion, referencia
 ) VALUES (
-    '2023-06-01',         -- Fecha de la venta
+    CURRENT_DATE(),       -- Fecha de la venta
     2,                    -- tipo_transaccion_id = 2 (Venta Repuesto)
     1,                    -- empleado_id = 1 (ACXEL)
     1,                    -- repuesto_id = 1
@@ -144,7 +144,7 @@ INSERT INTO transacciones_financieras (
     vehiculo_id, monto, comision_empleado,
     descripcion, referencia
 ) VALUES (
-    '2023-06-05',          -- Fecha de venta
+    CURRENT_DATE(),        -- Fecha de venta
     1,                     -- tipo_transaccion_id = 1 (Venta Vehículo)
     2,                     -- empleado_id = 2 (ADRIANA)
     1,                     -- vehiculo_id = 1 (Corolla)
@@ -178,7 +178,7 @@ SELECT * FROM vista_auditoria_completa WHERE tipo_entidad = 'Transacción';
 CALL sp_historial_vehiculo(1);
 
 -- 🗓️ Actividad de auditoría entre fechas específicas
-CALL sp_actividad_auditoria_fecha('2023-05-01', '2023-07-01');
+CALL sp_actividad_auditoria_fecha(CURRENT_DATE(), CURRENT_DATE());
 
 -- ========================================
 -- Ejemplo de reparacion de automovil
@@ -212,7 +212,7 @@ INSERT INTO vehiculos (
     fecha_ingreso, estado, notas
 ) VALUES (
     3, 2020, 8000000.00, 45000.00, 90000.00,   -- Ejemplo de costos
-    '2024-06-10', 'REPARACION',
+    CURRENT_DATE(), 'REPARACION',
     'Vehículo ingresado con daño en motor y carrocería, apto para reparación'
 );
 
@@ -232,7 +232,7 @@ INSERT INTO transacciones_financieras (
     fecha, tipo_transaccion_id, vehiculo_id, generacion_id, monto,
     descripcion, referencia
 ) VALUES (
-    '2024-06-15', 
+    CURRENT_DATE(), 
     7,    -- tipo_transaccion_id = 7: 'Compra Repuesto'
     3,    -- vehiculo_id = 3 (el Hilux)
     3,    -- generacion_id = 3
@@ -246,7 +246,7 @@ INSERT INTO transacciones_financieras (
     fecha, tipo_transaccion_id, vehiculo_id, generacion_id, monto,
     descripcion, referencia
 ) VALUES (
-    '2024-06-18',
+    CURRENT_DATE(),
     8,    -- tipo_transaccion_id = 8: 'Reparación Vehículo'
     3,    -- vehiculo_id = 3
     3,    -- generacion_id = 3
@@ -269,7 +269,7 @@ UPDATE vehiculos
 SET estado = 'DISPONIBLE',
     notas = CONCAT(
         COALESCE(notas, ''), 
-        '\n[2024-06-20] Reparación finalizada: motor y pintura. Vehículo listo para venta.'
+        CONCAT('\n[', CURRENT_DATE(), '] Reparación finalizada: motor y pintura. Vehículo listo para venta.')
     )
 WHERE id = 3;
 
@@ -281,12 +281,12 @@ INSERT INTO transacciones_financieras (
     vehiculo_id, monto, comision_empleado,
     descripcion, referencia
 ) VALUES (
-    '2024-07-01',     -- Fecha de venta
-    1,                -- tipo_transaccion_id = 1 (Venta Vehículo)
-    5,                -- empleado_id = 5 (DIEGO)
-    3,                -- vehiculo_id = 3 (Hilux)
-    10900000.00,      -- monto de venta
-    50000.00,         -- comisión al vendedor
+    CURRENT_DATE(),       -- Fecha de venta
+    1,                    -- tipo_transaccion_id = 1 (Venta Vehículo)
+    5,                    -- empleado_id = 5 (DIEGO)
+    3,                    -- vehiculo_id = 3 (Hilux)
+    10900000.00,          -- monto de venta
+    50000.00,             -- comisión al vendedor
     'Venta Hilux 2020 Reparado',
     'VENTA-HILUX-2020-001'
 );
@@ -300,7 +300,7 @@ SELECT * FROM transacciones_financieras;
 USE sistema_vehicular;
 
 -- =========================================================
--- A) “Bomba de Agua” (Corolla gen12) – SIN comisión
+-- A) "Bomba de Agua" (Corolla gen12) – SIN comisión
 -- =========================================================
 SELECT * FROM generaciones;
 SELECT * FROM vehiculos;
@@ -328,15 +328,15 @@ INSERT INTO transacciones_financieras (
     monto, comision_empleado,
     descripcion, referencia
 ) VALUES (
-    '2025-08-05', 2,           -- Venta Repuesto
-    3, 2, 1,                   -- AMAURIS vende repuesto id = 2, generación = Corolla
+    CURRENT_DATE(), 2,     -- Venta Repuesto
+    3, 2, 1,               -- AMAURIS vende repuesto id = 2, generación = Corolla
     110000.00, 0.00,
     'Venta Bomba de Agua Corolla gen12',
     'VENTA-REP-BA-COR-001'
 );
 
 -- =========================================================
--- B) “Kit Embrague” (Civic gen10) – CON comisión
+-- B) "Kit Embrague" (Civic gen10) – CON comisión
 -- =========================================================
 SELECT * FROM vista_ventas_por_empleado;
 SELECT * FROM generaciones;
@@ -373,7 +373,7 @@ INSERT INTO transacciones_financieras (
     monto, comision_empleado,
     descripcion, referencia
 ) VALUES (
-    '2025-07-25',     -- Fecha de la venta
+    CURRENT_DATE(),   -- Fecha de la venta
     2,                -- tipo_transaccion_id = 2 (Venta Repuesto)
     4,                -- empleado_id = 4 (CACHORRO)
     3,                -- repuesto_id = 3 (Kit embrague Civic)
@@ -385,7 +385,7 @@ INSERT INTO transacciones_financieras (
 );
 
 SELECT * FROM vista_ventas_por_empleado;
-SELECT * FROM vista_ventas_empleado_mensual WHERE anio = 2025 AND mes = 7;
+SELECT * FROM vista_ventas_empleado_mensual WHERE anio = YEAR(NOW()) AND mes = MONTH(NOW());
 
 -- =========================================================
 -- C) CONSULTAS DE VERIFICACIÓN
@@ -417,7 +417,7 @@ WHERE generacion_id IN (1, 2);
 -- Gasto: Patente
 INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
 VALUES (
-    '2025-07-01',
+    CURRENT_DATE(),
     (SELECT id FROM tipos_transacciones WHERE nombre = 'Impuestos' LIMIT 1),
     20000.00,
     'Pago de patente municipal',
@@ -427,7 +427,7 @@ VALUES (
 -- Gasto: Impuesto municipal
 INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
 VALUES (
-    '2025-07-01',
+    CURRENT_DATE(),
     (SELECT id FROM tipos_transacciones WHERE nombre = 'Impuestos' LIMIT 1),
     15000.00,
     'Pago de impuesto municipal julio',
@@ -437,7 +437,7 @@ VALUES (
 -- Gasto: Servicios públicos
 INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
 VALUES (
-    '2025-07-01',
+    CURRENT_DATE(),
     (SELECT id FROM tipos_transacciones WHERE nombre = 'Servicios Públicos' LIMIT 1),
     105000.00,
     'Pago de electricidad, agua y teléfono',
@@ -447,7 +447,7 @@ VALUES (
 -- Gasto: CCSS
 INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
 VALUES (
-    '2025-07-01',
+    CURRENT_DATE(),
     (SELECT id FROM tipos_transacciones WHERE nombre = 'Salarios' LIMIT 1),
     227000.00,
     'Aporte patronal CCSS',
@@ -457,7 +457,7 @@ VALUES (
 -- Gasto: Salarios
 INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
 VALUES (
-    '2025-07-01',
+    CURRENT_DATE(),
     (SELECT id FROM tipos_transacciones WHERE nombre = 'Salarios' LIMIT 1),
     2120000.00,
     'Pago de salarios',
@@ -467,7 +467,7 @@ VALUES (
 -- Gasto: Préstamo bancario
 INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
 VALUES (
-    '2025-07-01',
+    CURRENT_DATE(),
     (SELECT id FROM tipos_transacciones WHERE nombre = 'Otros Egresos' LIMIT 1),
     1000000.00,
     'Pago de préstamo bancario',
@@ -477,7 +477,7 @@ VALUES (
 -- Gasto: Contadora externa
 INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
 VALUES (
-    '2025-07-01',
+    CURRENT_DATE(),
     (SELECT id FROM tipos_transacciones WHERE nombre = 'Otros Egresos' LIMIT 1),
     56500.00,
     'Honorarios contadora externa',
@@ -487,7 +487,7 @@ VALUES (
 -- Gasto: Seguro de riesgos del trabajo
 INSERT INTO transacciones_financieras (fecha, tipo_transaccion_id, monto, descripcion, referencia)
 VALUES (
-    '2025-07-01',
+    CURRENT_DATE(),
     (SELECT id FROM tipos_transacciones WHERE nombre = 'Otros Egresos' LIMIT 1),
     35000.00,
     'Pago seguro riesgos del trabajo',
@@ -499,32 +499,60 @@ VALUES (
 -- Todo el mes:
 SELECT *
 FROM vista_transacciones_completas
-WHERE YEAR(fecha) = YEAR(CURRENT_DATE())
-  AND MONTH(fecha) = MONTH(CURRENT_DATE())
+WHERE YEAR(fecha) = YEAR(NOW())
+  AND MONTH(fecha) = MONTH(NOW())
 ORDER BY fecha DESC;
 
 -- Solo egresos
 SELECT * FROM vista_transacciones_completas
 WHERE categoria = 'EGRESO'
-  AND YEAR(fecha) = YEAR(CURRENT_DATE())
-  AND MONTH(fecha) = MONTH(CURRENT_DATE());
+  AND YEAR(fecha) = YEAR(NOW())
+  AND MONTH(fecha) = MONTH(NOW());
 
 -- Solo ingresos
 SELECT * FROM vista_transacciones_completas
 WHERE categoria = 'INGRESO'
-  AND YEAR(fecha) = YEAR(CURRENT_DATE())
-  AND MONTH(fecha) = MONTH(CURRENT_DATE());
+  AND YEAR(fecha) = YEAR(NOW())
+  AND MONTH(fecha) = MONTH(NOW());
   
   
 -- Analisis financiero del mes:
 SELECT 
     anio, mes, nombre_mes,
-    total_ingresos,
+    total_ingresos_netos AS total_ingresos,
     total_egresos,
     balance_neto,
     total_comisiones
 FROM vista_analisis_financiero_mensual
-WHERE anio = YEAR(CURRENT_DATE()) AND mes = MONTH(CURRENT_DATE());
+WHERE anio = YEAR(NOW()) AND mes = MONTH(NOW());
 
 
 
+SELECT 
+    anio,                          -- Año del movimiento
+    mes,                           -- Mes numérico (1–12)
+    nombre_mes,                    -- Nombre del mes (Enero, Febrero, ...)
+    
+    total_transacciones,          -- Número total de transacciones del mes
+    
+    -- 💰 Ingresos brutos y netos
+    total_ingresos_brutos,           -- Ingresos antes de comisiones
+    total_comisiones,                -- Comisiones pagadas (egreso)
+    total_ingresos_netos,            -- Ingresos después de comisiones
+    
+    -- 💸 Egresos
+    total_egresos,                   -- Egresos registrados
+    
+    -- 📊 Balance real
+    balance_neto,                    -- Utilidad real (ingresos netos - egresos)
+    
+    -- 📈 Métricas
+    vehiculos_vendidos,          -- COUNT(distinct tf.vehiculo_id) en transacciones de ingreso
+    repuestos_vendidos,          -- COUNT(distinct tf.repuesto_id) en transacciones de ingreso
+    promedio_venta,              -- AVG(monto) de transacciones con categoría = 'INGRESO'
+    ratio_ingresos_egresos,      -- total_ingresos / total_egresos (proporción financiera)
+    porcentaje_comisiones,       -- % de comisiones sobre ventas
+    margen_utilidad_porcentaje   -- % de utilidad real
+    
+FROM vista_analisis_financiero_mensual
+WHERE anio = YEAR(NOW()) AND mes = MONTH(NOW());

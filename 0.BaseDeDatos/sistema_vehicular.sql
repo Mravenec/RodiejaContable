@@ -1302,20 +1302,46 @@ SELECT
     MONTH(tf.fecha) AS mes,
     MONTHNAME(tf.fecha) AS nombre_mes,
     COUNT(DISTINCT tf.id) AS total_transacciones,
-    SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END) AS total_ingresos,
+    
+    -- Ingresos brutos (antes de comisiones)
+    SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END) AS total_ingresos_brutos,
+    
+    -- Egresos registrados como transacciones
     SUM(CASE WHEN tt.categoria = 'EGRESO' THEN tf.monto ELSE 0 END) AS total_egresos,
-    SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE -tf.monto END) AS balance_neto,
+    
+    -- Total de comisiones pagadas (es un egreso adicional)
     SUM(tf.comision_empleado) AS total_comisiones,
+    
+    -- Ingresos netos (después de comisiones)
+    SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END) - SUM(tf.comision_empleado) AS total_ingresos_netos,
+    
+    -- Balance neto CORREGIDO (ingresos netos - egresos)
+    (SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END) - SUM(tf.comision_empleado)) - 
+    SUM(CASE WHEN tt.categoria = 'EGRESO' THEN tf.monto ELSE 0 END) AS balance_neto,
+    
+    -- Métricas adicionales
     COUNT(DISTINCT CASE WHEN tt.categoria = 'INGRESO' THEN tf.vehiculo_id END) AS vehiculos_vendidos,
     COUNT(DISTINCT CASE WHEN tt.categoria = 'INGRESO' THEN tf.repuesto_id END) AS repuestos_vendidos,
     ROUND(AVG(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto END), 2) AS promedio_venta,
-    ROUND(SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END) / 
-          NULLIF(SUM(CASE WHEN tt.categoria = 'EGRESO' THEN tf.monto ELSE 0 END), 0), 2) AS ratio_ingresos_egresos
+    
+    -- Ratio corregido (ingresos netos vs egresos)
+    ROUND((SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END) - SUM(tf.comision_empleado)) / 
+          NULLIF(SUM(CASE WHEN tt.categoria = 'EGRESO' THEN tf.monto ELSE 0 END), 0), 2) AS ratio_ingresos_egresos,
+    
+    -- Porcentaje de comisiones sobre ventas
+    ROUND(SUM(tf.comision_empleado) / NULLIF(SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END), 0) * 100, 2) AS porcentaje_comisiones,
+    
+    -- Margen de utilidad real
+    ROUND(((SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END) - SUM(tf.comision_empleado)) - 
+           SUM(CASE WHEN tt.categoria = 'EGRESO' THEN tf.monto ELSE 0 END)) / 
+          NULLIF(SUM(CASE WHEN tt.categoria = 'INGRESO' THEN tf.monto ELSE 0 END), 0) * 100, 2) AS margen_utilidad_porcentaje
+
 FROM transacciones_financieras tf
 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
 WHERE tf.activo = TRUE
 GROUP BY YEAR(tf.fecha), MONTH(tf.fecha), MONTHNAME(tf.fecha)
 ORDER BY anio DESC, mes DESC;
+
 
 -- Vista para top de productos más vendidos
 CREATE VIEW vista_top_productos_vendidos AS
@@ -1548,18 +1574,30 @@ SELECT
     e.nombre AS empleado,
     YEAR(tf.fecha) AS anio,
     MONTH(tf.fecha) AS mes,
-    MONTHNAME(tf.fecha) AS nombre_mes,
+    MONTHNAME(tf.fecha) AS nombre_mes,  -- ¡Clave para reportes legibles!
     COUNT(tf.id) AS transacciones_venta,
     SUM(tf.monto) AS total_ventas,
     SUM(tf.comision_empleado) AS total_comisiones,
+    SUM(tf.monto) - SUM(tf.comision_empleado) AS contribucion_neta,  -- Nueva métrica vital
     ROUND(AVG(tf.monto), 2) AS promedio_venta,
     ROUND(SUM(tf.comision_empleado) / NULLIF(SUM(tf.monto), 0) * 100, 2) AS porcentaje_comision
 FROM transacciones_financieras tf
 JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
 JOIN empleados e ON tf.empleado_id = e.id
-WHERE tt.categoria = 'INGRESO' AND tf.activo = TRUE
-GROUP BY e.id, anio, mes
-ORDER BY anio DESC, mes DESC, e.nombre;
+WHERE 
+    tt.categoria = 'INGRESO' 
+    AND tf.activo = TRUE
+    AND tf.empleado_id IS NOT NULL  -- ¡Filtro esencial!
+GROUP BY 
+    e.id, 
+    e.nombre, 
+    YEAR(tf.fecha), 
+    MONTH(tf.fecha),
+    MONTHNAME(tf.fecha)  -- Agrupado correctamente
+ORDER BY 
+    anio DESC, 
+    mes DESC, 
+    contribucion_neta DESC;  -- Ordenado por impacto real
 
 
 
