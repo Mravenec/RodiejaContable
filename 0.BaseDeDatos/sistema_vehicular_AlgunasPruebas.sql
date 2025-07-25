@@ -86,7 +86,8 @@ INSERT INTO vehiculos (
     CURRENT_DATE(), 'DESARMADO'
 );
 SELECT * FROM vehiculos;
-
+SELECT * FROM generaciones;
+SELECT * FROM transacciones_financieras;
 
 -- ========================================
 -- 7. POBLAR INVENTARIO DE REPUESTOS (1 dato)
