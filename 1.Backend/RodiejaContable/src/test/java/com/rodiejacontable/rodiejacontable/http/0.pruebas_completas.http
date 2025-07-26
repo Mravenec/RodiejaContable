@@ -358,9 +358,9 @@ Content-Type: application/json
 
 {
   "fecha": "2023-06-01",
-  "tipoTransaccionId": 2,  -- Venta Repuesto
-  "empleadoId": 1,          -- ACXEL
-  "repuestoId": 1,          -- Motor Honda
+  "tipoTransaccionId": 2,  
+  "empleadoId": 1,          
+  "repuestoId": 1,          
   "monto": 1800000.00,
   "comisionEmpleado": 25000.00,
   "descripcion": "Venta de motor 1.5L Turbo VTEC",
@@ -373,9 +373,9 @@ Content-Type: application/json
 
 {
   "fecha": "2023-06-05",
-  "tipoTransaccionId": 1,  -- Venta Vehículo
-  "empleadoId": 2,          -- ADRIANA
-  "vehiculoId": 1,          -- Toyota Corolla
+  "tipoTransaccionId": 1,  
+  "empleadoId": 2,          
+  "vehiculoId": 1,          
   "monto": 12000000.00,
   "comisionEmpleado": 60000.00,
   "descripcion": "Venta Toyota Corolla 2023",
@@ -440,9 +440,9 @@ Content-Type: application/json
 
 {
   "fecha": "2023-06-15",
-  "tipoTransaccionId": 8,  -- Reparación Vehículo
-  "empleadoId": 3,          -- AMAURIS
-  "vehiculoId": 3,          -- Hilux
+  "tipoTransaccionId": 8,  
+  "empleadoId": 3,          
+  "vehiculoId": 3,          
   "monto": 250000.00,
   "descripcion": "Reparación de motor y transmisión",
   "referencia": "REP-HILUX-001"
