@@ -1,6 +1,5 @@
 @baseUrl = http://localhost:8080/api
 
-### ========================================
 ### 1. POBLAR MARCAS 
 ### ========================================
 
@@ -269,7 +268,7 @@ Content-Type: application/json
 ### Obtener todos los vehículos
 GET {{baseUrl}}/vehiculos
 
-### Insertar Toyota Corolla 2023
+### Insertar Toyota Corolla 2023 (DISPONIBLE)
 POST {{baseUrl}}/vehiculos
 Content-Type: application/json
 
@@ -279,11 +278,11 @@ Content-Type: application/json
   "precioCompra": 10000000.00,
   "costoGrua": 50000.00,
   "comisiones": 100000.00,
-  "fechaIngreso": "2023-05-01",
+  "fechaIngreso": "2023-01-15",
   "estado": "DISPONIBLE"
 }
 
-### Insertar Honda Civic 2018 (para repuestos)
+### Insertar Honda Civic 2018 (DESARMADO)
 POST {{baseUrl}}/vehiculos
 Content-Type: application/json
 
@@ -293,9 +292,12 @@ Content-Type: application/json
   "precioCompra": 6000000.00,
   "costoGrua": 40000.00,
   "comisiones": 80000.00,
-  "fechaIngreso": "2023-04-15",
+  "fechaIngreso": "2023-01-15",
   "estado": "DESARMADO"
 }
+
+### Ver vehículos insertados
+GET {{baseUrl}}/vehiculos
 
 ### ========================================
 ### 7. POBLAR INVENTARIO DE REPUESTOS 
@@ -381,7 +383,20 @@ Content-Type: application/json
 }
 
 ### ========================================
-### 9. PRUEBA DE REPARACIÓN DE VEHÍCULO
+### 9. CONSULTAS DE AUDITORÍA 
+### ========================================
+
+### Ver repuestos por estado
+GET {{baseUrl}}/inventario-repuestos?estado=VENDIDO
+
+### Ver ventas por empleado
+GET {{baseUrl}}/reportes/ventas-por-empleado
+
+### Ver ventas mensuales
+GET {{baseUrl}}/reportes/ventas-mensuales?anio=2023&mes=1
+
+### ========================================
+### 10. EJEMPLO DE REPARACIÓN DE VEHÍCULO 
 ### ========================================
 
 ### Agregar Modelo Hilux
@@ -457,29 +472,209 @@ Content-Type: application/json
 }
 
 ### ========================================
-### 10. CONSULTAS DE PRUEBA 
+### 11. VENTA DE REPUESTOS SIN VEHÍCULO ORIGEN 
 ### ========================================
 
-### Ver vehículos disponibles
-GET {{baseUrl}}/vehiculos/disponibles
+### Insertar Bomba de Agua para Corolla gen12
+POST {{baseUrl}}/inventario-repuestos/crear-sin-vehiculo
+Content-Type: application/json
 
-### Ver inventario completo
-GET {{baseUrl}}/inventario-repuestos/completo
+{
+  "generacionId": 1,
+  "marca": "Toyota",
+  "parteVehiculo": "BOMBA DE AGUA",
+  "descripcion": "Bomba de agua OEM Toyota Corolla",
+  "precioCosto": 70000.00,
+  "precioVenta": 110000.00,
+  "precioMayoreo": 95000.00,
+  "bodega": "R-",
+  "zona": "Z2-",
+  "pared": "PN-",
+  "malla": "V10",
+  "estante": "E2",
+  "piso": "P3-",
+  "estado": "STOCK",
+  "condicion": "100%-"
+}
 
-### Ver resumen financiero
-GET {{baseUrl}}/transacciones-financieras/resumen
+### Vender Bomba de Agua (sin comisión)
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
 
-### Ver auditoría completa
-GET {{baseUrl}}/auditoria/completa
+{
+  "fecha": "2023-01-21",
+  "tipoTransaccionId": 2,
+  "empleadoId": 3,
+  "repuestoId": 2,
+  "generacionId": 1,
+  "monto": 110000.00,
+  "comisionEmpleado": 0.00,
+  "descripcion": "Venta Bomba de Agua Corolla gen12",
+  "referencia": "VENTA-REP-BA-COR-001"
+}
 
-### Ver auditoría de vehículos
-GET {{baseUrl}}/auditoria?tipoEntidad=VEHICULO
+### Insertar Kit de Embrague para Civic gen10
+POST {{baseUrl}}/inventario-repuestos/crear-sin-vehiculo
+Content-Type: application/json
 
-### Ver auditoría de repuestos
-GET {{baseUrl}}/auditoria?tipoEntidad=REPUESTO
+{
+  "generacionId": 2,
+  "marca": "Honda",
+  "parteVehiculo": "EMBRAGUE",
+  "descripcion": "Kit embrague original Honda Civic",
+  "precioCosto": 85000.00,
+  "precioVenta": 140000.00,
+  "precioMayoreo": 120000.00,
+  "bodega": "R-",
+  "zona": "Z3-",
+  "pared": "PS-",
+  "malla": "V12",
+  "estante": "E3",
+  "piso": "P3-",
+  "estado": "STOCK",
+  "condicion": "100%-"
+}
 
-### Ver historial de un vehículo
-GET {{baseUrl}}/vehiculos/1/historial
+### Vender Kit de Embrague (con comisión)
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
 
-### Ver actividad de auditoría por fechas
-GET {{baseUrl}}/auditoria?fechaInicio=2023-05-01&fechaFin=2023-07-01
+{
+  "fecha": "2023-01-22",
+  "tipoTransaccionId": 2,
+  "empleadoId": 4,
+  "repuestoId": 3,
+  "generacionId": 2,
+  "monto": 140000.00,
+  "comisionEmpleado": 10000.00,
+  "descripcion": "Venta Embrague Civic gen10",
+  "referencia": "VENTA-REP-EMB-CIV-001"
+}
+
+### ========================================
+### 12. GASTOS FIJOS GLOBALES (Fixed Expenses)
+### ========================================
+
+### Gasto: Patente
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-07-25",
+  "tipoTransaccionId": 15,
+  "monto": 20000.00,
+  "descripcion": "Pago de patente municipal",
+  "referencia": "EGRESO-PATENTE-JUL25"
+}
+
+### Gasto: Impuesto municipal
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-07-25",
+  "tipoTransaccionId": 15,
+  "monto": 15000.00,
+  "descripcion": "Pago de impuesto municipal julio",
+  "referencia": "EGRESO-IMP-MUN-JUL25"
+}
+
+### Gasto: Servicios públicos
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-07-25",
+  "tipoTransaccionId": 14,
+  "monto": 105000.00,
+  "descripcion": "Pago de electricidad, agua y teléfono",
+  "referencia": "EGRESO-SERVPUB-JUL25"
+}
+
+### Gasto: CCSS
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-07-25",
+  "tipoTransaccionId": 16,
+  "monto": 227000.00,
+  "descripcion": "Aporte patronal CCSS",
+  "referencia": "EGRESO-CCSS-JUL25"
+}
+
+### Gasto: Salarios
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-07-25",
+  "tipoTransaccionId": 16,
+  "monto": 2120000.00,
+  "descripcion": "Pago de salarios",
+  "referencia": "EGRESO-SALARIOS-JUL25"
+}
+
+### Gasto: Préstamo bancario
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-07-25",
+  "tipoTransaccionId": 18,
+  "monto": 1000000.00,
+  "descripcion": "Pago de préstamo bancario",
+  "referencia": "EGRESO-PRESTAMO-JUL25"
+}
+
+### Gasto: Contadora externa
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-07-25",
+  "tipoTransaccionId": 18,
+  "monto": 56500.00,
+  "descripcion": "Honorarios contadora externa",
+  "referencia": "EGRESO-CONTADORA-JUL25"
+}
+
+### Gasto: Seguro de riesgos del trabajo
+POST {{baseUrl}}/transacciones-financieras
+Content-Type: application/json
+
+{
+  "fecha": "2023-07-25",
+  "tipoTransaccionId": 18,
+  "monto": 35000.00,
+  "descripcion": "Pago seguro riesgos del trabajo",
+  "referencia": "EGRESO-CERO-RIESGOS-JUL25"
+}
+
+### ========================================
+### 13. CONSULTAS DE REPORTES FINANCIEROS
+### ========================================
+
+### Ver todas las transacciones del mes actual
+GET {{baseUrl}}/reportes/transacciones?anio=2023&mes=7
+
+### Ver solo egresos del mes actual
+GET {{baseUrl}}/reportes/transacciones?anio=2023&mes=7&categoria=EGRESO
+
+### Ver solo ingresos del mes actual
+GET {{baseUrl}}/reportes/transacciones?anio=2023&mes=7&categoria=INGRESO
+
+### Ver análisis financiero mensual
+GET {{baseUrl}}/reportes/analisis-mensual?anio=2023&mes=7
+
+### Ver resumen por generación
+GET {{baseUrl}}/reportes/resumen-generaciones
+
+### Ver transacciones de un vehículo específico
+GET {{baseUrl}}/vehiculos/1/transacciones
+
+### Ver historial de un repuesto
+GET {{baseUrl}}/inventario-repuestos/1/historial
+
+### Ver resumen de ventas por empleado
+GET {{baseUrl}}/reportes/ventas-por-empleado?anio=2023&mes=7
