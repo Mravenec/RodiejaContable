@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:8080/api
+@baseUrl = http://localhost:8080
 
 ### 1. POBLAR MARCAS 
 ### ========================================
@@ -431,7 +431,7 @@ Content-Type: application/json
   "costoGrua": 50000.00,
   "comisiones": 0.00,
   "fechaIngreso": "2023-06-10",
-  "estado": "EN_REPARACION"
+  "estado": "REPARACION"
 }
 
 ### Registrar reparación del Hilux
@@ -449,12 +449,7 @@ Content-Type: application/json
 }
 
 ### Actualizar estado del Hilux a DISPONIBLE
-PUT {{baseUrl}}/vehiculos/3/estado
-Content-Type: application/json
-
-{
-  "estado": "DISPONIBLE"
-}
+PUT {{baseUrl}}/vehiculos/3/estado?estado=DISPONIBLE
 
 ### Registrar venta del Hilux reparado
 POST {{baseUrl}}/transacciones-financieras
@@ -462,9 +457,9 @@ Content-Type: application/json
 
 {
   "fecha": "2023-06-20",
-  "tipoTransaccionId": 1,  -- Venta Vehículo
-  "empleadoId": 4,          -- CACHORRO
-  "vehiculoId": 3,          -- Hilux
+  "tipoTransaccionId": 1,  
+  "empleadoId": 4,          
+  "vehiculoId": 3,          
   "monto": 10000000.00,
   "comisionEmpleado": 50000.00,
   "descripcion": "Venta Toyota Hilux 2020 reparado",
@@ -677,4 +672,113 @@ GET {{baseUrl}}/vehiculos/1/transacciones
 GET {{baseUrl}}/inventario-repuestos/1/historial
 
 ### Ver resumen de ventas por empleado
-GET {{baseUrl}}/reportes/ventas-por-empleado?anio=2023&mes=7
+GET {{baseUrl}}/api/v1/ventas-empleados/filtrar?anio=2023&mes=7
+
+### ========================================
+### 14. VISTAS
+### ========================================
+
+### 14.1 VISTA ANÁLISIS FINANCIERO MENSUAL
+### ========================================
+
+### Obtener todos los análisis financieros
+GET {{baseUrl}}/api/analisis-financiero
+
+### Obtener análisis financiero por año
+GET {{baseUrl}}/api/analisis-financiero/anio/2023
+
+### Obtener análisis financiero por año y mes
+GET {{baseUrl}}/api/analisis-financiero/anio/2023/mes/7
+
+### 14.2 VISTA AUDITORÍA COMPLETA
+### ========================================
+
+### Obtener todos los registros de auditoría
+GET {{baseUrl}}/api/auditoria
+
+### Obtener auditoría por tipo de entidad
+GET {{baseUrl}}/api/auditoria/tipo-entidad/VEHICULO
+
+### Obtener auditoría por ID de entidad
+GET {{baseUrl}}/api/auditoria/entidad/1
+
+### Obtener auditoría por usuario
+GET {{baseUrl}}/api/auditoria/usuario/admin
+
+### 14.3 VISTA DASHBOARD EJECUTIVO
+### ========================================
+
+### Obtener todos los datos del dashboard ejecutivo
+GET {{baseUrl}}/api/dashboard/ejecutivo
+
+### Obtener datos de una sección específica del dashboard
+GET {{baseUrl}}/api/dashboard/ejecutivo/seccion/ventas
+
+### 14.4 VISTA INVENTARIO COMPLETO
+### ========================================
+
+### Obtener todo el inventario
+GET {{baseUrl}}/api/inventario
+
+### Buscar en el inventario con filtros
+GET {{baseUrl}}/api/inventario/buscar?marca=toyota&estado=DISPONIBLE
+
+### 14.5 VISTA INVENTARIO CRÍTICO
+### ========================================
+
+### Obtener inventario crítico
+GET {{baseUrl}}/api/inventario-critico
+
+### Buscar en inventario crítico con filtros
+GET {{baseUrl}}/api/inventario-critico/buscar?estado=CRITICO
+
+### 14.6 VISTA RENTABILIDAD GENERACIONES
+### ========================================
+
+### Obtener todas las generaciones con rentabilidad
+GET {{baseUrl}}/api/rentabilidad-generaciones
+
+### Obtener generaciones por año de inicio
+GET {{baseUrl}}/api/rentabilidad-generaciones/anio-inicio/2020
+
+### 14.7 VISTA TOP PRODUCTOS VENDIDOS
+### ========================================
+
+### Obtener todos los productos vendidos
+GET {{baseUrl}}/api/v1/top-productos-vendidos
+
+### Obtener productos por tipo
+GET {{baseUrl}}/api/v1/top-productos-vendidos/tipo/REPUESTO
+
+### 14.8 VISTA TRANSACCIONES COMPLETAS
+### ========================================
+
+### Obtener todas las transacciones
+GET {{baseUrl}}/api/v1/transacciones
+
+### Obtener transacciones por rango de fechas
+GET {{baseUrl}}/api/v1/transacciones/rango-fechas?fechaInicio=2023-01-01&fechaFin=2023-12-31
+
+### 14.9 VISTA VEHÍCULOS COMPLETA
+### ========================================
+
+### Obtener todos los vehículos
+GET {{baseUrl}}/api/v1/vehiculos
+
+### Buscar vehículos con filtros
+GET {{baseUrl}}/api/v1/vehiculos/buscar?marca=toyota&estado=DISPONIBLE
+
+### 14.10 VISTA VENTAS POR EMPLEADO
+### ========================================
+
+### Obtener ventas de todos los empleados
+GET {{baseUrl}}/api/v1/ventas-empleados
+
+### Obtener ventas de un empleado específico
+GET {{baseUrl}}/api/v1/ventas-empleados/JUAN_PEREZ
+
+### Obtener top N empleados por ventas
+GET {{baseUrl}}/api/v1/ventas-empleados/top/1
+
+### Obtener lista de todos los empleados
+GET {{baseUrl}}/api/v1/ventas-empleados/empleados
