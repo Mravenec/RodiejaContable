@@ -1,99 +1,147 @@
 import api from './axios';
 
-const vehiculoService = {
-  // Obtener todos los vehículos con información completa
-  async getVehiculos(params = {}) {
+class VehiculoService {
+  // Obtener todos los vehículos agrupados por marca y generación
+  async getVehiculosAgrupados() {
     try {
-      const response = await api.get('/vehiculos', { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error al obtener vehículos:', error);
-      throw error;
-    }
-  },
-
-  // Obtener un vehículo por ID con información completa
-  async getVehiculoById(id) {
-    try {
-      const response = await api.get(`/vehiculos/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error al obtener el vehículo con ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Crear un nuevo vehículo
-  async createVehiculo(vehiculoData) {
-    try {
-      // Asegurarse de que los campos numéricos sean números
-      const payload = {
-        ...vehiculoData,
-        generacion_id: Number(vehiculoData.generacion_id),
-        anio: Number(vehiculoData.anio),
-        precio_compra: parseFloat(vehiculoData.precio_compra),
-        costo_grua: parseFloat(vehiculoData.costo_grua || 0),
-        comisiones: parseFloat(vehiculoData.comisiones || 0),
-        precio_venta: vehiculoData.precio_venta ? parseFloat(vehiculoData.precio_venta) : null,
-        fecha_venta: vehiculoData.fecha_venta || null,
-        estado: vehiculoData.estado || 'DISPONIBLE',
-        notas: vehiculoData.notas || ''
-      };
+      // Obtener todos los vehículos completos
+      const response = await api.get('/v1/vehiculos');
+      const vehiculos = response.data;
       
-      const response = await api.post('/vehiculos', payload);
+      // Agrupar por marca y generación
+      const marcasMap = new Map();
+      
+      vehiculos.forEach(vehiculo => {
+        if (!marcasMap.has(vehiculo.marcaId)) {
+          marcasMap.set(vehiculo.marcaId, {
+            id: vehiculo.marcaId,
+            nombre: vehiculo.marcaNombre,
+            generaciones: new Map()
+          });
+        }
+        
+        const marca = marcasMap.get(vehiculo.marcaId);
+        
+        if (!marca.generaciones.has(vehiculo.generacionId)) {
+          marca.generaciones.set(vehiculo.generacionId, {
+            id: vehiculo.generacionId,
+            nombre: vehiculo.generacionNombre,
+            vehiculos: []
+          });
+        }
+        
+        const generacion = marca.generaciones.get(vehiculo.generacionId);
+        
+        generacion.vehiculos.push({
+          id: vehiculo.id,
+          modelo: vehiculo.modeloNombre,
+          año: vehiculo.anio,
+          precio: vehiculo.precioVenta,
+          estado: vehiculo.estado,
+          descripcion: vehiculo.descripcion,
+          color: vehiculo.color,
+          kilometraje: vehiculo.kilometraje,
+          placa: vehiculo.placa,
+          vin: vehiculo.vin
+        });
+      });
+      
+      // Convertir los mapas a arrays
+      return Array.from(marcasMap.values()).map(marca => ({
+        ...marca,
+        generaciones: Array.from(marca.generaciones.values())
+      }));
+    } catch (error) {
+      console.error('Error al obtener vehículos agrupados:', error);
+      throw error;
+    }
+  }
+  
+  // Obtener un vehículo por su ID
+  async getVehiculoPorId(id) {
+    try {
+      const response = await api.get(`/v1/vehiculos/${id}`);
+      const vehiculo = response.data;
+      
+      return {
+        id: vehiculo.id,
+        modelo: vehiculo.modeloNombre,
+        año: vehiculo.anio,
+        precio: vehiculo.precioVenta,
+        estado: vehiculo.estado,
+        descripcion: vehiculo.descripcion,
+        color: vehiculo.color,
+        kilometraje: vehiculo.kilometraje,
+        placa: vehiculo.placa,
+        vin: vehiculo.vin,
+        marcaId: vehiculo.marcaId,
+        marcaNombre: vehiculo.marcaNombre,
+        generacionId: vehiculo.generacionId,
+        generacionNombre: vehiculo.generacionNombre
+      };
+    } catch (error) {
+      console.error('Error al obtener el vehículo:', error);
+      throw error;
+    }
+  }
+  
+  // Crear un nuevo vehículo
+  async crearVehiculo(vehiculoData) {
+    try {
+      const response = await api.post('/v1/vehiculos', vehiculoData);
       return response.data;
     } catch (error) {
       console.error('Error al crear el vehículo:', error);
       throw error;
     }
-  },
-
+  }
+  
   // Actualizar un vehículo existente
-  async updateVehiculo(id, vehiculoData) {
+  async actualizarVehiculo(id, vehiculoData) {
     try {
-      // Asegurarse de que los campos numéricos sean números
-      const payload = {
-        ...vehiculoData,
-        generacion_id: Number(vehiculoData.generacion_id),
-        anio: Number(vehiculoData.anio),
-        precio_compra: parseFloat(vehiculoData.precio_compra),
-        costo_grua: parseFloat(vehiculoData.costo_grua || 0),
-        comisiones: parseFloat(vehiculoData.comisiones || 0),
-        precio_venta: vehiculoData.precio_venta ? parseFloat(vehiculoData.precio_venta) : null,
-        fecha_venta: vehiculoData.fecha_venta || null,
-        estado: vehiculoData.estado || 'DISPONIBLE',
-        notas: vehiculoData.notas || ''
-      };
+      const response = await api.put(`/v1/vehiculos/${id}`, vehiculoData);
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar el vehículo:', error);
+      throw error;
+    }
+  }
+  
+  // Eliminar un vehículo
+  async eliminarVehiculo(id) {
+    try {
+      await api.delete(`/v1/vehiculos/${id}`);
+      return true;
+    } catch (error) {
+      console.error('Error al eliminar el vehículo:', error);
+      throw error;
+    }
+  }
+  
+  // Obtener transacciones de un vehículo
+  async getTransaccionesVehiculo(vehiculoId) {
+    try {
+      const response = await api.get('/transacciones', {
+        params: {
+          vehiculoId: vehiculoId,
+          sort: 'fecha,desc'
+        }
+      });
       
-      const response = await api.put(`/vehiculos/${id}`, payload);
-      return response.data;
+      return response.data.map(transaccion => ({
+        id: transaccion.id,
+        fecha: transaccion.fecha,
+        tipo: transaccion.tipo,
+        monto: transaccion.monto,
+        descripcion: transaccion.descripcion,
+        estado: transaccion.estado
+      }));
     } catch (error) {
-      console.error(`Error al actualizar el vehículo con ID ${id}:`, error);
+      console.error('Error al obtener transacciones del vehículo:', error);
       throw error;
     }
-  },
+  }
+}
 
-  // Eliminar un vehículo (eliminación lógica)
-  async deleteVehiculo(id) {
-    try {
-      const response = await api.delete(`/vehiculos/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error al eliminar el vehículo con ID ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Obtener vehículos por generación
-  async getVehiculosPorGeneracion(generacionId) {
-    try {
-      const response = await api.get(`/vehiculos/generacion/${generacionId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error al obtener vehículos por generación:', error);
-      throw error;
-    }
-  },
-};
-
-export default vehiculoService;
+// Export a singleton instance
+export default new VehiculoService();

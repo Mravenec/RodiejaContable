@@ -1,93 +1,97 @@
 import api from './axios';
 
-const finanzasService = {
-  // Obtener todas las transacciones
-  async getTransacciones(params = {}) {
+export const finanzaService = {
+  // Get all financial transactions with optional filters
+  getTransacciones: async (filters = {}) => {
     try {
-      const response = await api.get('/finanzas/transacciones', { params });
+      const response = await api.get('/finanzas/transacciones', { params: filters });
       return response.data;
     } catch (error) {
-      console.error('Error al obtener transacciones:', error);
-      throw error;
+      throw error.response?.data || error.message;
     }
   },
 
-  // Obtener una transacción por ID
-  async getTransaccionById(id) {
+  // Get a single transaction by ID
+  getTransaccionById: async (id) => {
     try {
       const response = await api.get(`/finanzas/transacciones/${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Error al obtener la transacción con ID ${id}:`, error);
-      throw error;
+      throw error.response?.data || error.message;
     }
   },
 
-  // Crear una nueva transacción
-  async createTransaccion(transaccionData) {
+  // Create a new transaction
+  createTransaccion: async (transaccionData) => {
     try {
       const response = await api.post('/finanzas/transacciones', transaccionData);
       return response.data;
     } catch (error) {
-      console.error('Error al crear la transacción:', error);
-      throw error;
+      throw error.response?.data || error.message;
     }
   },
 
-  // Actualizar una transacción existente
-  async updateTransaccion(id, transaccionData) {
+  // Update an existing transaction
+  updateTransaccion: async (id, transaccionData) => {
     try {
       const response = await api.put(`/finanzas/transacciones/${id}`, transaccionData);
       return response.data;
     } catch (error) {
-      console.error(`Error al actualizar la transacción con ID ${id}:`, error);
-      throw error;
+      throw error.response?.data || error.message;
     }
   },
 
-  // Eliminar una transacción
-  async deleteTransaccion(id) {
+  // Delete a transaction
+  deleteTransaccion: async (id) => {
     try {
       const response = await api.delete(`/finanzas/transacciones/${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Error al eliminar la transacción con ID ${id}:`, error);
-      throw error;
+      throw error.response?.data || error.message;
     }
   },
 
-  // Obtener resumen financiero
-  async getResumenFinanciero(params = {}) {
+  // Get financial summary
+  getResumenFinanciero: async (params = {}) => {
     try {
       const response = await api.get('/finanzas/resumen', { params });
       return response.data;
     } catch (error) {
-      console.error('Error al obtener el resumen financiero:', error);
-      throw error;
+      throw error.response?.data || error.message;
     }
   },
 
-  // Obtener ventas por empleado
-  async getVentasPorEmpleado(params = {}) {
+  // Get financial metrics
+  getMetricasFinancieras: async (params = {}) => {
     try {
-      const response = await api.get('/finanzas/ventas/empleados', { params });
+      const response = await api.get('/finanzas/metricas', { params });
       return response.data;
     } catch (error) {
-      console.error('Error al obtener las ventas por empleado:', error);
-      throw error;
+      throw error.response?.data || error.message;
     }
   },
 
-  // Obtener productos más vendidos
-  async getProductosMasVendidos(params = {}) {
+  // Get transactions by type (ingreso/egreso)
+  getTransaccionesByTipo: async (tipo, params = {}) => {
     try {
-      const response = await api.get('/finanzas/productos/mas-vendidos', { params });
+      const response = await api.get(`/finanzas/transacciones/tipo/${tipo}`, { params });
       return response.data;
     } catch (error) {
-      console.error('Error al obtener los productos más vendidos:', error);
-      throw error;
+      throw error.response?.data || error.message;
     }
   },
+
+  // Get transactions by date range
+  getTransaccionesByDateRange: async (fechaInicio, fechaFin, params = {}) => {
+    try {
+      const response = await api.get('/finanzas/transacciones/rango-fechas', {
+        params: { fechaInicio, fechaFin, ...params }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  }
 };
 
-export default finanzasService;
+export default finanzaService;

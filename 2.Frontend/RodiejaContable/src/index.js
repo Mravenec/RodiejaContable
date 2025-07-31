@@ -7,13 +7,21 @@ import App from './App';
 import 'antd/dist/reset.css';
 import './index.css';
 
-// Importar el servicio de mocks solo en desarrollo
-if (process.env.NODE_ENV === 'development') {
-  // Importar dinámicamente para asegurar que el código solo se ejecuta en el cliente
-  import('./mocks/browser')
-    .then(() => console.log('MSW initialized in browser'))
-    .catch(err => console.error('Failed to initialize MSW in browser', err));
-}
+// Optional: Initialize mocks if they exist
+const initializeMocks = async () => {
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      const { worker } = await import('./mocks/browser');
+      await worker.start();
+      console.log('MSW initialized in browser');
+    } catch (error) {
+      console.warn('MSW not initialized. Proceeding without mock service worker.');
+    }
+  }
+};
+
+// Initialize the app
+initializeMocks();
 
 // Mensajes de depuración solo en desarrollo
 if (process.env.NODE_ENV === 'development') {

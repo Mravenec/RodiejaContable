@@ -1,66 +1,37 @@
 import axios from 'axios';
 
-// Configuración de Axios para desarrollo
 const api = axios.create({
-  baseURL: '/api', // Esto será manejado por el proxy
+  baseURL: 'http://localhost:8080/api', // Backend API URL
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor para simular respuestas del servidor
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
-    console.log(`[API] ${config.method.toUpperCase()} ${config.url}`, config.data || '');
-    
-    // Agregar token de autorización simulado
-    config.headers.Authorization = 'Bearer mock-jwt-token';
-    
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
-    console.error('[API] Error en la solicitud:', error);
     return Promise.reject(error);
   }
 );
 
-// Interceptor para simular respuestas del servidor
+// Response interceptor
 api.interceptors.response.use(
-  (response) => {
-    console.log('[API] Respuesta recibida:', response.status, response.data);
-    return response;
-  },
+  (response) => response,
   (error) => {
-    console.error('[API] Error en la respuesta:', error);
-    
-    // Simular respuesta de error 401 (No autorizado)
-    if (error.config?.url?.includes('protegido')) {
-      return Promise.reject({
-        response: {
-          status: 401,
-          data: { message: 'No autorizado' }
-        }
-      });
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      localStorage.removeItem('token');
+      window.location.href = '/login';
     }
-    
-    // Simular respuesta de error 404 (No encontrado)
-    if (error.config?.url?.includes('no-existe')) {
-      return Promise.reject({
-        response: {
-          status: 404,
-          data: { message: 'Recurso no encontrado' }
-        }
-      });
-    }
-    
-    // Para otras rutas, simular una respuesta exitosa
-    return Promise.resolve({
-      data: {
-        success: true,
-        message: 'Operación simulada exitosamente',
-        data: {}
-      }
-    });
+    return Promise.reject(error);
   }
 );
 
