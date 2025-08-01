@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 
 // Componentes de vehículos
 import Vehiculos from './pages/vehiculos/Vehiculos';
+import VehiculosJerarquicos from './components/vehiculos/VehiculosJerarquicos';
 import NuevoVehiculo from './pages/vehiculos/NuevoVehiculo';
 import EditarVehiculo from './pages/vehiculos/EditarVehiculo';
 import DetalleVehiculo from './pages/vehiculos/DetalleVehiculo';
@@ -205,6 +206,16 @@ function App() {
           <PrivateRoute>
             <MainLayout>
               <Vehiculos />
+            </MainLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/vehiculos/jerarquia"
+        element={
+          <PrivateRoute>
+            <MainLayout>
+              <VehiculosJerarquicos />
             </MainLayout>
           </PrivateRoute>
         }

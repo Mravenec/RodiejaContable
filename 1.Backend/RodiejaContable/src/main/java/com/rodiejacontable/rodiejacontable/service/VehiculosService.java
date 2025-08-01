@@ -14,6 +14,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+
+import org.springframework.cache.annotation.Cacheable;
 
 @Service
 public class VehiculosService {
@@ -142,6 +145,22 @@ public class VehiculosService {
         
         // Eliminar el vehículo
         vehiculosRepository.delete(id);
+    }
+    
+    @Transactional
+    public Vehiculos updateEstado(Integer id, VehiculosEstado nuevoEstado) {
+        Vehiculos vehiculo = findById(id);
+        vehiculo.setEstado(nuevoEstado);
+        return vehiculosRepository.update(vehiculo);
+    }
+    
+    /**
+     * Obtiene la estructura jerárquica completa de vehículos agrupados por marca > modelo > generación
+     * @return Mapa con la estructura jerárquica de vehículos
+     */
+    @Cacheable(value = "vehiculosHierarchy", unless = "#result == null || #result.isEmpty()")
+    public Map<String, Object> getVehiculosHierarchy() {
+        return vehiculosRepository.findHierarchicalVehicles();
     }
     
     @Transactional

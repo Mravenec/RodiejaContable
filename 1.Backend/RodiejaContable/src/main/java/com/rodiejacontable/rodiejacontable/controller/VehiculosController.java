@@ -7,11 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/vehiculos")
@@ -48,6 +52,16 @@ public class VehiculosController {
     public ResponseEntity<List<Vehiculos>> getActivos() {
         List<Vehiculos> vehiculos = vehiculosService.findActivos();
         return new ResponseEntity<>(vehiculos, HttpStatus.OK);
+    }
+    
+    /**
+     * Obtiene la estructura jerárquica completa de vehículos agrupados por marca > modelo > generación > vehículo
+     * @return Estructura jerárquica de vehículos
+     */
+    @GetMapping("/jerarquia")
+    public ResponseEntity<Map<String, Object>> getVehiculosJerarquia() {
+        Map<String, Object> hierarchy = vehiculosService.getVehiculosHierarchy();
+        return new ResponseEntity<>(hierarchy, HttpStatus.OK);
     }
     
     @GetMapping("/{id}")

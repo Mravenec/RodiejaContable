@@ -132,9 +132,9 @@ const MainLayout = () => {
         </Header>
         
         <Content style={{ 
-          margin: '108px 16px 24px', /* Aumentado de 88px a 108px para más espacio */
-          padding: 24, 
-          minHeight: 'calc(100vh - 132px)', /* Ajustado para mantener la misma altura total */
+          margin: '24px 16px',
+          padding: '24px 24px 24px',
+          minHeight: 'calc(100vh - 112px)',
           background: '#fff',
           borderRadius: '8px',
           boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)'

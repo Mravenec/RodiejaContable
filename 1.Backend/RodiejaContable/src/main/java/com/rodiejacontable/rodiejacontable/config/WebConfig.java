@@ -8,8 +8,8 @@ import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.util.Arrays;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.core.Ordered;
 
 @Configuration
 @EnableWebMvc
@@ -17,31 +17,37 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // Enable CORS for all endpoints
         registry.addMapping("/**")
-                .allowedOrigins(
-                    "http://localhost:3000",
-                    "http://127.0.0.1:3000"
+                .allowedOrigins("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders(
+                    "authorization",
+                    "content-type",
+                    "x-auth-token",
+                    "access-control-allow-headers",
+                    "access-control-allow-origin"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
-                .exposedHeaders("Authorization", "Content-Type", "Content-Disposition")
-                .allowCredentials(true)
+                .exposedHeaders("access-control-allow-origin")
+                .allowCredentials(false)
                 .maxAge(3600);
     }
 
     @Bean
-    public CorsFilter corsFilter() {
-        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        final CorsConfiguration config = new CorsConfiguration();
+    public FilterRegistrationBean<CorsFilter> corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
         
-        config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://127.0.0.1:3000"));
-        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "Content-Disposition"));
-        config.setMaxAge(3600L);
+        // Allow all origins, methods, and headers for development
+        config.setAllowCredentials(false);
+        config.addAllowedOrigin("*");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
         
         source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+        
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return bean;
     }
 }

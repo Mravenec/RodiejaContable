@@ -11,7 +11,12 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.rodiejacontable.database.jooq.Tables.*;
 
 @Repository
 public class VehiculosRepository {
@@ -125,9 +130,59 @@ public class VehiculosRepository {
     public void actualizarEstado(Integer id, VehiculosEstado estado) {
         dsl.update(VEHICULOS)
            .set(VEHICULOS.ESTADO, estado)
-           .set(VEHICULOS.FECHA_ACTUALIZACION, java.time.LocalDateTime.now())
            .where(VEHICULOS.ID.eq(id))
            .execute();
+    }
+    
+    /**
+     * Obtiene la estructura jerárquica de vehículos agrupados por marca > modelo > generación
+     * @return Mapa con la estructura jerárquica
+     */
+    public Map<String, Object> findHierarchicalVehicles() {
+        // Obtener todas las marcas con sus modelos, generaciones y vehículos
+        Map<String, Object> result = new LinkedHashMap<>();
+        
+        // Obtener marcas
+        dsl.selectFrom(MARCAS)
+           .orderBy(MARCAS.NOMBRE.asc())
+           .fetch()
+           .forEach(marca -> {
+               Map<String, Object> marcaMap = new LinkedHashMap<>();
+               result.put(marca.getNombre(), marcaMap);
+               
+               // Obtener modelos para esta marca
+               dsl.selectFrom(MODELOS)
+                  .where(MODELOS.MARCA_ID.eq(marca.getId()))
+                  .orderBy(MODELOS.NOMBRE.asc())
+                  .fetch()
+                  .forEach(modelo -> {
+                      Map<String, Object> modeloMap = new LinkedHashMap<>();
+                      marcaMap.put(modelo.getNombre(), modeloMap);
+                      
+                      // Obtener generaciones para este modelo
+                      dsl.selectFrom(GENERACIONES)
+                         .where(GENERACIONES.MODELO_ID.eq(modelo.getId()))
+                         .orderBy(GENERACIONES.ANIO_INICIO.asc())
+                         .fetch()
+                         .forEach(generacion -> {
+                             // Obtener vehículos para esta generación
+                             List<Vehiculos> vehiculos = dsl.selectFrom(VEHICULOS)
+                                                         .where(VEHICULOS.GENERACION_ID.eq(generacion.getId()))
+                                                         .orderBy(VEHICULOS.ANIO.asc())
+                                                         .fetchInto(Vehiculos.class);
+                                                         
+                             if (!vehiculos.isEmpty()) {
+                                 String key = String.format("%s (%d-%d)", 
+                                     generacion.getNombre(), 
+                                     generacion.getAnioInicio(), 
+                                     generacion.getAnioFin() != null ? generacion.getAnioFin() : "Actual");
+                                 modeloMap.put(key, vehiculos);
+                             }
+                         });
+                  });
+           });
+           
+        return result;
     }
     
     public void marcarComoVendido(Integer id, BigDecimal precioVenta, LocalDate fechaVenta) {

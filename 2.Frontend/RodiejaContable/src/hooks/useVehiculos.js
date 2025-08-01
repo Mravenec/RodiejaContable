@@ -5,12 +5,29 @@ import vehiculoService from '../api/vehiculos';
 export function useVehiculos(params = {}) {
   return useQuery(
     ['vehiculos', params],
-    () => vehiculoService.getVehiculos(params),
+    async () => {
+      try {
+        const data = await vehiculoService.getVehiculos(params);
+        console.log('API Response:', data);
+        return data;
+      } catch (error) {
+        console.error('Error in useVehiculos:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          params
+        });
+        throw error;
+      }
+    },
     {
       onError: (error) => {
-        message.error('Error al cargar los vehículos');
+        const errorMessage = error.response?.data?.message || 'Error al cargar los vehículos';
+        message.error(errorMessage);
         console.error('Error en useVehiculos:', error);
       },
+      retry: 1,
+      refetchOnWindowFocus: false
     }
   );
 }

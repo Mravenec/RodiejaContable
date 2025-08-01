@@ -15,7 +15,7 @@ const Vehiculos = () => {
   const { data, isLoading, isError, refetch } = useVehiculos(filtros);
   
   // Asegurarse de que los datos sean un array
-  const tableData = data?.data && Array.isArray(data.data) ? data.data : [];
+  const tableData = Array.isArray(data) ? data : [];
   
   const handleSearch = (value) => {
     setFiltros(prev => ({
@@ -37,20 +37,32 @@ const Vehiculos = () => {
   
   const columns = [
     {
-      title: 'Marca',
-      dataIndex: ['generacion', 'modelo', 'marca', 'nombre'],
-      key: 'marca',
-      width: 150,
+      title: 'Código',
+      dataIndex: 'codigoVehiculo',
+      key: 'codigo',
+      width: 120,
       ellipsis: true,
       render: (text) => <span style={{ whiteSpace: 'nowrap' }}>{text || '-'}</span>,
     },
     {
-      title: 'Modelo',
-      dataIndex: ['generacion', 'modelo', 'nombre'],
-      key: 'modelo',
+      title: 'Año',
+      dataIndex: 'anio',
+      key: 'anio',
+      width: 100,
+      align: 'center',
+      render: (text) => text || '-',
+    },
+    {
+      title: 'Precio',
+      key: 'precio',
       width: 150,
-      ellipsis: true,
-      render: (text) => <span style={{ whiteSpace: 'nowrap' }}>{text || '-'}</span>,
+      align: 'right',
+      render: (_, record) => (
+        <div>
+          <div>Compra: ${record.precioCompra?.toLocaleString() || '-'}</div>
+          {record.precioVenta && <div>Venta: ${record.precioVenta.toLocaleString()}</div>}
+        </div>
+      ),
     },
     {
       title: 'Año',
@@ -115,23 +127,26 @@ const Vehiculos = () => {
 
   if (isError) {
     return (
-      <div className="vehiculos-container" style={{ textAlign: 'center', padding: '20px' }}>
-        <Title level={2}>Error al cargar los vehículos</Title>
-        <Button 
-          type="primary" 
-          icon={<ReloadOutlined />} 
-          onClick={handleRefresh}
-          style={{ marginTop: '16px' }}
-        >
-          Reintentar
-        </Button>
+      <div className="vehiculos-container">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Title level={2} style={{ margin: 0 }}>Vehículos</Title>
+          <Button 
+            icon={<ReloadOutlined />} 
+            onClick={handleRefresh}
+            loading={isLoading}
+          >
+            Reintentar
+          </Button>
+        </div>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <p>Error al cargar los vehículos</p>
+        </div>
       </div>
     );
   }
 
   const estados = [
     { value: 'DISPONIBLE', label: 'Disponible' },
-    { value: 'RESERVADO', label: 'Reservado' },
     { value: 'VENDIDO', label: 'Vendido' },
     { value: 'EN_REPARACION', label: 'En Reparación' },
   ];

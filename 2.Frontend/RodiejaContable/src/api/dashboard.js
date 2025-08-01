@@ -26,12 +26,17 @@ class DashboardService {
   // Obtener vehículos más vendidos
   async getVehiculosMasVendidos() {
     try {
-      const response = await api.get('/v1/vehiculos/mas-vendidos', {
-        params: {
-          limit: 5
-        }
+      // If the endpoint doesn't exist, return an empty array for now
+      console.log('Endpoint /vehiculos/mas-vendidos no implementado, devolviendo array vacío');
+      return [];
+      
+      // Uncomment and use this when the endpoint is implemented on the backend
+      /*
+      const response = await api.get('/vehiculos/mas-vendidos', {
+        params: { limit: 5 }
       });
       return response.data;
+      */
     } catch (error) {
       console.error('Error al obtener vehículos más vendidos:', error);
       return [];
@@ -41,12 +46,17 @@ class DashboardService {
   // Obtener repuestos más vendidos
   async getRepuestosMasVendidos() {
     try {
+      // If the endpoint doesn't exist, return an empty array for now
+      console.log('Endpoint /inventario/mas-vendidos no implementado, devolviendo array vacío');
+      return [];
+      
+      // Uncomment and use this when the endpoint is implemented on the backend
+      /*
       const response = await api.get('/inventario/mas-vendidos', {
-        params: {
-          limit: 5
-        }
+        params: { limit: 5 }
       });
       return response.data;
+      */
     } catch (error) {
       console.error('Error al obtener repuestos más vendidos:', error);
       return [];
@@ -67,7 +77,7 @@ class DashboardService {
   // Obtener comisiones de vendedores
   async getComisionesVendedores() {
     try {
-      const response = await api.get('/v1/ventas-empleados');
+      const response = await api.get('/ventas-empleados');
       return response.data;
     } catch (error) {
       console.error('Error al obtener comisiones por vendedor:', error);
