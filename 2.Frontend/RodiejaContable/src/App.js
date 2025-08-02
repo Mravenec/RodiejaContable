@@ -137,12 +137,29 @@ const MainLayout = ({ children }) => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sidebar menuItems={menuItems} collapsed={collapsed} />
-      <Layout>
-        <Header collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} user={user} />
-        <Layout.Content style={{ margin: '24px 16px', padding: 24, minHeight: 280 }}>
+      <Layout style={{ marginLeft: collapsed ? '80px' : '200px', transition: 'margin-left 0.2s' }}>
+        <div style={{ height: '64px' }}>
+          <Header collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} user={user} />
+        </div>
+        <Layout.Content style={{ 
+          margin: '24px 16px 0', 
+          padding: 24,
+          minHeight: 'calc(100vh - 112px)',
+          background: '#f0f2f5',
+          borderRadius: '8px 8px 0 0',
+          overflow: 'auto'
+        }}>
           {children}
         </Layout.Content>
-        <Layout.Footer style={{ textAlign: 'center' }}>
+        <Layout.Footer style={{ 
+          textAlign: 'center', 
+          padding: '16px',
+          background: '#fff',
+          borderTop: '1px solid #f0f0f0',
+          marginLeft: '16px',
+          marginRight: '16px',
+          borderRadius: '0 0 8px 8px'
+        }}>
           Rodieja Contable ©{new Date().getFullYear()} - Todos los derechos reservados
         </Layout.Footer>
       </Layout>

@@ -92,19 +92,27 @@ const Sidebar = ({ collapsed }) => {
       }}
     >
       <div style={{ 
-        height: 32, 
+        height: collapsed ? 32 : 'auto',
+        minHeight: 32,
         margin: 16, 
+        padding: collapsed ? 0 : '12px 16px',
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
         color: 'white',
-        fontSize: '16px',
-        fontWeight: 'bold',
-        background: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: '4px',
-        padding: '0 8px'
+        fontSize: collapsed ? '16px' : '18px',
+        fontWeight: 700,
+        background: 'rgba(255, 255, 255, 0.25)',
+        borderRadius: '8px',
+        textAlign: 'center',
+        lineHeight: '1.4',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+        transition: 'all 0.3s ease',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
       }}>
-        {collapsed ? 'RSA' : 'Rodieja S.A.'}
+        {collapsed ? 'RC' : 'Rodieja Contable'}
       </div>
       <Menu
         theme="dark"

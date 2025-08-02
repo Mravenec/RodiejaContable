@@ -65,7 +65,7 @@ const Header = ({ collapsed, toggleCollapse }) => {
   return (
     <AntdHeader 
       style={{ 
-        padding: 0, 
+        padding: '0 24px 0 16px',
         background: '#fff',
         display: 'flex',
         alignItems: 'center',
@@ -74,8 +74,8 @@ const Header = ({ collapsed, toggleCollapse }) => {
         width: '100%',
         zIndex: 1,
         boxShadow: '0 1px 4px rgba(0,21,41,.08)',
-        paddingLeft: '16px',
-        paddingRight: '24px',
+        height: '64px',
+        lineHeight: '64px'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -89,7 +89,20 @@ const Header = ({ collapsed, toggleCollapse }) => {
             height: 64,
           }}
         />
-        <div style={{ marginLeft: 16, fontSize: '18px', fontWeight: 'bold' }}>
+        <div style={{
+          marginLeft: '16px',
+          fontSize: '20px',
+          fontWeight: 700,
+          color: '#1890ff',
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+          letterSpacing: '0.3px',
+          background: 'linear-gradient(90deg, #1890ff 0%, #096dd9 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          textFillColor: 'transparent',
+          padding: '4px 0'
+        }}>
           Rodieja Contable
         </div>
       </div>
