@@ -144,10 +144,11 @@ const MainLayout = ({ children }) => {
         <Layout.Content style={{ 
           margin: '24px 16px 0', 
           padding: 24,
-          minHeight: 'calc(100vh - 112px)',
+          minHeight: 'calc(100vh - 180px)',
           background: '#f0f2f5',
           borderRadius: '8px 8px 0 0',
-          overflow: 'auto'
+          overflow: 'auto',
+          flex: '1 1 auto'
         }}>
           {children}
         </Layout.Content>
@@ -156,9 +157,11 @@ const MainLayout = ({ children }) => {
           padding: '16px',
           background: '#fff',
           borderTop: '1px solid #f0f0f0',
-          marginLeft: '16px',
-          marginRight: '16px',
-          borderRadius: '0 0 8px 8px'
+          margin: '0 16px 16px',
+          borderRadius: '0 0 8px 8px',
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 1
         }}>
           Rodieja Contable ©{new Date().getFullYear()} - Todos los derechos reservados
         </Layout.Footer>

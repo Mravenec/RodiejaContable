@@ -365,48 +365,217 @@ const Dashboard = () => {
         </Col>
       </Row>
       
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[16, 16]} style={{ marginTop: 16, marginBottom: 24 }}>
         <Col span={24}>
-          <Card title="Acciones Rápidas">
+          <Card 
+            title={
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                fontSize: '16px',
+                fontWeight: 500
+              }}>
+                <span>Acciones Rápidas</span>
+              </div>
+            }
+            headStyle={{
+              borderBottom: 'none',
+              padding: '16px 24px',
+              backgroundColor: '#fafafa',
+              borderTopLeftRadius: '8px',
+              borderTopRightRadius: '8px'
+            }}
+            bodyStyle={{
+              padding: '16px 24px',
+              backgroundColor: '#fff',
+              borderBottomLeftRadius: '8px',
+              borderBottomRightRadius: '8px'
+            }}
+            style={{
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+              border: '1px solid #f0f0f0',
+              borderRadius: '8px'
+            }}
+          >
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12} md={6}>
                 <Card 
                   hoverable 
-                  style={{ textAlign: 'center' }}
+                  style={{ 
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    borderRadius: '8px',
+                    border: '1px solid #f0f0f0',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    minHeight: '120px'
+                  }}
+                  bodyStyle={{
+                    padding: '16px 8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1
+                  }}
                   onClick={() => navigate('/vehiculos/nuevo')}
                 >
-                  <CarOutlined style={{ fontSize: 24, marginBottom: 8, color: '#1890ff' }} />
-                  <div>Agregar Vehículo</div>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    backgroundColor: '#e6f7ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <CarOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+                  </div>
+                  <div style={{ 
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    color: 'rgba(0, 0, 0, 0.85)'
+                  }}>
+                    Agregar Vehículo
+                  </div>
                 </Card>
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Card 
                   hoverable 
-                  style={{ textAlign: 'center' }}
+                  style={{ 
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    borderRadius: '8px',
+                    border: '1px solid #f0f0f0',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    minHeight: '120px'
+                  }}
+                  bodyStyle={{
+                    padding: '16px 8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1
+                  }}
                   onClick={() => navigate('/inventario/nuevo')}
                 >
-                  <ToolOutlined style={{ fontSize: 24, marginBottom: 8, color: '#722ed1' }} />
-                  <div>Agregar Repuesto</div>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    backgroundColor: '#f9f0ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <ToolOutlined style={{ fontSize: '24px', color: '#722ed1' }} />
+                  </div>
+                  <div style={{ 
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    color: 'rgba(0, 0, 0, 0.85)'
+                  }}>
+                    Agregar Repuesto
+                  </div>
                 </Card>
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Card 
                   hoverable 
-                  style={{ textAlign: 'center' }}
+                  style={{ 
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    borderRadius: '8px',
+                    border: '1px solid #f0f0f0',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    minHeight: '120px'
+                  }}
+                  bodyStyle={{
+                    padding: '16px 8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1
+                  }}
                   onClick={() => navigate('/finanzas/nueva-transaccion')}
                 >
-                  <DollarOutlined style={{ fontSize: 24, marginBottom: 8, color: '#52c41a' }} />
-                  <div>Nueva Transacción</div>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    backgroundColor: '#f6ffed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <DollarOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                  </div>
+                  <div style={{ 
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    color: 'rgba(0, 0, 0, 0.85)'
+                  }}>
+                    Nueva Transacción
+                  </div>
                 </Card>
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Card 
                   hoverable 
-                  style={{ textAlign: 'center' }}
+                  style={{ 
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    borderRadius: '8px',
+                    border: '1px solid #f0f0f0',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    minHeight: '120px'
+                  }}
+                  bodyStyle={{
+                    padding: '16px 8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: 1
+                  }}
                   onClick={() => navigate('/reportes')}
                 >
-                  <FileTextOutlined style={{ fontSize: 24, marginBottom: 8, color: '#fa8c16' }} />
-                  <div>Ver Reportes</div>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    backgroundColor: '#e6fffb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <BarChartOutlined style={{ fontSize: '24px', color: '#13c2c2' }} />
+                  </div>
+                  <div style={{ 
+                    fontWeight: 500,
+                    fontSize: '15px',
+                    color: 'rgba(0, 0, 0, 0.85)'
+                  }}>
+                    Ver Reportes
+                  </div>
                 </Card>
               </Col>
             </Row>
