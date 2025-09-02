@@ -21,6 +21,7 @@ import {
   Input as AntdInput,
   message
 } from 'antd';
+import { formatCurrency } from '../../utils/formatters';
 import { 
   DollarOutlined, 
   ArrowUpOutlined, 
@@ -217,7 +218,7 @@ const Finanzas = () => {
             color: record.tipo === 'ingreso' ? '#52c41a' : '#f5222d' 
           }}
         >
-          {record.tipo === 'ingreso' ? '+' : '-'}${monto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {record.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(monto)}
         </Text>
       ),
       sorter: (a, b) => a.monto - b.monto,
@@ -368,7 +369,7 @@ const Finanzas = () => {
               precision={2}
               valueStyle={{ color: '#52c41a' }}
               prefix={<ArrowUpOutlined />}
-              suffix="MXN"
+              suffix="CRC"
             />
           </Card>
         </Col>
@@ -380,7 +381,7 @@ const Finanzas = () => {
               precision={2}
               valueStyle={{ color: '#f5222d' }}
               prefix={<ArrowDownOutlined />}
-              suffix="MXN"
+              suffix="CRC"
             />
           </Card>
         </Col>
@@ -395,7 +396,7 @@ const Finanzas = () => {
                 fontWeight: 'bold'
               }}
               prefix={balance >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-              suffix="MXN"
+              suffix="CRC"
             />
           </Card>
         </Col>

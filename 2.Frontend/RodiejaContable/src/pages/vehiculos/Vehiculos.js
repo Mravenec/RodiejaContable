@@ -3,6 +3,7 @@ import { Card, Table, Button, Space, Typography, Input, Select, Tag, Spin, messa
 import { SearchOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useVehiculos } from '../../hooks/useVehiculos';
+import { formatCurrency } from '../../utils/formatters';
 import './vehiculos.css';
 
 const { Title, Text } = Typography;
@@ -59,8 +60,8 @@ const Vehiculos = () => {
       align: 'right',
       render: (_, record) => (
         <div>
-          <div>Compra: ${record.precioCompra?.toLocaleString() || '-'}</div>
-          {record.precioVenta && <div>Venta: ${record.precioVenta.toLocaleString()}</div>}
+          <div>Compra: {record.precioCompra ? formatCurrency(record.precioCompra) : '-'}</div>
+          {record.precioVenta && <div>Venta: {formatCurrency(record.precioVenta)}</div>}
         </div>
       ),
     },

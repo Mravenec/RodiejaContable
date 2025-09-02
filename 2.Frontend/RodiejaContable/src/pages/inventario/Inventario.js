@@ -31,6 +31,7 @@ import {
   MoreOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '../../utils/formatters';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -197,7 +198,7 @@ const Inventario = () => {
       width: 120,
       responsive: ['sm'],
       align: 'right',
-      render: (text) => `$${text.toLocaleString()}`,
+      render: (text) => formatCurrency(text),
       sorter: (a, b) => a.precio - b.precio,
     },
     {

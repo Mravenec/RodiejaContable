@@ -141,10 +141,10 @@ const NuevoRepuesto = () => {
                     <InputNumber 
                       style={{ width: '100%' }} 
                       min={0} 
-                      step={0.01} 
-                      precision={2}
-                      formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                      step={1000} 
+                      precision={0}
+                      formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      parser={value => value.replace(/₡\s?|(,*)/g, '')}
                     />
                   </Form.Item>
                 </Col>
@@ -158,10 +158,10 @@ const NuevoRepuesto = () => {
                     <InputNumber 
                       style={{ width: '100%' }} 
                       min={0} 
-                      step={0.01} 
-                      precision={2}
-                      formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                      step={1000} 
+                      precision={0}
+                      formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      parser={value => value.replace(/₡\s?|(,*)/g, '')}
                     />
                   </Form.Item>
                 </Col>
@@ -174,10 +174,10 @@ const NuevoRepuesto = () => {
                 <InputNumber 
                   style={{ width: '100%' }} 
                   min={0} 
-                  step={0.01} 
-                  precision={2}
-                  formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                  step={1000} 
+                  precision={0}
+                  formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={value => value.replace(/₡\s?|(,*)/g, '')}
                 />
               </Form.Item>
               

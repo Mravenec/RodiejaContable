@@ -281,8 +281,8 @@ const Reportes = () => {
               title="Ingresos Totales"
               value={metricas.totalIngresos}
               precision={2}
-              prefix="$"
-              suffix="MXN"
+              prefix="₡"
+              suffix=""
               prefixCls="ant-statistic-content-value"
               valueStyle={{ color: '#52c41a' }}
             />

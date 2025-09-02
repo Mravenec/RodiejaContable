@@ -1,5 +1,6 @@
 import { Tag, Typography, Row, Col, Card, Statistic } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { formatCurrency } from './formatters';
 
 const { Text } = Typography;
 
@@ -22,18 +23,7 @@ export const renderEstado = (estado) => {
   return <Tag color={estadoInfo.color}>{estadoInfo.text}</Tag>;
 };
 
-/**
- * Formatea un valor numérico como moneda mexicana
- * @param {number} value - Valor a formatear
- * @returns {string} Valor formateado como moneda
- */
-export const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2
-  }).format(value || 0);
-};
+// formatCurrency is now imported from formatters.js
 
 /**
  * Renderiza las estadísticas de una generación de vehículos

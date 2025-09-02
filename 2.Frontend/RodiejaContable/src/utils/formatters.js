@@ -1,11 +1,11 @@
-// Format currency (MXN)
+// Format currency (CRC - Costa Rican Colones)
 export const formatCurrency = (amount) => {
-  if (amount === null || amount === undefined) return '$0.00';
-  return new Intl.NumberFormat('es-MX', {
+  if (amount === null || amount === undefined) return '₡0';
+  return new Intl.NumberFormat('es-CR', {
     style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    currency: 'CRC',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(amount);
 };
 

@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import { Loading } from '../components/Loading';
 import { dashboardService } from '../api';
+import { formatCurrency } from '../utils/formatters';
 
 const { Title, Text } = Typography;
 
@@ -102,13 +103,6 @@ const Dashboard = () => {
     meses: ventasMensuales
   };
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
 
   return (
     <div className="dashboard-container" style={{ padding: { xs: '12px', sm: '16px', md: '24px' } }}>
