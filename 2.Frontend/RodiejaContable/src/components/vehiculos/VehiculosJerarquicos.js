@@ -40,6 +40,84 @@ const VehiculosJerarquicos = () => {
   const [expandedKeys, setExpandedKeys] = useState({});
   const [transacciones, setTransacciones] = useState({});
   const [loadingTransacciones, setLoadingTransacciones] = useState({});
+  const [rawData, setRawData] = useState(null);
+  const [showRawData, setShowRawData] = useState(false);
+
+  /**
+   * Procesa los datos de marcas para asegurar la estructura correcta
+   * @param {Object|Array} data - Datos de entrada que pueden ser un objeto o array
+   * @returns {Array} Datos de marcas procesados con estructura jerárquica
+   */
+  const procesarDatosMarcas = (data) => {
+    console.log('[DEBUG] Procesando datos en procesarDatosMarcas:', data);
+    
+    // Si los datos son nulos o indefinidos
+    if (!data) {
+      console.warn('No se recibieron datos en procesarDatosMarcas');
+      return [];
+    }
+
+    // Función para procesar un array de marcas
+    const procesarArrayMarcas = (marcasArray) => {
+      if (!Array.isArray(marcasArray)) return [];
+      
+      return marcasArray.map(marca => ({
+        ...marca,
+        key: `marca-${marca.id || Math.random()}`,
+        modelos: Array.isArray(marca.modelos) ? marca.modelos.map(modelo => ({
+          ...modelo,
+          key: `modelo-${modelo.id || Math.random()}`,
+          generaciones: Array.isArray(modelo.generaciones) ? modelo.generaciones.map(generacion => ({
+            ...generacion,
+            key: `generacion-${generacion.id || Math.random()}`,
+            vehiculos: Array.isArray(generacion.vehiculos) ? generacion.vehiculos.map(v => ({
+              ...v,
+              key: `vehiculo-${v.id || Math.random()}`
+            })) : []
+          })) : []
+        })) : []
+      }));
+    };
+
+    // Si los datos son un array, asumimos que es un array de marcas
+    if (Array.isArray(data)) {
+      console.log('[DEBUG] Los datos son un array, procesando como array de marcas');
+      return procesarArrayMarcas(data);
+    }
+    
+    // Si es un objeto con propiedad 'marcas'
+    if (data.marcas && Array.isArray(data.marcas)) {
+      console.log('[DEBUG] Datos contienen propiedad "marcas"');
+      return procesarArrayMarcas(data.marcas);
+    }
+    
+    // Si es un objeto pero no tiene la estructura esperada, intentar extraer marcas
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      console.log('[DEBUG] Los datos son un objeto, buscando estructura alternativa');
+      // Buscar cualquier propiedad que sea un array que podría contener las marcas
+      const possibleMarcas = Object.values(data).find(
+        val => Array.isArray(val) && val.length > 0 && val[0].modelos
+      );
+      
+      if (possibleMarcas) {
+        console.log('[DEBUG] Se encontró un array de marcas en una propiedad del objeto');
+        return procesarArrayMarcas(possibleMarcas);
+      }
+      
+      // Si no encontramos marcas directamente, buscar cualquier array que pueda contener vehículos
+      const anyArray = Object.values(data).find(
+        val => Array.isArray(val) && val.length > 0
+      );
+      
+      if (anyArray) {
+        console.log('[DEBUG] Se encontró un array en los datos, intentando procesar como marcas');
+        return procesarArrayMarcas(anyArray);
+      }
+    }
+    
+    console.warn('Formato de datos inesperado en procesarDatosMarcas:', data);
+    return [];
+  };
 
   /**
    * Carga los datos jerárquicos de vehículos desde el servidor
@@ -47,13 +125,123 @@ const VehiculosJerarquicos = () => {
   const cargarDatos = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await vehiculoService.getVehiculosAgrupados();
-      console.log('Datos jerárquicos recibidos:', data);
-      setMarcas(data);
+      setError('');
+      setRawData(null);
+      setMarcas([]); // Resetear marcas antes de cargar
+      
+      console.log('[DEBUG] Iniciando solicitud de datos jerárquicos...');
+      
+      // Verificar que el servicio esté definido
+      if (!vehiculoService || typeof vehiculoService.getVehiculosAgrupados !== 'function') {
+        const errorMsg = 'El servicio de vehículos no está configurado correctamente';
+        console.error(errorMsg, { vehiculoService });
+        setError(errorMsg);
+        return;
+      }
+      
+      // Hacer la petición al servidor
+      console.log('[DEBUG] Realizando petición a la API...');
+      let data;
+      try {
+        data = await vehiculoService.getVehiculosAgrupados();
+        console.log('[DEBUG] Respuesta de la API recibida:', data);
+      } catch (apiError) {
+        console.error('[ERROR] Error en la petición a la API:', {
+          message: apiError.message,
+          response: apiError.response?.data,
+          status: apiError.response?.status,
+          url: apiError.config?.url
+        });
+        throw apiError;
+      }
+      
+      if (!data) {
+        const errorMsg = 'No se recibieron datos de la API';
+        console.error(errorMsg);
+        setError(errorMsg);
+        return;
+      }
+      
+      // Guardar datos crudos para depuración
+      setRawData(data);
+      
+      // Registrar estructura de los datos recibidos
+      console.log('[DEBUG] Estructura de los datos recibidos:', {
+        tipo: typeof data,
+        esArray: Array.isArray(data),
+        claves: Object.keys(data),
+        tieneMarcas: !!data.marcas,
+        esArrayMarcas: Array.isArray(data.marcas),
+        primerElemento: Array.isArray(data) ? data[0] : data.marcas?.[0],
+        data: data
+      });
+      
+      // Procesar los datos
+      console.log('[DEBUG] Procesando datos...');
+      const marcasProcesadas = procesarDatosMarcas(data);
+      
+      console.log('[DEBUG] Resultado del procesamiento:', {
+        marcasProcesadas,
+        cantidad: marcasProcesadas?.length || 0,
+        primerElemento: marcasProcesadas[0]
+      });
+      
+      if (!marcasProcesadas || marcasProcesadas.length === 0) {
+        const errorMsg = 'No se encontraron vehículos registrados o formato de datos inesperado';
+        console.warn(errorMsg, { 
+          rawData: data,
+          tipo: typeof data,
+          claves: Object.keys(data)
+        });
+        setError(errorMsg);
+        return;
+      }
+      
+      // Verificar la estructura de los datos procesados
+      const estructura = {
+        marcas: marcasProcesadas.length,
+        modelos: marcasProcesadas.reduce((sum, m) => sum + (m.modelos?.length || 0), 0),
+        generaciones: marcasProcesadas.reduce((sum, m) => 
+          sum + (m.modelos?.reduce((s, mod) => 
+            s + (mod.generaciones?.length || 0), 0) || 0), 0),
+        vehiculos: marcasProcesadas.reduce((sum, m) => 
+          sum + (m.modelos?.reduce((s, mod) => 
+            mod.generaciones?.reduce((ss, gen) => 
+              ss + (gen.vehiculos?.length || 0), 0) || 0, 0) || 0), 0)
+      };
+      
+      console.log('[DEBUG] Estructura de datos procesados:', estructura);
+      
+      if (estructura.vehiculos === 0) {
+        console.warn('No se encontraron vehículos en la estructura jerárquica:', {
+          marcasProcesadas,
+          rawData: data
+        });
+        setError('No se encontraron vehículos en la estructura de datos recibida');
+        return;
+      }
+      
+      console.log('[DEBUG] Datos validados correctamente, actualizando estado...');
+      setMarcas(marcasProcesadas);
+      
     } catch (err) {
-      console.error('Error al cargar vehículos:', err);
-      setError('Error al cargar los datos de vehículos');
+      const errorDetails = {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      };
+      
+      console.error('[ERROR] Error al cargar vehículos:', errorDetails);
+      setError(`Error al cargar los datos: ${err.message || 'Error desconocido'}`);
+      
+      // En desarrollo, mostrar más detalles del error
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Detalles completos del error:', errorDetails);
+      }
     } finally {
+      console.log('[DEBUG] Finalizando carga de datos, estableciendo loading=false');
       setLoading(false);
     }
   }, []);
@@ -561,6 +749,30 @@ const VehiculosJerarquicos = () => {
                 >
                   Reintentar
                 </Button>
+                {rawData && (
+                  <div style={{ marginTop: '16px' }}>
+                    <Button 
+                      type="link" 
+                      onClick={() => setShowRawData(!showRawData)}
+                      icon={<InfoCircleOutlined />}
+                      size="small"
+                    >
+                      {showRawData ? 'Ocultar' : 'Mostrar'} datos en bruto
+                    </Button>
+                    {showRawData && (
+                      <pre style={{ 
+                        marginTop: 8, 
+                        padding: 12, 
+                        background: '#f5f5f5',
+                        borderRadius: 4,
+                        maxHeight: 400,
+                        overflow: 'auto'
+                      }}>
+                        {JSON.stringify(rawData, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                )}
               </div>
             }
           />
@@ -569,41 +781,102 @@ const VehiculosJerarquicos = () => {
     );
   }
 
-  if (!marcas || marcas.length === 0) {
-    return (
-      <Card title="Vehículos">
-        <Empty 
-          description="No se encontraron vehículos registrados"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
-      </Card>
-    );
-  }
-
+  // Renderizado principal del componente
   return (
     <div className="vehiculos-jerarquicos">
       <div style={{ marginBottom: 24 }}>
-        <h1>Vehículos</h1>
-        <Text type="secondary">
-          Vista jerárquica de vehículos agrupados por marca, modelo y generación
-        </Text>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1>Vehículos</h1>
+            <Text type="secondary">
+              Vista jerárquica de vehículos agrupados por marca, modelo y generación
+            </Text>
+          </div>
+          {rawData && (
+            <Button 
+              type="link" 
+              onClick={() => setShowRawData(!showRawData)}
+              icon={<InfoCircleOutlined />}
+            >
+              {showRawData ? 'Ocultar datos en bruto' : 'Mostrar datos en bruto'}
+            </Button>
+          )}
+        </div>
+        
+        {showRawData && (
+          <div style={{ 
+            marginTop: 16, 
+            padding: 16, 
+            background: '#f5f5f5', 
+            borderRadius: 4,
+            maxHeight: 400,
+            overflow: 'auto'
+          }}>
+            <pre style={{ margin: 0 }}>{JSON.stringify(rawData, null, 2)}</pre>
+          </div>
+        )}
       </div>
       
-      {marcas.map(renderMarca)}
-      
-      <style jsx global>{`
-        .ant-collapse > .ant-collapse-item > .ant-collapse-header {
-          padding: 8px 0 !important;
-        }
-        .ant-collapse-ghost > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box {
-          padding: 8px 0 16px 0 !important;
-        }
-        .vehiculo-header {
-          display: flex;
-          align-items: center;
-          width: 100%;
-        }
-      `}</style>
+      {marcas.map(marca => (
+        <Card 
+          key={`marca-${marca.id}`} 
+          style={{ marginBottom: 16 }}
+          title={marca.nombre}
+          extra={`${marca.modelos?.length || 0} modelos`}
+        >
+          {marca.modelos?.length > 0 ? (
+            <Collapse ghost>
+              {marca.modelos.map(modelo => (
+                <Panel 
+                  key={`modelo-${modelo.id}`}
+                  header={
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>{modelo.nombre}</span>
+                      <span>{modelo.generaciones?.length || 0} generaciones</span>
+                    </div>
+                  }
+                >
+                  {modelo.generaciones?.length > 0 ? (
+                    <Collapse ghost>
+                      {modelo.generaciones.map(generacion => (
+                        <Panel
+                          key={`generacion-${generacion.id}`}
+                          header={`${generacion.nombre} (${generacion.anio_inicio} - ${generacion.anio_fin || 'Actual'})`}
+                        >
+                          {generacion.vehiculos?.length > 0 ? (
+                            <div style={{ marginLeft: 24 }}>
+                              {generacion.vehiculos.map(vehiculo => (
+                                <div key={vehiculo.id} style={{ marginBottom: 16 }}>
+                                  {renderVehiculo(vehiculo)}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <Empty 
+                              description="No hay vehículos en esta generación" 
+                              image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                            />
+                          )}
+                        </Panel>
+                      ))}
+                    </Collapse>
+                  ) : (
+                    <Empty 
+                      description="No hay generaciones para este modelo" 
+                      image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                    />
+                  )}
+                </Panel>
+              ))}
+            </Collapse>
+          ) : (
+            <Empty 
+              description="No hay modelos para esta marca" 
+              image={Empty.PRESENTED_IMAGE_SIMPLE} 
+            />
+          )}
+        </Card>
+      ))}
     </div>
   );
 };

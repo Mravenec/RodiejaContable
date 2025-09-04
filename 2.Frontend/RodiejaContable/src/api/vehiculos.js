@@ -13,6 +13,88 @@ class VehiculoService {
   error(...args) {
     console.error('[VehiculoService]', ...args);
   }
+  /**
+   * Obtiene los vehículos agrupados jerárquicamente por marca, modelo y generación
+   * @returns {Promise<Object>} Objeto con la estructura jerárquica de vehículos
+   */
+  async getVehiculosAgrupados() {
+    try {
+      this.log('Fetching hierarchical vehicle data...');
+      const response = await api.get('/vehiculos/jerarquia');
+      
+      // Log detallado de la respuesta
+      console.log('[DEBUG] Raw API response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        data: response.data,
+        config: {
+          url: response.config?.url,
+          method: response.config?.method,
+          params: response.config?.params,
+          data: response.config?.data
+        }
+      });
+      
+      // Verificar si hay datos
+      if (!response.data) {
+        console.warn('La respuesta de la API está vacía');
+        return { marcas: [] };
+      }
+      
+      // Asegurarse de que la respuesta tenga la estructura esperada
+      if (response.data.marcas !== undefined) {
+        console.log('Respuesta con formato { marcas: [...] }');
+        return response.data;
+      } 
+      
+      // Si es un array, asumimos que son las marcas
+      if (Array.isArray(response.data)) {
+        console.log('Respuesta es un array, convirtiendo a { marcas: [...] }');
+        return { marcas: response.data };
+      }
+      
+      // Si es un objeto pero no tiene la estructura esperada, intentar extraer marcas
+      if (typeof response.data === 'object' && response.data !== null) {
+        console.log('Respuesta es un objeto, buscando estructura alternativa');
+        
+        // Buscar cualquier propiedad que sea un array
+        const arrayProps = Object.entries(response.data)
+          .filter(([_, value]) => Array.isArray(value))
+          .map(([key, value]) => ({ key, length: value.length }));
+          
+        console.log('Propiedades de array encontradas:', arrayProps);
+        
+        // Si hay exactamente una propiedad de array, usarla como marcas
+        if (arrayProps.length === 1) {
+          const [key] = arrayProps[0];
+          console.log(`Usando propiedad '${key}' como marcas`);
+          return { marcas: response.data[key] };
+        }
+      }
+      
+      console.warn('Formato de respuesta no reconocido, devolviendo marcas vacías');
+      return { marcas: [] };
+      
+    } catch (error) {
+      this.error('Error fetching hierarchical vehicles:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      
+      // Si el endpoint no existe (404), intentar con el método alternativo
+      if (error.response?.status === 404) {
+        this.log('Hierarchical endpoint not found, falling back to flat data');
+        const flatData = await this.getVehiculos({}, true);
+        return { marcas: Array.isArray(flatData) ? flatData : [] };
+      }
+      
+      throw error;
+    }
+  }
+  
   // Obtener todos los vehículos con sus relaciones
   /**
    * Obtiene vehículos en formato plano o jerárquico según los parámetros
@@ -110,36 +192,6 @@ class VehiculoService {
     }
   }
 
-  // Obtener vehículos agrupados jerárquicamente por marca > modelo > generación > vehículo
-  async getVehiculosAgrupados() {
-    try {
-      this.log('Fetching vehicles with hierarchical structure');
-      
-      // Obtener vehículos con toda la información necesaria
-      const response = await api.get('/vehiculos/completo');
-      this.log('Hierarchical vehicles API response:', response.data);
-      
-      if (!response.data) {
-        this.error('Invalid response format for hierarchical vehicles');
-        return [];
-      }
-      
-      return response.data;
-    } catch (error) {
-      this.error('Error getting hierarchical vehicles:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      
-      if (error.response?.status === 404) {
-        this.log('Hierarchical vehicles endpoint not found, falling back to flat structure');
-        return [];
-      }
-      
-      throw error;
-    }
-  }
   
   // Obtener estadísticas financieras por generación
   async getEstadisticasGeneracion(generacionId) {

@@ -167,17 +167,25 @@ const Vehiculos = () => {
             justifyContent: 'space-between', 
             alignItems: 'center',
             gap: '16px',
-            rowGap: '16px'
           }}>
             <span style={{ whiteSpace: 'nowrap' }}>Lista de Vehículos</span>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={() => navigate('/vehiculos/nuevo')}
-              style={{ flexShrink: 0 }}
-            >
-              Agregar Vehículo
-            </Button>
+            <Space>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />}
+                onClick={() => navigate('/vehiculos/nuevo')}
+                style={{ flexShrink: 0 }}
+              >
+                Agregar Vehículo
+              </Button>
+              <Button 
+                type="default"
+                icon={<ReloadOutlined />}
+                onClick={() => navigate('/vehiculos/jerarquia')}
+              >
+                Ver por Generaciones
+              </Button>
+            </Space>
           </div>
         }
         style={{ marginBottom: '24px', overflow: 'hidden' }}
