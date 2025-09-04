@@ -30,89 +30,113 @@ import {
 const { Panel } = Collapse;
 const { Text } = Typography;
 
-/** Helpers de normalización y formateo */
+/* ========================= Helpers ========================= */
 const isNullish = (v) => v === null || v === undefined || v === '{null}';
-const toNum = (v, d = 0) => (isNullish(v) ? d : Number(v));
-const toDateStr = (v) => {
-  if (isNullish(v)) return '-';
-  // JOOQ te manda '2025-07-31' o '2025-07-31T06:08:14'
-  const dt = new Date(String(v));
-  return isNaN(dt.getTime()) ? String(v) : dt.toLocaleDateString();
-};
+const toNum = (v, d = 0) => (isNullish(v) || v === '' ? d : Number(v));
 const toStr = (v, d = '') => (isNullish(v) ? d : String(v));
 
-/**
- * Normaliza a la forma esperada por la UI:
- * [{ id, nombre, modelos:[{ id, nombre, generaciones:[{..., vehiculos:[...] }]}] }]
- * Garantiza arrays y ordena como tus queries (nombre asc, anio_inicio asc, anio asc)
- */
+/** Acepta string ISO, Date, o array [yyyy, m, d, (hh, mm, ss)] */
+const arrDateToDate = (arr) => {
+  if (!Array.isArray(arr) || arr.length < 3) return null;
+  const [y, m, d, hh = 0, mm = 0, ss = 0] = arr.map(Number);
+  const dt = new Date(y, (m || 1) - 1, d || 1, hh, mm, ss);
+  return isNaN(dt.getTime()) ? null : dt;
+};
+const toDate = (v) => {
+  if (isNullish(v)) return null;
+  if (Array.isArray(v)) return arrDateToDate(v);
+  const dt = new Date(String(v));
+  return isNaN(dt.getTime()) ? null : dt;
+};
+const toDateStr = (v) => {
+  const dt = toDate(v);
+  return dt ? dt.toLocaleDateString() : '-';
+};
+
+/* ========== Normalización: soporta snake_case y camelCase ========== */
 const normalizarEOrdenar = (data) => {
   const marcas = Array.isArray(data?.marcas) ? data.marcas : (Array.isArray(data) ? data : []);
+
+  const normVehiculo = (v) => {
+    const codigo = v.codigo_vehiculo ?? v.codigoVehiculo;
+    const generacionId = v.generacion_id ?? v.generacionId;
+    const precioCompra = v.precio_compra ?? v.precioCompra;
+    const costoGrua = v.costo_grua ?? v.costoGrua;
+    const inversionTotal = v.inversion_total ?? v.inversionTotal;
+    const costoRecuperado = v.costo_recuperado ?? v.costoRecuperado;
+    const costoPendiente = v.costo_pendiente ?? v.costoPendiente;
+    const fechaIngreso = v.fecha_ingreso ?? v.fechaIngreso;
+    const precioVenta = v.precio_venta ?? v.precioVenta;
+    const fechaVenta = v.fecha_venta ?? v.fechaVenta;
+    const fechaCreacion = v.fecha_creacion ?? v.fechaCreacion;
+    const fechaActualizacion = v.fecha_actualizacion ?? v.fechaActualizacion;
+
+    return {
+      id: v.id,
+      codigo_vehiculo: toStr(codigo, 'Sin código'),
+      generacion_id: generacionId,
+      anio: toNum(v.anio),
+      precio_compra: toNum(precioCompra),
+      costo_grua: toNum(costoGrua),
+      comisiones: toNum(v.comisiones),
+      inversion_total: toNum(inversionTotal),
+      costo_recuperado: toNum(costoRecuperado),
+      costo_pendiente: toNum(costoPendiente),
+      fecha_ingreso: fechaIngreso,
+      estado: toStr(v.estado, 'SIN_ESTADO'),
+      precio_venta: isNullish(precioVenta) ? null : Number(precioVenta),
+      fecha_venta: isNullish(fechaVenta) ? null : fechaVenta,
+      activo: toNum(v.activo, 0),
+      notas: isNullish(v.notas) ? null : String(v.notas),
+      fecha_creacion: fechaCreacion,
+      fecha_actualizacion: fechaActualizacion
+    };
+  };
+
+  const normGeneracion = (g) => {
+    const anioInicio = g.anio_inicio ?? g.anioInicio;
+    const anioFin = g.anio_fin ?? g.anioFin;
+    return {
+      id: g.id,
+      modelo_id: g.modelo_id,
+      nombre: toStr(g.nombre, 'Sin generación'),
+      descripcion: toStr(g.descripcion),
+      anio_inicio: isNullish(anioInicio) ? undefined : Number(anioInicio),
+      anio_fin: isNullish(anioFin) ? null : Number(anioFin),
+      total_inversion: toNum(g.total_inversion),
+      total_ingresos: toNum(g.total_ingresos),
+      total_egresos: toNum(g.total_egresos),
+      balance_neto: toNum(g.balance_neto),
+      activo: toNum(g.activo, 0),
+      fecha_creacion: toStr(g.fecha_creacion ?? g.fechaCreacion),
+      vehiculos: (Array.isArray(g.vehiculos) ? g.vehiculos.map(normVehiculo) : [])
+        .sort((a, b) => (a.anio ?? 0) - (b.anio ?? 0))
+    };
+  };
+
+  const normModelo = (mo) => ({
+    id: mo.id,
+    marca_id: mo.marca_id,
+    nombre: toStr(mo.nombre, 'Sin modelo'),
+    activo: toNum(mo.activo, 0),
+    fecha_creacion: toStr(mo.fecha_creacion ?? mo.fechaCreacion),
+    generaciones: (Array.isArray(mo.generaciones) ? mo.generaciones.map(normGeneracion) : [])
+      .sort((a, b) => (a.anio_inicio ?? 0) - (b.anio_inicio ?? 0))
+  });
+
   return marcas
     .map((m) => ({
       id: m.id,
       nombre: toStr(m.nombre, 'Sin marca'),
       activo: toNum(m.activo, 0),
-      fecha_creacion: toStr(m.fecha_creacion),
-      modelos: Array.isArray(m.modelos) ? m.modelos.map((mo) => ({
-        id: mo.id,
-        marca_id: mo.marca_id,
-        nombre: toStr(mo.nombre, 'Sin modelo'),
-        activo: toNum(mo.activo, 0),
-        fecha_creacion: toStr(mo.fecha_creacion),
-        generaciones: Array.isArray(mo.generaciones) ? mo.generaciones.map((g) => ({
-          id: g.id,
-          modelo_id: g.modelo_id,
-          nombre: toStr(g.nombre, 'Sin generación'),
-          descripcion: toStr(g.descripcion),
-          anio_inicio: toNum(g.anio_inicio),
-          anio_fin: isNullish(g.anio_fin) ? null : Number(g.anio_fin),
-          total_inversion: toNum(g.total_inversion),
-          total_ingresos: toNum(g.total_ingresos),
-          total_egresos: toNum(g.total_egresos),
-          balance_neto: toNum(g.balance_neto),
-          activo: toNum(g.activo, 0),
-          fecha_creacion: toStr(g.fecha_creacion),
-          vehiculos: Array.isArray(g.vehiculos) ? g.vehiculos
-            .map((v) => ({
-              id: v.id,
-              codigo_vehiculo: toStr(v.codigo_vehiculo, 'Sin código'),
-              generacion_id: v.generacion_id,
-              anio: toNum(v.anio),
-              precio_compra: toNum(v.precio_compra),
-              costo_grua: toNum(v.costo_grua),
-              comisiones: toNum(v.comisiones),
-              inversion_total: toNum(v.inversion_total),
-              costo_recuperado: toNum(v.costo_recuperado),
-              costo_pendiente: toNum(v.costo_pendiente),
-              fecha_ingreso: toStr(v.fecha_ingreso),
-              estado: toStr(v.estado, 'SIN_ESTADO'),
-              precio_venta: isNullish(v.precio_venta) ? null : Number(v.precio_venta),
-              fecha_venta: isNullish(v.fecha_venta) ? null : v.fecha_venta,
-              activo: toNum(v.activo, 0),
-              notas: isNullish(v.notas) ? null : String(v.notas),
-              fecha_creacion: toStr(v.fecha_creacion),
-              fecha_actualizacion: toStr(v.fecha_actualizacion)
-            }))
-            .sort((a, b) => (a.anio ?? 0) - (b.anio ?? 0))
-            : []
-        }))
-          .sort((a, b) => (a.anio_inicio ?? 0) - (b.anio_inicio ?? 0))
-          : []
-      })) : []
-    }))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre))
-    .map((m) => ({
-      ...m,
-      modelos: m.modelos
+      fecha_creacion: toStr(m.fecha_creacion ?? m.fechaCreacion),
+      modelos: (Array.isArray(m.modelos) ? m.modelos.map(normModelo) : [])
         .sort((a, b) => a.nombre.localeCompare(b.nombre))
-    }));
+    }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
 };
 
-/**
- * Componente jerárquico
- * Fuente: vehiculoService.getVehiculosAgrupados()
- */
+/* ========================= Componente ========================= */
 const VehiculosJerarquicos = () => {
   const [loading, setLoading] = useState(true);
   const [marcas, setMarcas] = useState([]);
@@ -128,10 +152,7 @@ const VehiculosJerarquicos = () => {
       const response = await vehiculoService.getVehiculosAgrupados();
       if (!response) throw new Error('Respuesta vacía del servidor');
 
-      // Guarda raw para debug
       setRawData(response);
-
-      // Normaliza y ordena como tus queries
       const datos = normalizarEOrdenar(response);
 
       if (!datos.length) {
@@ -225,7 +246,7 @@ const VehiculosJerarquicos = () => {
         className="vehiculo-collapse"
       >
         <Panel
-          key={vehiculo.id}
+          key={`veh-${vehiculo.id}`}
           header={
             <div className="vehiculo-header" style={{ width: '100%' }}>
               <Row gutter={[8, 8]} align="middle" wrap={false}>
@@ -347,9 +368,9 @@ const VehiculosJerarquicos = () => {
     );
   };
 
-  const renderGeneracion = (generacion) => (
+  const renderGeneracion = (modeloId) => (generacion) => (
     <Card
-      key={generacion.id}
+      key={`gen-card-${modeloId}-${generacion.id}`}
       size="small"
       style={{ marginBottom: 16, borderRadius: 8, overflow: 'hidden' }}
       bodyStyle={{ padding: 0 }}
@@ -412,8 +433,8 @@ const VehiculosJerarquicos = () => {
 
       <div className="vehiculos-list" style={{ padding: '12px 16px' }}>
         {generacion.vehiculos?.length > 0 ? (
-          generacion.vehiculos.map(vehiculo => (
-            <div key={vehiculo.id} className="vehiculo-item" style={{ marginBottom: 12 }}>
+          generacion.vehiculos.map((vehiculo) => (
+            <div key={`vehiculo-${generacion.id}-${vehiculo.id}`} className="vehiculo-item" style={{ marginBottom: 12 }}>
               {renderVehiculo(vehiculo)}
             </div>
           ))
@@ -433,9 +454,9 @@ const VehiculosJerarquicos = () => {
     </Card>
   );
 
-  const renderModelo = (modelo) => (
+  const renderModelo = (marcaId) => (modelo) => (
     <Card
-      key={modelo.id}
+      key={`modelo-card-${marcaId}-${modelo.id}`}
       className="modelo-item"
       style={{ marginBottom: 16, borderRadius: 8, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
       bodyStyle={{ padding: 0 }}
@@ -450,7 +471,7 @@ const VehiculosJerarquicos = () => {
       <div className="generaciones-list">
         {modelo.generaciones?.length > 0 ? (
           <div style={{ padding: '8px 8px 0' }}>
-            {modelo.generaciones.map(renderGeneracion)}
+            {modelo.generaciones.map(renderGeneracion(modelo.id))}
           </div>
         ) : (
           <Empty
@@ -470,27 +491,30 @@ const VehiculosJerarquicos = () => {
 
   const renderMarca = (marca) => (
     <Card
-      key={marca.id}
+      key={`marca-${marca.id}`}
       style={{ marginBottom: 24, borderRadius: 8, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
       bodyStyle={{ padding: 0 }}
       className="marca-card"
-    >
-      <div style={{ padding: '16px 20px', background: 'linear-gradient(135deg, #f6f9fc 0%, #eef2f7 100%)', borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <CarOutlined style={{ fontSize: '1.2em', color: '#1890ff' }} />
           <Text strong style={{ fontSize: '1.2em' }}>{toStr(marca.nombre, 'Sin marca')}</Text>
         </div>
-        <div>
-          <Tag color="blue" style={{ padding: '2px 10px', borderRadius: '12px', fontSize: '0.9em', fontWeight: 500 }}>
-            {marca.modelos?.length || 0} {marca.modelos?.length === 1 ? 'modelo' : 'modelos'}
-          </Tag>
-        </div>
-      </div>
-
+      }
+      extra={
+        <Tag color="blue" style={{ padding: '2px 10px', borderRadius: '12px', fontSize: '0.9em', fontWeight: 500 }}>
+          {marca.modelos?.length || 0} {marca.modelos?.length === 1 ? 'modelo' : 'modelos'}
+        </Tag>
+      }
+    >
       <div className="modelos-list" style={{ padding: '8px' }}>
         {marca.modelos?.length > 0 ? (
           <div style={{ marginTop: '4px' }}>
-            {marca.modelos.map(renderModelo)}
+            {marca.modelos.map((modelo) => (
+              <React.Fragment key={`modelo-${marca.id}-${modelo.id}`}>
+                {renderModelo(marca.id)(modelo)}
+              </React.Fragment>
+            ))}
           </div>
         ) : (
           <Empty
@@ -540,13 +564,18 @@ const VehiculosJerarquicos = () => {
         )}
       </div>
 
-      {marcas.map(marca => (
-        <Card key={`marca-${marca.id}`} style={{ marginBottom: 16 }} title={toStr(marca.nombre, 'Sin marca')} extra={`${marca.modelos?.length || 0} modelos`}>
+      {marcas.map((marca) => (
+        <Card
+          key={`marca-list-${marca.id}`}
+          style={{ marginBottom: 16 }}
+          title={toStr(marca.nombre, 'Sin marca')}
+          extra={`${marca.modelos?.length || 0} modelos`}
+        >
           {marca.modelos?.length > 0 ? (
             <Collapse ghost>
-              {marca.modelos.map(modelo => (
+              {marca.modelos.map((modelo) => (
                 <Panel
-                  key={`modelo-${modelo.id}`}
+                  key={`modelo-panel-${marca.id}-${modelo.id}`}
                   header={
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>{toStr(modelo.nombre, 'Sin modelo')}</span>
@@ -556,15 +585,15 @@ const VehiculosJerarquicos = () => {
                 >
                   {modelo.generaciones?.length > 0 ? (
                     <Collapse ghost>
-                      {modelo.generaciones.map(generacion => (
+                      {modelo.generaciones.map((generacion) => (
                         <Panel
-                          key={`generacion-${generacion.id}`}
+                          key={`generacion-panel-${modelo.id}-${generacion.id}`}
                           header={`${toStr(generacion.nombre, 'Sin generación')} (${generacion.anio_inicio ?? '-'} - ${generacion.anio_fin ?? 'Actual'})`}
                         >
                           {generacion.vehiculos?.length > 0 ? (
                             <div style={{ marginLeft: 24 }}>
-                              {generacion.vehiculos.map(vehiculo => (
-                                <div key={vehiculo.id} style={{ marginBottom: 16 }}>
+                              {generacion.vehiculos.map((vehiculo) => (
+                                <div key={`vehiculo-panel-${generacion.id}-${vehiculo.id}`} style={{ marginBottom: 16 }}>
                                   {renderVehiculo(vehiculo)}
                                 </div>
                               ))}
