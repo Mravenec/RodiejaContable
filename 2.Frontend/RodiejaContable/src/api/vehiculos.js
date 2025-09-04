@@ -42,39 +42,58 @@ class VehiculoService {
         return { marcas: [] };
       }
       
-      // Asegurarse de que la respuesta tenga la estructura esperada
+      // Si la respuesta ya está en el formato esperado, retornarla directamente
       if (response.data.marcas !== undefined) {
         console.log('Respuesta con formato { marcas: [...] }');
         return response.data;
-      } 
-      
-      // Si es un array, asumimos que son las marcas
-      if (Array.isArray(response.data)) {
-        console.log('Respuesta es un array, convirtiendo a { marcas: [...] }');
-        return { marcas: response.data };
       }
       
-      // Si es un objeto pero no tiene la estructura esperada, intentar extraer marcas
-      if (typeof response.data === 'object' && response.data !== null) {
-        console.log('Respuesta es un objeto, buscando estructura alternativa');
+      // Transformar la estructura jerárquica al formato esperado
+      const marcas = [];
+      
+      // Recorrer cada marca en la respuesta
+      for (const [nombreMarca, modelos] of Object.entries(response.data)) {
+        const modelosArray = [];
         
-        // Buscar cualquier propiedad que sea un array
-        const arrayProps = Object.entries(response.data)
-          .filter(([_, value]) => Array.isArray(value))
-          .map(([key, value]) => ({ key, length: value.length }));
+        // Recorrer cada modelo de la marca
+        for (const [nombreModelo, generaciones] of Object.entries(modelos)) {
+          const generacionesArray = [];
           
-        console.log('Propiedades de array encontradas:', arrayProps);
-        
-        // Si hay exactamente una propiedad de array, usarla como marcas
-        if (arrayProps.length === 1) {
-          const [key] = arrayProps[0];
-          console.log(`Usando propiedad '${key}' como marcas`);
-          return { marcas: response.data[key] };
+          // Recorrer cada generación del modelo
+          for (const [nombreGeneracion, vehiculos] of Object.entries(generaciones)) {
+            // Extraer años de la generación (ej: "gen10 (2016-2021)")
+            const anioMatch = nombreGeneracion.match(/\((\d{4})-(\d{4})\)/);
+            const anioInicio = anioMatch ? parseInt(anioMatch[1]) : null;
+            const anioFin = anioMatch ? parseInt(anioMatch[2]) : null;
+            
+            // Crear objeto de generación
+            generacionesArray.push({
+              id: generacionesArray.length + 1, // ID temporal
+              nombre: nombreGeneracion.split(' (')[0], // Extraer solo el nombre sin años
+              anioInicio,
+              anioFin,
+              vehiculos: Array.isArray(vehiculos) ? vehiculos : []
+            });
+          }
+          
+          // Crear objeto de modelo
+          modelosArray.push({
+            id: modelosArray.length + 1, // ID temporal
+            nombre: nombreModelo,
+            generaciones: generacionesArray
+          });
         }
+        
+        // Crear objeto de marca
+        marcas.push({
+          id: marcas.length + 1, // ID temporal
+          nombre: nombreMarca,
+          modelos: modelosArray
+        });
       }
       
-      console.warn('Formato de respuesta no reconocido, devolviendo marcas vacías');
-      return { marcas: [] };
+      console.log('Datos transformados al formato jerárquico:', { marcas });
+      return { marcas };
       
     } catch (error) {
       this.error('Error fetching hierarchical vehicles:', {

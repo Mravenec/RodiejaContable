@@ -10,7 +10,8 @@ import {
   Tag,
   Row,
   Col,
-  Space
+  Space,
+  message
 } from 'antd';
 import { 
   CarOutlined, 
@@ -93,9 +94,9 @@ const VehiculosJerarquicos = () => {
   const [expandedKeys, setExpandedKeys] = useState({});
   const [transacciones, setTransacciones] = useState({});
   const [loadingTransacciones, setLoadingTransacciones] = useState({});
-  const [rawData, setRawData] = useState(null);
   const [showRawData, setShowRawData] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const [rawData, setRawData] = useState(null);
+  const [retryCount] = useState(0);
 
   /**
    * Procesa los datos de marcas para asegurar la estructura correcta
@@ -103,7 +104,9 @@ const VehiculosJerarquicos = () => {
    * @returns {Array} Datos de marcas procesados con estructura jerárquica
    */
   const procesarDatosMarcas = (data) => {
-    console.log('[DEBUG] Procesando datos en procesarDatosMarcas:', data);
+    console.log('[DEBUG] Iniciando procesamiento de datos en procesarDatosMarcas');
+    console.log('[DEBUG] Tipo de datos recibidos:', typeof data);
+    console.log('[DEBUG] Datos recibidos:', data);
     
     // Si los datos son nulos o indefinidos
     if (!data) {
@@ -111,88 +114,95 @@ const VehiculosJerarquicos = () => {
       return [];
     }
 
-    // Función para procesar un array de marcas
-    const procesarArrayMarcas = (marcasArray) => {
-      if (!Array.isArray(marcasArray)) return [];
-      
-      return marcasArray
-        .filter(marca => marca && typeof marca === 'object')
-        .map(marca => ({
-          ...marca,
-          key: `marca-${marca.id || Math.random()}`,
-          nombre: marca.nombre || 'Sin nombre',
-          modelos: Array.isArray(marca.modelos) 
-            ? marca.modelos
-                .filter(modelo => modelo && typeof modelo === 'object')
-                .map(modelo => ({
-                  ...modelo,
-                  key: `modelo-${modelo.id || Math.random()}`,
-                  nombre: modelo.nombre || 'Sin nombre',
-                  generaciones: Array.isArray(modelo.generaciones)
-                    ? modelo.generaciones
-                        .filter(generacion => generacion && typeof generacion === 'object')
-                        .map(generacion => ({
-                          ...generacion,
-                          key: `generacion-${generacion.id || Math.random()}`,
-                          nombre: generacion.nombre || 'Sin nombre',
-                          vehiculos: Array.isArray(generacion.vehiculos)
-                            ? generacion.vehiculos
-                                .filter(v => v && typeof v === 'object')
-                                .map(v => ({
-                                  ...v,
-                                  key: `vehiculo-${v.id || Math.random()}`,
-                                  codigo_vehiculo: v.codigo_vehiculo || 'Sin código'
-                                }))
-                            : []
-                        }))
-                    : []
-                }))
-            : []
-        }));
-    };
-
-    // Si los datos son un array, asumimos que es un array de marcas
-    if (Array.isArray(data)) {
-      console.log('[DEBUG] Los datos son un array, procesando como array de marcas');
-      const marcasProcesadas = procesarArrayMarcas(data);
-      console.log('[DEBUG] Marcas procesadas:', marcasProcesadas);
-      return marcasProcesadas;
-    }
-    
-    // Si es un objeto con propiedad 'marcas'
+    // Si es un objeto con propiedad 'marcas' (formato de la API)
     if (data.marcas && Array.isArray(data.marcas)) {
       console.log('[DEBUG] Datos contienen propiedad "marcas"');
-      const marcasProcesadas = procesarArrayMarcas(data.marcas);
-      console.log('[DEBUG] Marcas procesadas:', marcasProcesadas);
-      return marcasProcesadas;
+      return data.marcas;
     }
     
-    // Si es un objeto pero no tiene la estructura esperada, intentar extraer marcas
-    if (typeof data === 'object' && !Array.isArray(data)) {
-      console.log('[DEBUG] Los datos son un objeto, buscando estructura alternativa');
+    // Si ya es un array, asumimos que es el formato correcto
+    if (Array.isArray(data)) {
+      console.log('[DEBUG] Los datos ya están en formato de array');
+      return data;
+    }
+
+    // Si es un objeto pero no tiene la propiedad 'marcas'
+    if (typeof data === 'object') {
+      console.log('[DEBUG] Procesando estructura de objeto sin propiedad "marcas"');
+      const marcas = [];
+      let marcaId = 1;
       
-      // Buscar cualquier propiedad que sea un array que podría contener las marcas
-      const possibleMarcas = Object.values(data).find(
-        val => Array.isArray(val) && val.length > 0 && val[0].modelos
-      );
+      // Recorrer cada propiedad del objeto (marcas)
+      Object.entries(data).forEach(([marcaNombre, modelosData]) => {
+        if (typeof modelosData !== 'object' || modelosData === null) {
+          console.log(`[DEBUG] Saltando marca ${marcaNombre}: no es un objeto válido`);
+          return;
+        }
+        
+        const modelos = [];
+        let modeloId = 1;
+        
+        // Recorrer cada propiedad de modelos
+        Object.entries(modelosData).forEach(([modeloNombre, generacionesData]) => {
+          if (typeof generacionesData !== 'object' || generacionesData === null) {
+            console.log(`[DEBUG] Saltando modelo ${modeloNombre}: no es un objeto válido`);
+            return;
+          }
+          
+          const generaciones = [];
+          let generacionId = 1;
+          
+          // Recorrer cada generación
+          Object.entries(generacionesData).forEach(([genNombre, vehiculos]) => {
+            if (!Array.isArray(vehiculos)) {
+              console.log(`[DEBUG] Saltando generación ${genNombre}: no es un array de vehículos`);
+              return;
+            }
+            
+            const vehiculosProcesados = vehiculos.map((v, idx) => ({
+              ...v,
+              key: `vehiculo-${v.id || `${marcaId}-${modeloId}-${generacionId}-${idx}`}`,
+              codigo_vehiculo: v.codigoVehiculo || v.codigo_vehiculo || `VIN-${marcaId}-${modeloId}-${generacionId}-${idx}`,
+              año: v.anio || v.año || new Date().getFullYear(),
+              precio: v.precio || v.precioCompra || v.precio_venta || 0,
+              estado: (v.estado || 'disponible').toLowerCase()
+            }));
+            
+            generaciones.push({
+              id: generacionId++,
+              key: `generacion-${marcaId}-${modeloId}-${generacionId}`,
+              nombre: genNombre,
+              vehiculos: vehiculosProcesados
+            });
+          });
+          
+          if (generaciones.length > 0) {
+            modelos.push({
+              id: modeloId,
+              key: `modelo-${marcaId}-${modeloId}`,
+              nombre: modeloNombre,
+              generaciones
+            });
+            modeloId++;
+          }
+        });
+        
+        if (modelos.length > 0) {
+          marcas.push({
+            id: marcaId,
+            key: `marca-${marcaId}`,
+            nombre: marcaNombre,
+            modelos
+          });
+          marcaId++;
+        }
+      });
       
-      if (possibleMarcas) {
-        console.log('[DEBUG] Se encontró un array de marcas en una propiedad del objeto');
-        return procesarArrayMarcas(possibleMarcas);
-      }
-      
-      // Si no encontramos marcas directamente, buscar cualquier array que pueda contener vehículos
-      const anyArray = Object.values(data).find(
-        val => Array.isArray(val) && val.length > 0
-      );
-      
-      if (anyArray) {
-        console.log('[DEBUG] Se encontró un array en los datos, intentando procesar como marcas');
-        return procesarArrayMarcas(anyArray);
-      }
+      console.log('[DEBUG] Datos procesados exitosamente:', marcas);
+      return marcas;
     }
     
-    console.warn('Formato de datos inesperado en procesarDatosMarcas:', data);
+    console.warn('Formato de datos no reconocido en procesarDatosMarcas:', data);
     return [];
   };
 
@@ -270,55 +280,44 @@ const VehiculosJerarquicos = () => {
   const cargarDatos = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
-      setRawData(null);
-      setShowRawData(false);
-      setMarcas([]);
+      console.log('Iniciando carga de datos jerárquicos...');
       
-      console.log('[DEBUG] Iniciando carga de datos...');
+      // Usar el servicio para obtener los datos jerárquicos
+      const response = await vehiculoService.getVehiculosAgrupados();
+      console.log('Datos recibidos de getVehiculosAgrupados:', response);
       
-      // Usar datos de prueba directamente
-      console.log('[DEBUG] Usando datos de prueba...');
-      const data = MOCK_VEHICULOS;
-      
-      // Procesar los datos
-      console.log('[DEBUG] Procesando datos de prueba...');
-      const marcasProcesadas = procesarDatosMarcas(data);
-      
-      if (!marcasProcesadas || marcasProcesadas.length === 0) {
-        throw new Error('No se encontraron vehículos en los datos de prueba');
+      // Asegurarse de que tenemos datos válidos
+      if (!response) {
+        throw new Error('No se recibieron datos del servidor');
       }
       
-      console.log('[DEBUG] Datos de prueba procesados correctamente:', marcasProcesadas);
+      // Guardar los datos en bruto
+      setRawData(response);
       
-      setMarcas(marcasProcesadas);
-      setRawData(data);
-      setError('Modo de demostración: mostrando datos de prueba. El servidor no está disponible.');
-      setShowRawData(true);
-      setLoading(false);
-    } catch (err) {
-      const errorDetails = {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        url: err.config?.url,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-      };
+      // Procesar los datos para el árbol
+      const datosProcesados = procesarDatosMarcas(response);
+      console.log('Datos procesados para el árbol:', datosProcesados);
       
-      console.error('[ERROR] Error al cargar vehículos:', errorDetails);
-      setError(`Error al cargar los datos: ${err.message || 'Error desconocido'}`);
-      
-      // En desarrollo, mostrar más detalles del error
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Detalles completos del error:', errorDetails);
+      if (!datosProcesados || datosProcesados.length === 0) {
+        console.warn('No se encontraron vehículos para mostrar');
+        message.info('No se encontraron vehículos para mostrar');
       }
+      
+      setMarcas(datosProcesados);
+    } catch (error) {
+      console.error('Error al cargar los vehículos:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
+      
+      message.error(`Error al cargar los vehículos: ${error.message || 'Error desconocido'}`);
     } finally {
-      console.log('[DEBUG] Finalizando carga de datos, estableciendo loading=false');
       setLoading(false);
     }
   }, []);
 
-  // Cargar datos al montar el componente
+  // Efecto para cargar los datos
   useEffect(() => {
     cargarDatos();
   }, [cargarDatos]);
@@ -776,7 +775,7 @@ const VehiculosJerarquicos = () => {
       }}>
         <Spin size="large" />
         <div style={{ marginTop: '16px', fontSize: '16px', color: '#666' }}>
-          {retryCount > 0 ? 'Reintentando cargar los datos...' : 'Cargando vehículos...'}
+          Cargando vehículos...
         </div>
       </div>
     );
