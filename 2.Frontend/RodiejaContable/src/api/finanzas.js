@@ -5,7 +5,7 @@ export const finanzaService = {
   // Get all financial transactions with optional filters
   getTransacciones: async (filters = {}) => {
     try {
-      const response = await api.get('/api/transacciones-financieras', { params: filters });
+      const response = await api.get('transacciones-financieras', { params: filters });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -15,7 +15,7 @@ export const finanzaService = {
   // Get a single transaction by ID
   getTransaccionById: async (id) => {
     try {
-      const response = await api.get(`/api/transacciones-financieras/${id}`);
+      const response = await api.get(`transacciones-financieras/${id}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -25,7 +25,7 @@ export const finanzaService = {
   // Create a new transaction
   createTransaccion: async (transaccionData) => {
     try {
-      const response = await api.post('/api/transacciones-financieras', transaccionData);
+      const response = await api.post('transacciones-financieras', transaccionData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -35,7 +35,7 @@ export const finanzaService = {
   // Update an existing transaction
   updateTransaccion: async (id, transaccionData) => {
     try {
-      const response = await api.put(`/api/transacciones-financieras/${id}`, transaccionData);
+      const response = await api.put(`transacciones-financieras/${id}`, transaccionData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -45,7 +45,7 @@ export const finanzaService = {
   // Delete a transaction
   deleteTransaccion: async (id) => {
     try {
-      const response = await api.delete(`/api/transacciones-financieras/${id}`);
+      const response = await api.delete(`transacciones-financieras/${id}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -55,7 +55,7 @@ export const finanzaService = {
   // Get financial summary
   getResumenFinanciero: async (params = {}) => {
     try {
-      const response = await api.get('/api/transacciones-financieras/resumen', { params });
+      const response = await api.get('transacciones-financieras/resumen', { params });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -65,7 +65,7 @@ export const finanzaService = {
   // Get financial metrics
   getMetricasFinancieras: async (params = {}) => {
     try {
-      const response = await api.get('/api/transacciones-financieras/metricas', { params });
+      const response = await api.get('transacciones-financieras/metricas', { params });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -75,7 +75,7 @@ export const finanzaService = {
   // Get transactions by type (ingreso/egreso)
   getTransaccionesByTipo: async (tipo, params = {}) => {
     try {
-      const response = await api.get(`/api/transacciones-financieras/tipo/${tipo}`, { params });
+      const response = await api.get(`transacciones-financieras/tipo/${tipo}`, { params });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -85,7 +85,7 @@ export const finanzaService = {
   // Get transactions by date range
   getTransaccionesByDateRange: async (fechaInicio, fechaFin, params = {}) => {
     try {
-      const response = await api.get('/api/transacciones-financieras/rango-fechas', {
+      const response = await api.get('transacciones-financieras/rango-fechas', {
         params: { fechaInicio, fechaFin, ...params }
       });
       return response.data;

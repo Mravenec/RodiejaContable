@@ -22,10 +22,8 @@ import {
 } from '@ant-design/icons';
 
 import vehiculoService from '../../api/vehiculos';
-import {
-  renderEstado,
-  handleExpand as handleExpandUtil
-} from '../../utils/vehicleUtils';
+import finanzaService from '../../api/finanzas'; // Importar el servicio de finanzas
+import { renderEstado } from '../../utils/vehicleUtils';
 
 const { Panel } = Collapse;
 const { Text } = Typography;
@@ -171,15 +169,53 @@ const VehiculosJerarquicos = () => {
     cargarDatos();
   }, [cargarDatos]);
 
-  const handleExpand = useCallback((vehiculoId, expanded) => {
-    handleExpandUtil(
-      vehiculoId,
-      expanded,
-      transacciones,
-      setTransacciones,
-      setLoadingTransacciones,
-      vehiculoService
-    );
+  // Función personalizada para manejar la expansión y carga de transacciones
+  const handleExpand = useCallback(async (vehiculoId, expanded) => {
+    if (!expanded || transacciones[vehiculoId]) {
+      return; // Si no se está expandiendo o ya tenemos las transacciones, no hacer nada
+    }
+
+    try {
+      setLoadingTransacciones(prev => ({ ...prev, [vehiculoId]: true }));
+      
+      // Usar el servicio de finanzas para obtener transacciones del vehículo
+      const response = await finanzaService.getTransacciones({ 
+        vehiculo_id: vehiculoId,
+        // Puedes agregar más filtros aquí si es necesario
+        activo: 1
+      });
+
+      // Normalizar las transacciones si es necesario
+      const transaccionesNormalizadas = Array.isArray(response?.data) ? response.data : 
+                                       Array.isArray(response) ? response : [];
+
+      // Ordenar por fecha (más reciente primero)
+      const transaccionesOrdenadas = transaccionesNormalizadas.sort((a, b) => {
+        const fechaA = toDate(a.fecha || a.fecha_transaccion);
+        const fechaB = toDate(b.fecha || b.fecha_transaccion);
+        if (!fechaA && !fechaB) return 0;
+        if (!fechaA) return 1;
+        if (!fechaB) return -1;
+        return fechaB.getTime() - fechaA.getTime();
+      });
+
+      setTransacciones(prev => ({
+        ...prev,
+        [vehiculoId]: transaccionesOrdenadas
+      }));
+
+    } catch (error) {
+      console.error(`Error al cargar transacciones del vehículo ${vehiculoId}:`, error);
+      message.error(`Error al cargar transacciones: ${error.message || 'Error desconocido'}`);
+      
+      // Establecer array vacío en caso de error
+      setTransacciones(prev => ({
+        ...prev,
+        [vehiculoId]: []
+      }));
+    } finally {
+      setLoadingTransacciones(prev => ({ ...prev, [vehiculoId]: false }));
+    }
   }, [transacciones]);
 
   const columnasTransacciones = useMemo(() => ([
@@ -189,44 +225,62 @@ const VehiculosJerarquicos = () => {
       key: 'fecha',
       width: 120,
       responsive: ['md'],
-      render: (fecha) => toDateStr(fecha)
+      render: (fecha, record) => {
+        // Intentar diferentes campos de fecha
+        const fechaTransaccion = fecha || record.fecha_transaccion || record.fechaTransaccion;
+        return toDateStr(fechaTransaccion);
+      }
     },
     {
       title: 'Descripción',
       dataIndex: 'descripcion',
       key: 'descripcion',
-      render: (text, record) => (
-        <div>
-          <div style={{ marginBottom: 4 }}>{toStr(text, '-')}</div>
+      render: (text, record) => {
+        // Intentar diferentes campos de descripción
+        const descripcion = text || record.concepto || record.detalle || '-';
+        const fechaTransaccion = record.fecha || record.fecha_transaccion || record.fechaTransaccion;
+        
+        return (
           <div>
-            <span style={{ marginRight: 8, display: 'inline-block' }}>
-              {toDateStr(record?.fecha)}
-            </span>
-            {record?.tipo_transaccion && (
-              <Tag color={record.tipo_transaccion.categoria === 'INGRESO' ? 'green' : 'red'}>
-                {toStr(record.tipo_transaccion.nombre, 'Transacción')}
-              </Tag>
-            )}
+            <div style={{ marginBottom: 4 }}>{toStr(descripcion, '-')}</div>
+            <div>
+              <span style={{ marginRight: 8, display: 'inline-block' }}>
+                {toDateStr(fechaTransaccion)}
+              </span>
+              {(record?.tipo_transaccion || record?.tipo) && (
+                <Tag color={(record.tipo_transaccion?.categoria || record.categoria || record.tipo) === 'INGRESO' ? 'green' : 'red'}>
+                  {toStr(record.tipo_transaccion?.nombre || record.tipo_nombre || record.tipo, 'Transacción')}
+                </Tag>
+              )}
+            </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
     {
       title: 'Monto',
       dataIndex: 'monto',
       key: 'monto',
       align: 'right',
-      render: (monto, record) => (
-        <Text strong style={{ color: record?.tipo_transaccion?.categoria === 'INGRESO' ? 'green' : 'red' }}>
-          {record?.tipo_transaccion?.categoria === 'INGRESO' ? '+' : '-'} ${toNum(monto).toLocaleString()}
-        </Text>
-      )
+      render: (monto, record) => {
+        // Intentar diferentes campos de monto
+        const montoTransaccion = monto || record.valor || record.importe || 0;
+        const categoria = record?.tipo_transaccion?.categoria || record?.categoria || record?.tipo;
+        const esIngreso = categoria === 'INGRESO';
+        
+        return (
+          <Text strong style={{ color: esIngreso ? 'green' : 'red' }}>
+            {esIngreso ? '+' : '-'} ${toNum(montoTransaccion).toLocaleString()}
+          </Text>
+        );
+      }
     }
   ]), []);
 
   const renderVehiculo = (vehiculo) => {
     const tieneTransacciones = transacciones[vehiculo.id]?.length > 0;
     const cargando = loadingTransacciones[vehiculo.id];
+    const estaExpandido = expandedKeys[vehiculo.id];
 
     return (
       <Collapse
@@ -238,12 +292,20 @@ const VehiculosJerarquicos = () => {
             icon={isActive ? <DownOutlined /> : <RightOutlined />}
             onClick={(e) => {
               e.stopPropagation();
-              handleExpand(vehiculo.id, !expandedKeys[vehiculo.id]);
-              setExpandedKeys(prev => ({ ...prev, [vehiculo.id]: !prev[vehiculo.id] }));
+              const nuevoEstado = !expandedKeys[vehiculo.id];
+              
+              // Actualizar estado de expansión
+              setExpandedKeys(prev => ({ ...prev, [vehiculo.id]: nuevoEstado }));
+              
+              // Cargar transacciones si se está expandiendo
+              if (nuevoEstado) {
+                handleExpand(vehiculo.id, true);
+              }
             }}
           />
         )}
         className="vehiculo-collapse"
+        activeKey={estaExpandido ? [`veh-${vehiculo.id}`] : []}
       >
         <Panel
           key={`veh-${vehiculo.id}`}
@@ -341,8 +403,12 @@ const VehiculosJerarquicos = () => {
                     size="small"
                     columns={columnasTransacciones}
                     dataSource={tieneTransacciones ? transacciones[vehiculo.id] : []}
-                    rowKey="id"
-                    pagination={false}
+                    rowKey={(record) => record.id || `${record.fecha}-${record.monto}`}
+                    pagination={tieneTransacciones && transacciones[vehiculo.id].length > 10 ? {
+                      pageSize: 10,
+                      size: 'small',
+                      showSizeChanger: false
+                    } : false}
                     bordered
                     style={{ minWidth: '600px' }}
                     locale={{
@@ -367,170 +433,6 @@ const VehiculosJerarquicos = () => {
       </Collapse>
     );
   };
-
-  const renderGeneracion = (modeloId) => (generacion) => (
-    <Card
-      key={`gen-card-${modeloId}-${generacion.id}`}
-      size="small"
-      style={{ marginBottom: 16, borderRadius: 8, overflow: 'hidden' }}
-      bodyStyle={{ padding: 0 }}
-    >
-      <div style={{ padding: '12px 16px', background: '#f9f9f9', borderBottom: '1px solid #f0f0f0' }}>
-        <Row gutter={[8, 8]} align="middle">
-          <Col xs={24} md={12}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-              <Text strong style={{ fontSize: '1em' }}>{toStr(generacion.nombre, 'Sin generación')}</Text>
-              {toStr(generacion.descripcion) && (
-                <Text type="secondary" style={{ fontSize: '0.9em' }}>
-                  ({generacion.descripcion})
-                </Text>
-              )}
-              <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                {generacion.anio_inicio ?? '-'} - {generacion.anio_fin ?? 'Actual'}
-              </Text>
-            </div>
-          </Col>
-          <Col xs={24} md={12}>
-            <Row gutter={[8, 8]}>
-              <Col xs={12} sm={6}>
-                <div>
-                  <div style={{ fontSize: '0.75em', color: '#8c8c8c' }}>Inversión</div>
-                  <div>${toNum(generacion.total_inversion).toLocaleString()}</div>
-                </div>
-              </Col>
-              <Col xs={12} sm={6}>
-                <div>
-                  <div style={{ fontSize: '0.75em', color: '#8c8c8c' }}>Ingresos</div>
-                  <div style={{ color: '#52c41a' }}>${toNum(generacion.total_ingresos).toLocaleString()}</div>
-                </div>
-              </Col>
-              <Col xs={12} sm={6}>
-                <div>
-                  <div style={{ fontSize: '0.75em', color: '#8c8c8c' }}>Egresos</div>
-                  <div style={{ color: '#f5222d' }}>${toNum(generacion.total_egresos).toLocaleString()}</div>
-                </div>
-              </Col>
-              <Col xs={12} sm={6}>
-                <div>
-                  <div style={{ fontSize: '0.75em', color: '#8c8c8c' }}>Balance</div>
-                  <div
-                    style={{
-                      color: (toNum(generacion.balance_neto) >= 0) ? '#52c41a' : '#f5222d',
-                      fontWeight: 500
-                    }}
-                  >
-                    ${Math.abs(toNum(generacion.balance_neto)).toLocaleString()}
-                    <span style={{ fontSize: '0.85em', marginLeft: 4 }}>
-                      {toNum(generacion.balance_neto) < 0 ? 'Pérdida' : 'Ganancia'}
-                    </span>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-          </Col>
-        </Row>
-      </div>
-
-      <div className="vehiculos-list" style={{ padding: '12px 16px' }}>
-        {generacion.vehiculos?.length > 0 ? (
-          generacion.vehiculos.map((vehiculo) => (
-            <div key={`vehiculo-${generacion.id}-${vehiculo.id}`} className="vehiculo-item" style={{ marginBottom: 12 }}>
-              {renderVehiculo(vehiculo)}
-            </div>
-          ))
-        ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <span style={{ fontSize: '0.9em' }}>
-                <InfoCircleOutlined style={{ marginRight: 4 }} />
-                No hay vehículos registrados
-              </span>
-            }
-            style={{ margin: '16px 0', padding: '16px 0' }}
-          />
-        )}
-      </div>
-    </Card>
-  );
-
-  const renderModelo = (marcaId) => (modelo) => (
-    <Card
-      key={`modelo-card-${marcaId}-${modelo.id}`}
-      className="modelo-item"
-      style={{ marginBottom: 16, borderRadius: 8, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
-      bodyStyle={{ padding: 0 }}
-    >
-      <div style={{ padding: '12px 16px', background: '#f5f7fa', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text strong style={{ fontSize: '1.1em' }}>{toStr(modelo.nombre, 'Sin modelo')}</Text>
-        <Tag color="blue" style={{ marginLeft: 8, borderRadius: 10 }}>
-          {modelo.generaciones?.length || 0} {modelo.generaciones?.length === 1 ? 'generación' : 'generaciones'}
-        </Tag>
-      </div>
-
-      <div className="generaciones-list">
-        {modelo.generaciones?.length > 0 ? (
-          <div style={{ padding: '8px 8px 0' }}>
-            {modelo.generaciones.map(renderGeneracion(modelo.id))}
-          </div>
-        ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <span style={{ fontSize: '0.9em' }}>
-                <InfoCircleOutlined style={{ marginRight: 4 }} />
-                No hay generaciones registradas
-              </span>
-            }
-            style={{ margin: '24px 0', padding: '24px 0' }}
-          />
-        )}
-      </div>
-    </Card>
-  );
-
-  const renderMarca = (marca) => (
-    <Card
-      key={`marca-${marca.id}`}
-      style={{ marginBottom: 24, borderRadius: 8, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-      bodyStyle={{ padding: 0 }}
-      className="marca-card"
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <CarOutlined style={{ fontSize: '1.2em', color: '#1890ff' }} />
-          <Text strong style={{ fontSize: '1.2em' }}>{toStr(marca.nombre, 'Sin marca')}</Text>
-        </div>
-      }
-      extra={
-        <Tag color="blue" style={{ padding: '2px 10px', borderRadius: '12px', fontSize: '0.9em', fontWeight: 500 }}>
-          {marca.modelos?.length || 0} {marca.modelos?.length === 1 ? 'modelo' : 'modelos'}
-        </Tag>
-      }
-    >
-      <div className="modelos-list" style={{ padding: '8px' }}>
-        {marca.modelos?.length > 0 ? (
-          <div style={{ marginTop: '4px' }}>
-            {marca.modelos.map((modelo) => (
-              <React.Fragment key={`modelo-${marca.id}-${modelo.id}`}>
-                {renderModelo(marca.id)(modelo)}
-              </React.Fragment>
-            ))}
-          </div>
-        ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <span style={{ fontSize: '0.9em' }}>
-                <InfoCircleOutlined style={{ marginRight: 4 }} />
-                No hay modelos registrados
-              </span>
-            }
-            style={{ margin: '24px 0', padding: '24px 0', borderTop: '1px dashed #f0f0f0' }}
-          />
-        )}
-      </div>
-    </Card>
-  );
 
   if (loading) {
     return (
