@@ -36,6 +36,87 @@ const isNullish = (v) => v === null || v === undefined || v === '{null}';
 const toNum = (v, d = 0) => (isNullish(v) || v === '' ? d : Number(v));
 const toStr = (v, d = '') => (isNullish(v) ? d : String(v));
 
+// Formatear monto con separadores de miles y símbolo de colones
+const formatMonto = (monto) => {
+  if (monto === null || monto === undefined || isNaN(monto)) return '₡0';
+  return `₡${parseFloat(monto).toLocaleString('es-CR')}`;
+};
+
+// Mapeo de tipos de transacción a categorías
+const categoriaPorTipoId = {
+  1: 'INGRESO',  // Venta Vehículo
+  2: 'INGRESO',  // Venta Repuesto
+  3: 'INGRESO',  // Venta Mayoreo
+  4: 'INGRESO',  // Servicios Mecánicos
+  5: 'INGRESO',  // Alquiler Espacio
+  6: 'EGRESO',   // Compra Vehículo
+  7: 'EGRESO',   // Compra Repuesto
+  8: 'EGRESO',   // Reparación Vehículo
+  9: 'EGRESO',   // Mantenimiento Local
+  10: 'EGRESO',  // Comisión Vendedor
+  11: 'EGRESO',  // Costo Grúa
+  12: 'EGRESO',  // Transporte
+  13: 'EGRESO',  // Combustible
+  14: 'EGRESO',  // Servicios Públicos
+  15: 'EGRESO',  // Impuestos
+  16: 'EGRESO',  // Salarios
+  17: 'INGRESO', // Otros Ingresos
+  18: 'EGRESO'   // Otros Egresos
+};
+
+// Nombres de tipos de transacción
+const nombreTipoTransaccion = {
+  1: 'Venta Vehículo',
+  2: 'Venta Repuesto',
+  3: 'Venta Mayoreo',
+  4: 'Servicios Mecánicos',
+  5: 'Alquiler Espacio',
+  6: 'Compra Vehículo',
+  7: 'Compra Repuesto',
+  8: 'Reparación Vehículo',
+  9: 'Mantenimiento Local',
+  10: 'Comisión Vendedor',
+  11: 'Costo Grúa',
+  12: 'Transporte',
+  13: 'Combustible',
+  14: 'Servicios Públicos',
+  15: 'Impuestos',
+  16: 'Salarios',
+  17: 'Otros Ingresos',
+  18: 'Otros Egresos'
+};
+
+// Helpers para transacciones
+const getCategoriaTransaccion = (record) => {
+  // Primero intenta obtener la categoría del mapeo por ID
+  if (record?.tipoTransaccionId) {
+    return categoriaPorTipoId[record.tipoTransaccionId] || '';
+  }
+  // Si no hay ID, intenta obtener la categoría de otros campos
+  return toStr(
+    record?.tipo_transaccion?.categoria ?? record?.categoria ?? record?.tipo,
+    ''
+  ).toUpperCase();
+};
+
+const esIngreso = (record) => getCategoriaTransaccion(record) === 'INGRESO';
+
+const getNombreTipoTransaccion = (record) => {
+  // Primero intenta obtener el nombre del mapeo por ID
+  if (record?.tipoTransaccionId && nombreTipoTransaccion[record.tipoTransaccionId]) {
+    return nombreTipoTransaccion[record.tipoTransaccionId];
+  }
+  // Si no hay ID o no está en el mapeo, intenta obtener el nombre de otros campos
+  return toStr(
+    record?.tipo_transaccion?.nombre ?? record?.tipo_nombre ?? record?.tipo ?? 'Transacción',
+    'Transacción'
+  );
+};
+
+const getMontoTransaccion = (record) => {
+  return Math.abs(toNum(record?.monto ?? record?.valor ?? record?.importe, 0));
+};
+
 /** Acepta string ISO, Date, o array [yyyy, m, d, (hh, mm, ss)] */
 const arrDateToDate = (arr) => {
   if (!Array.isArray(arr) || arr.length < 3) return null;
@@ -367,7 +448,6 @@ const VehiculosJerarquicos = () => {
       width: 120,
       responsive: ['md'],
       render: (fecha, record) => {
-        // Intentar diferentes campos de fecha
         const fechaTransaccion = fecha || record.fecha_transaccion || record.fechaTransaccion;
         return toDateStr(fechaTransaccion);
       }
@@ -377,9 +457,9 @@ const VehiculosJerarquicos = () => {
       dataIndex: 'descripcion',
       key: 'descripcion',
       render: (text, record) => {
-        // Intentar diferentes campos de descripción
         const descripcion = text || record.concepto || record.detalle || '-';
         const fechaTransaccion = record.fecha || record.fecha_transaccion || record.fechaTransaccion;
+        const ingreso = esIngreso(record);
         
         return (
           <div>
@@ -388,11 +468,9 @@ const VehiculosJerarquicos = () => {
               <span style={{ marginRight: 8, display: 'inline-block' }}>
                 {toDateStr(fechaTransaccion)}
               </span>
-              {(record?.tipo_transaccion || record?.tipo) && (
-                <Tag color={(record.tipo_transaccion?.categoria || record.categoria || record.tipo) === 'INGRESO' ? 'green' : 'red'}>
-                  {toStr(record.tipo_transaccion?.nombre || record.tipo_nombre || record.tipo, 'Transacción')}
-                </Tag>
-              )}
+              <Tag color={ingreso ? 'blue' : 'red'}>
+                {ingreso ? 'INGRESO' : 'EGRESO'}
+              </Tag>
             </div>
           </div>
         );
@@ -403,26 +481,19 @@ const VehiculosJerarquicos = () => {
       dataIndex: 'monto',
       key: 'monto',
       align: 'right',
-      render: (monto, record) => {
-        // Intentar diferentes campos de monto
-        const montoTransaccion = monto || record.valor || record.importe || 0;
-        const categoria = record?.tipo_transaccion?.categoria || record?.categoria || record?.tipo;
-        const esIngreso = categoria === 'INGRESO';
+      render: (_monto, record) => {
+        const ingreso = esIngreso(record);
+        const monto = getMontoTransaccion(record);
+        const signo = ingreso ? '+' : '-';
         
         return (
-          <Text strong style={{ color: esIngreso ? 'green' : 'red' }}>
-            {esIngreso ? '+' : '-'} {formatMonto(montoTransaccion).replace('₡', '')}
+          <Text strong style={{ color: ingreso ? 'green' : 'red' }}>
+            {signo} {formatMonto(monto).replace('₡', '')}
           </Text>
         );
       }
     }
   ]), []);
-
-  // Formatear monto con separadores de miles y símbolo de colones
-  const formatMonto = (monto) => {
-    if (monto === null || monto === undefined) return '₡0';
-    return `₡${parseFloat(monto).toLocaleString('es-CR')}`;
-  };
 
   const renderVehiculo = (vehiculo) => {
     const tieneTransacciones = transacciones[vehiculo.id]?.length > 0;
