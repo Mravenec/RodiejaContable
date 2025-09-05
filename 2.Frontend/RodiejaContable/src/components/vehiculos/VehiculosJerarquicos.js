@@ -1,5 +1,5 @@
 // src/components/VehiculosJerarquicos.jsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Card,
   Table,
@@ -12,13 +12,16 @@ import {
   Row,
   Col,
   Space,
-  message
+  message,
+  Input
 } from 'antd';
 import {
   CarOutlined,
   DownOutlined,
+  UpOutlined,
   RightOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
 
 import vehiculoService from '../../api/vehiculos';
@@ -138,11 +141,20 @@ const normalizarEOrdenar = (data) => {
 const VehiculosJerarquicos = () => {
   const [loading, setLoading] = useState(true);
   const [marcas, setMarcas] = useState([]);
+  const [filteredMarcas, setFilteredMarcas] = useState([]);
   const [expandedKeys, setExpandedKeys] = useState({});
   const [transacciones, setTransacciones] = useState({});
   const [loadingTransacciones, setLoadingTransacciones] = useState({});
   const [showRawData, setShowRawData] = useState(false);
   const [rawData, setRawData] = useState(null);
+  
+  // State for search and expanded sections
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeBrandKeys, setActiveBrandKeys] = useState([]);
+  const [expandedModelsByMarca, setExpandedModelsByMarca] = useState({});
+  const [expandedGensByModelo, setExpandedGensByModelo] = useState({});
+  const vehiculoRefs = useRef({});
+  const [vehiculoMatchId, setVehiculoMatchId] = useState(null);
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -157,12 +169,146 @@ const VehiculosJerarquicos = () => {
         message.info('No se encontraron vehículos para mostrar');
       }
       setMarcas(datos);
+      setFilteredMarcas(datos); // Initialize filtered list with all brands
     } catch (error) {
       console.error('Error al cargar los vehículos:', error);
       message.error(`Error al cargar los vehículos: ${error.message || 'Error desconocido'}`);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Find a vehicle by its code in the hierarchy
+  const findVehiclePath = useCallback((codigo, marcasList) => {
+    if (!codigo) return null;
+    
+    const normalizedQuery = codigo.trim().toLowerCase();
+    
+    for (const marca of marcasList) {
+      for (const modelo of (marca.modelos || [])) {
+        for (const generacion of (modelo.generaciones || [])) {
+          for (const vehiculo of (generacion.vehiculos || [])) {
+            const vehiculoCodigo = (vehiculo.codigo_vehiculo || '').toLowerCase();
+            if (vehiculoCodigo === normalizedQuery) {
+              return { marca, modelo, generacion, vehiculo };
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }, []);
+
+  // Handle search input changes
+  const handleSearch = useCallback((value) => {
+    if (!value) {
+      setFilteredMarcas(marcas);
+      setSearchQuery('');
+      return;
+    }
+
+    const query = value.trim().toLowerCase();
+    setSearchQuery(query);
+
+    // If it looks like a vehicle code (e.g., TOYA-001)
+    if (/^[a-z]{2,4}-\d{2,4}$/i.test(query)) {
+      const match = findVehiclePath(query, marcas);
+      if (match) {
+        const { marca, modelo, generacion, vehiculo } = match;
+        
+        // Set active brand and expand the hierarchy
+        setActiveBrandKeys([`marca-${marca.id}`]);
+        setExpandedModelsByMarca(prev => ({
+          ...prev,
+          [marca.id]: [...(prev[marca.id] || []), modelo.id]
+        }));
+        setExpandedGensByModelo(prev => ({
+          ...prev,
+          [modelo.id]: [...(prev[modelo.id] || []), generacion.id]
+        }));
+        
+        // Expand the vehicle and scroll to it
+        setTimeout(() => {
+          setExpandedKeys(prev => ({ ...prev, [vehiculo.id]: true }));
+          setVehiculoMatchId(vehiculo.id);
+          
+          // Scroll to the matched vehicle
+          if (vehiculoRefs.current[vehiculo.id]) {
+            vehiculoRefs.current[vehiculo.id].scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+          
+          // Remove highlight after 3 seconds
+          setTimeout(() => setVehiculoMatchId(null), 3000);
+        }, 100);
+      } else {
+        message.warning(`No se encontró ningún vehículo con el código: ${query}`);
+      }
+    } else {
+      // Filter brands by name
+      const filtered = marcas.filter(marca => 
+        marca.nombre.toLowerCase().includes(query)
+      );
+      setFilteredMarcas(filtered);
+      
+      // Auto-expand matching brands
+      if (filtered.length > 0) {
+        setActiveBrandKeys(filtered.map(m => `marca-${m.id}`));
+      }
+    }
+  }, [marcas, findVehiclePath]);
+
+  // Update filtered list when search query changes
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredMarcas(marcas);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = marcas.filter(marca => 
+        marca.nombre.toLowerCase().includes(query) ||
+        (marca.modelos || []).some(modelo => 
+          modelo.nombre.toLowerCase().includes(query) ||
+          (modelo.generaciones || []).some(generacion =>
+            generacion.nombre.toLowerCase().includes(query) ||
+            (generacion.vehiculos || []).some(vehiculo =>
+              (vehiculo.codigo_vehiculo || '').toLowerCase().includes(query)
+            )
+          )
+        )
+      );
+      setFilteredMarcas(filtered);
+    }
+  }, [searchQuery, marcas]);
+
+  // Toggle brand expansion
+  const toggleBrand = useCallback((marcaId) => {
+    setActiveBrandKeys(prev => 
+      prev.includes(`marca-${marcaId}`)
+        ? prev.filter(key => key !== `marca-${marcaId}`)
+        : [...prev, `marca-${marcaId}`]
+    );
+  }, []);
+
+  // Toggle model expansion
+  const toggleModel = useCallback((marcaId, modeloId) => {
+    setExpandedModelsByMarca(prev => ({
+      ...prev,
+      [marcaId]: prev[marcaId]?.includes(modeloId)
+        ? prev[marcaId].filter(id => id !== modeloId)
+        : [...(prev[marcaId] || []), modeloId]
+    }));
+  }, []);
+
+  // Toggle generation expansion
+  const toggleGeneration = useCallback((modeloId, generacionId) => {
+    setExpandedGensByModelo(prev => ({
+      ...prev,
+      [modeloId]: prev[modeloId]?.includes(generacionId)
+        ? prev[modeloId].filter(id => id !== generacionId)
+        : [...(prev[modeloId] || []), generacionId]
+    }));
   }, []);
 
   useEffect(() => {
@@ -446,20 +592,150 @@ const VehiculosJerarquicos = () => {
     );
   }
 
+  // Render a single vehicle card
+  const renderVehiculoCard = (vehiculo, generacion, modelo, marca) => {
+    const estaExpandido = expandedKeys[vehiculo.id];
+    const esVehiculoDestacado = vehiculoMatchId === vehiculo.id;
+    
+    return (
+      <div 
+        key={`veh-${vehiculo.id}`} 
+        ref={el => vehiculoRefs.current[vehiculo.id] = el}
+        style={{
+          marginBottom: 16,
+          transition: 'all 0.3s ease',
+          borderLeft: esVehiculoDestacado ? '4px solid #1890ff' : '4px solid transparent',
+          paddingLeft: 8,
+          backgroundColor: esVehiculoDestacado ? '#f0f9ff' : 'transparent',
+          borderRadius: 4
+        }}
+      >
+        {renderVehiculo(vehiculo)}
+      </div>
+    );
+  };
+
+  // Render a generation with its vehicles
+  const renderGeneracion = (generacion, modelo, marca) => {
+    const isExpanded = expandedGensByModelo[modelo.id]?.includes(generacion.id);
+    
+    return (
+      <div key={`gen-${generacion.id}`} style={{ marginBottom: 16 }}>
+        <div 
+          onClick={() => toggleGeneration(modelo.id, generacion.id)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '8px 16px',
+            background: '#f9f9f9',
+            borderRadius: 4,
+            cursor: 'pointer',
+            marginBottom: 8,
+            borderLeft: '3px solid #1890ff'
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <Text strong>{generacion.nombre || 'Sin nombre'}</Text>
+            <Text type="secondary" style={{ marginLeft: 8 }}>
+              ({generacion.anio_inicio || '?'} - {generacion.anio_fin || 'Actual'})
+            </Text>
+          </div>
+          <div>
+            <Text type="secondary">
+              {generacion.vehiculos?.length || 0} vehículo{generacion.vehiculos?.length !== 1 ? 's' : ''}
+            </Text>
+            {isExpanded ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}
+          </div>
+        </div>
+        
+        {isExpanded && generacion.vehiculos?.length > 0 && (
+          <div style={{ marginLeft: 16 }}>
+            {generacion.vehiculos.map(vehiculo => 
+              renderVehiculoCard(vehiculo, generacion, modelo, marca)
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render a model with its generations
+  const renderModelo = (modelo, marca) => {
+    const isExpanded = expandedModelsByMarca[marca.id]?.includes(modelo.id);
+    
+    return (
+      <div key={`mod-${modelo.id}`} style={{ marginBottom: 16 }}>
+        <div 
+          onClick={() => toggleModel(marca.id, modelo.id)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '12px 16px',
+            background: '#f0f0f0',
+            borderRadius: 4,
+            cursor: 'pointer',
+            marginBottom: 8
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <Text strong>{modelo.nombre || 'Sin modelo'}</Text>
+          </div>
+          <div>
+            <Text type="secondary">
+              {modelo.generaciones?.length || 0} generación{modelo.generaciones?.length !== 1 ? 'es' : ''}
+            </Text>
+            {isExpanded ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}
+          </div>
+        </div>
+        
+        {isExpanded && modelo.generaciones?.length > 0 && (
+          <div style={{ marginLeft: 16 }}>
+            {modelo.generaciones.map(generacion => 
+              renderGeneracion(generacion, modelo, marca)
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '300px', padding: '40px 20px', textAlign: 'center' }}>
+        <Spin size="large" />
+        <div style={{ marginTop: '16px', fontSize: '16px', color: '#666' }}>
+          Cargando vehículos...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="vehiculos-jerarquicos">
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <h1>Vehículos</h1>
             <Text type="secondary">Vista jerárquica de vehículos agrupados por marca, modelo y generación</Text>
           </div>
-          {rawData && (
-            <Button type="link" onClick={() => setShowRawData(!showRawData)} icon={<InfoCircleOutlined />}>
-              {showRawData ? 'Ocultar datos en bruto' : 'Mostrar datos en bruto'}
-            </Button>
-          )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Input.Search
+              placeholder="Buscar por marca, modelo o código..."
+              allowClear
+              enterButton={<SearchOutlined />}
+              onSearch={handleSearch}
+              style={{ width: 300 }}
+              onChange={(e) => handleSearch(e.target.value)}
+              value={searchQuery}
+            />
+            {rawData && (
+              <Button onClick={() => setShowRawData(!showRawData)} icon={<InfoCircleOutlined />}>
+                {showRawData ? 'Ocultar datos' : 'Ver datos'}
+              </Button>
+            )}
+          </div>
         </div>
+        
         {showRawData && (
           <div style={{ marginTop: 16, padding: 16, background: '#f5f5f5', borderRadius: 4, maxHeight: 400, overflow: 'auto' }}>
             <pre style={{ margin: 0 }}>{JSON.stringify(rawData, null, 2)}</pre>
@@ -467,57 +743,62 @@ const VehiculosJerarquicos = () => {
         )}
       </div>
 
-      {marcas.map((marca) => (
-        <Card
-          key={`marca-list-${marca.id}`}
-          style={{ marginBottom: 16 }}
-          title={toStr(marca.nombre, 'Sin marca')}
-          extra={`${marca.modelos?.length || 0} modelos`}
+      {filteredMarcas.length > 0 ? (
+        <Collapse 
+          activeKey={activeBrandKeys}
+          onChange={(keys) => setActiveBrandKeys(keys)}
+          expandIcon={({ isActive }) => isActive ? <UpOutlined /> : <DownOutlined />}
+          style={{ background: 'transparent', border: 'none' }}
+          className="marcas-collapse"
         >
-          {marca.modelos?.length > 0 ? (
-            <Collapse ghost>
-              {marca.modelos.map((modelo) => (
-                <Panel
-                  key={`modelo-panel-${marca.id}-${modelo.id}`}
-                  header={
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>{toStr(modelo.nombre, 'Sin modelo')}</span>
-                      <span>{modelo.generaciones?.length || 0} generaciones</span>
-                    </div>
-                  }
-                >
-                  {modelo.generaciones?.length > 0 ? (
-                    <Collapse ghost>
-                      {modelo.generaciones.map((generacion) => (
-                        <Panel
-                          key={`generacion-panel-${modelo.id}-${generacion.id}`}
-                          header={`${toStr(generacion.nombre, 'Sin generación')} (${generacion.anio_inicio ?? '-'} - ${generacion.anio_fin ?? 'Actual'})`}
-                        >
-                          {generacion.vehiculos?.length > 0 ? (
-                            <div style={{ marginLeft: 24 }}>
-                              {generacion.vehiculos.map((vehiculo) => (
-                                <div key={`vehiculo-panel-${generacion.id}-${vehiculo.id}`} style={{ marginBottom: 16 }}>
-                                  {renderVehiculo(vehiculo)}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <Empty description="No hay vehículos en esta generación" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                          )}
-                        </Panel>
-                      ))}
-                    </Collapse>
-                  ) : (
-                    <Empty description="No hay generaciones para este modelo" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  )}
-                </Panel>
-              ))}
-            </Collapse>
-          ) : (
-            <Empty description="No hay modelos para esta marca" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-          )}
+          {filteredMarcas.map((marca) => (
+            <Panel 
+              key={`marca-${marca.id}`}
+              header={
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                  <Text strong>{marca.nombre || 'Sin marca'}</Text>
+                  <div>
+                    <Text type="secondary" style={{ marginRight: 24 }}>
+                      {marca.modelos?.length || 0} modelo{marca.modelos?.length !== 1 ? 's' : ''}
+                    </Text>
+                  </div>
+                </div>
+              }
+              style={{
+                background: '#fff',
+                marginBottom: 16,
+                borderRadius: 4,
+                border: '1px solid #f0f0f0',
+                overflow: 'hidden'
+              }}
+            >
+              {marca.modelos?.length > 0 ? (
+                <div style={{ marginLeft: 8 }}>
+                  {marca.modelos.map(modelo => renderModelo(modelo, marca))}
+                </div>
+              ) : (
+                <Empty 
+                  description="No hay modelos para esta marca" 
+                  image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                  style={{ margin: '16px 0' }}
+                />
+              )}
+            </Panel>
+          ))}
+        </Collapse>
+      ) : (
+        <Card>
+          <Empty 
+            description={
+              <span>
+                <InfoCircleOutlined style={{ marginRight: 4 }} />
+                No se encontraron vehículos que coincidan con la búsqueda
+              </span>
+            } 
+            image={Empty.PRESENTED_IMAGE_SIMPLE} 
+          />
         </Card>
-      ))}
+      )}
     </div>
   );
 };
