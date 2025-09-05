@@ -270,12 +270,18 @@ const VehiculosJerarquicos = () => {
         
         return (
           <Text strong style={{ color: esIngreso ? 'green' : 'red' }}>
-            {esIngreso ? '+' : '-'} ${toNum(montoTransaccion).toLocaleString()}
+            {esIngreso ? '+' : '-'} {formatMonto(montoTransaccion).replace('₡', '')}
           </Text>
         );
       }
     }
   ]), []);
+
+  // Formatear monto con separadores de miles y símbolo de colones
+  const formatMonto = (monto) => {
+    if (monto === null || monto === undefined) return '₡0';
+    return `₡${parseFloat(monto).toLocaleString('es-CR')}`;
+  };
 
   const renderVehiculo = (vehiculo) => {
     const tieneTransacciones = transacciones[vehiculo.id]?.length > 0;
@@ -326,13 +332,13 @@ const VehiculosJerarquicos = () => {
                   <Space wrap size={[8, 8]} style={{ justifyContent: 'flex-end' }}>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '0.8em' }}><Text type="secondary">Inversión</Text></div>
-                      <Text strong>${toNum(vehiculo.inversion_total).toLocaleString()}</Text>
+                      <Text strong>{formatMonto(vehiculo.inversion_total)}</Text>
                     </div>
                     {toStr(vehiculo.estado).toUpperCase() === 'VENDIDO' && !isNullish(vehiculo.precio_venta) && (
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.8em' }}><Text type="secondary">Venta</Text></div>
                         <Text strong style={{ color: 'green' }}>
-                          ${toNum(vehiculo.precio_venta).toLocaleString()}
+                          {formatMonto(vehiculo.precio_venta)}
                         </Text>
                       </div>
                     )}
@@ -370,13 +376,13 @@ const VehiculosJerarquicos = () => {
                     <Col xs={12} sm={6} md={4}>
                       <div>
                         <Text type="secondary" style={{ fontSize: '0.85em' }}>Costo grúa</Text>
-                        <div style={{ marginTop: 2 }}>${toNum(vehiculo.costo_grua).toLocaleString()}</div>
+                        <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.costo_grua)}</div>
                       </div>
                     </Col>
                     <Col xs={12} sm={6} md={4}>
                       <div>
                         <Text type="secondary" style={{ fontSize: '0.85em' }}>Comisiones</Text>
-                        <div style={{ marginTop: 2 }}>${toNum(vehiculo.comisiones).toLocaleString()}</div>
+                        <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.comisiones)}</div>
                       </div>
                     </Col>
                   </Row>
