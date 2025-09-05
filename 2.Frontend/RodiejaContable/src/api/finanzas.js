@@ -92,6 +92,19 @@ export const finanzaService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Get transactions by vehicle ID
+  getTransaccionesPorVehiculo: async (vehiculoId, params = {}) => {
+    try {
+      const { data } = await api.get(
+        `transacciones-financieras/vehiculo/${vehiculoId}`,
+        { params: { activo: 1, ...params } }
+      );
+      return data;
+    } catch (error) {
+      throw error?.response?.data || error?.message || 'Error al cargar transacciones del vehículo';
+    }
   }
 };
 

@@ -178,19 +178,14 @@ const VehiculosJerarquicos = () => {
     try {
       setLoadingTransacciones(prev => ({ ...prev, [vehiculoId]: true }));
       
-      // Usar el servicio de finanzas para obtener transacciones del vehículo
-      const response = await finanzaService.getTransacciones({ 
-        vehiculo_id: vehiculoId,
-        // Puedes agregar más filtros aquí si es necesario
-        activo: 1
-      });
+      // Usar el servicio de finanzas para obtener transacciones específicas del vehículo
+      const response = await finanzaService.getTransaccionesPorVehiculo(vehiculoId);
+      
+      // Asegurarse de que tenemos un array, incluso si la respuesta es null/undefined
+      const transaccionesNormalizadas = Array.isArray(response) ? response : [];
 
-      // Normalizar las transacciones si es necesario
-      const transaccionesNormalizadas = Array.isArray(response?.data) ? response.data : 
-                                       Array.isArray(response) ? response : [];
-
-      // Ordenar por fecha (más reciente primero)
-      const transaccionesOrdenadas = transaccionesNormalizadas.sort((a, b) => {
+      // Ordenar por fecha (más reciente primero) - por si acaso el backend no lo hace
+      const transaccionesOrdenadas = [...transaccionesNormalizadas].sort((a, b) => {
         const fechaA = toDate(a.fecha || a.fecha_transaccion);
         const fechaB = toDate(b.fecha || b.fecha_transaccion);
         if (!fechaA && !fechaB) return 0;
