@@ -1,3 +1,7 @@
+### Obtener todas las transacciones por vehiculo
+GET http://localhost:8080/api/transacciones-financieras/vehiculo/1
+
+
 ### Obtener todas las transacciones
 GET http://localhost:8080/api/transacciones-financieras
 
