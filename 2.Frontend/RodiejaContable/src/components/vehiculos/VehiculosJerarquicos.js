@@ -26,6 +26,7 @@ import {
 
 import vehiculoService from '../../api/vehiculos';
 import finanzaService from '../../api/finanzas'; // Importar el servicio de finanzas
+import { getTiposTransacciones } from '../../api/transacciones'; // Importar el servicio de tipos de transacciones
 import { renderEstado } from '../../utils/vehicleUtils';
 
 const { Panel } = Collapse;
@@ -42,57 +43,18 @@ const formatMonto = (monto) => {
   return `₡${parseFloat(monto).toLocaleString('es-CR')}`;
 };
 
-// Mapeo de tipos de transacción a categorías
-const categoriaPorTipoId = {
-  1: 'INGRESO',  // Venta Vehículo
-  2: 'INGRESO',  // Venta Repuesto
-  3: 'INGRESO',  // Venta Mayoreo
-  4: 'INGRESO',  // Servicios Mecánicos
-  5: 'INGRESO',  // Alquiler Espacio
-  6: 'EGRESO',   // Compra Vehículo
-  7: 'EGRESO',   // Compra Repuesto
-  8: 'EGRESO',   // Reparación Vehículo
-  9: 'EGRESO',   // Mantenimiento Local
-  10: 'EGRESO',  // Comisión Vendedor
-  11: 'EGRESO',  // Costo Grúa
-  12: 'EGRESO',  // Transporte
-  13: 'EGRESO',  // Combustible
-  14: 'EGRESO',  // Servicios Públicos
-  15: 'EGRESO',  // Impuestos
-  16: 'EGRESO',  // Salarios
-  17: 'INGRESO', // Otros Ingresos
-  18: 'EGRESO'   // Otros Egresos
-};
-
-// Nombres de tipos de transacción
-const nombreTipoTransaccion = {
-  1: 'Venta Vehículo',
-  2: 'Venta Repuesto',
-  3: 'Venta Mayoreo',
-  4: 'Servicios Mecánicos',
-  5: 'Alquiler Espacio',
-  6: 'Compra Vehículo',
-  7: 'Compra Repuesto',
-  8: 'Reparación Vehículo',
-  9: 'Mantenimiento Local',
-  10: 'Comisión Vendedor',
-  11: 'Costo Grúa',
-  12: 'Transporte',
-  13: 'Combustible',
-  14: 'Servicios Públicos',
-  15: 'Impuestos',
-  16: 'Salarios',
-  17: 'Otros Ingresos',
-  18: 'Otros Egresos'
-};
+// Objetos para almacenar los tipos de transacciones
+let categoriaPorTipoId = {};
+let nombreTipoTransaccion = {};
+let tiposTransaccionesCargados = false;
 
 // Helpers para transacciones
 const getCategoriaTransaccion = (record) => {
   // Primero intenta obtener la categoría del mapeo por ID
-  if (record?.tipoTransaccionId) {
-    return categoriaPorTipoId[record.tipoTransaccionId] || '';
+  if (record?.tipoTransaccionId && categoriaPorTipoId[record.tipoTransaccionId]) {
+    return categoriaPorTipoId[record.tipoTransaccionId];
   }
-  // Si no hay ID, intenta obtener la categoría de otros campos
+  // Si no hay ID o no está en el mapeo, intenta obtener la categoría de otros campos
   return toStr(
     record?.tipo_transaccion?.categoria ?? record?.categoria ?? record?.tipo,
     ''
@@ -221,6 +183,7 @@ const normalizarEOrdenar = (data) => {
 /* ========================= Componente ========================= */
 const VehiculosJerarquicos = () => {
   const [loading, setLoading] = useState(true);
+  const [loadingTipos, setLoadingTipos] = useState(true);
   const [marcas, setMarcas] = useState([]);
   const [filteredMarcas, setFilteredMarcas] = useState([]);
   const [expandedKeys, setExpandedKeys] = useState({});
@@ -396,6 +359,48 @@ const VehiculosJerarquicos = () => {
     cargarDatos();
   }, [cargarDatos]);
 
+  // Cargar tipos de transacciones al montar el componente
+  useEffect(() => {
+    const cargarTiposTransacciones = async () => {
+      try {
+        setLoadingTipos(true);
+        const tipos = await getTiposTransacciones();
+        
+        // Actualizar los mapeos de tipos de transacción
+        const nuevoCategoriaPorTipoId = {};
+        const nuevoNombreTipoTransaccion = {};
+        
+        tipos.forEach(tipo => {
+          if (tipo.activo) {
+            nuevoCategoriaPorTipoId[tipo.id] = tipo.categoria;
+            nuevoNombreTipoTransaccion[tipo.id] = tipo.nombre;
+          }
+        });
+        
+        categoriaPorTipoId = nuevoCategoriaPorTipoId;
+        nombreTipoTransaccion = nuevoNombreTipoTransaccion;
+        tiposTransaccionesCargados = true;
+        
+      } catch (error) {
+        console.error('Error al cargar tipos de transacciones:', error);
+        message.error('Error al cargar los tipos de transacciones');
+      } finally {
+        setLoadingTipos(false);
+      }
+    };
+
+    if (!tiposTransaccionesCargados) {
+      cargarTiposTransacciones();
+    }
+  }, []);
+
+  // Cargar vehículos después de que los tipos de transacciones estén listos
+  useEffect(() => {
+    if (tiposTransaccionesCargados) {
+      cargarDatos();
+    }
+  }, [tiposTransaccionesCargados, cargarDatos]);
+
   // Función personalizada para manejar la expansión y carga de transacciones
   const handleExpand = useCallback(async (vehiculoId, expanded) => {
     if (!expanded || transacciones[vehiculoId]) {
@@ -468,7 +473,7 @@ const VehiculosJerarquicos = () => {
               <span style={{ marginRight: 8, display: 'inline-block' }}>
                 {toDateStr(fechaTransaccion)}
               </span>
-              <Tag color={ingreso ? 'blue' : 'red'}>
+              <Tag color={ingreso ? 'green' : 'red'}>
                 {ingreso ? 'INGRESO' : 'EGRESO'}
               </Tag>
             </div>
@@ -652,16 +657,7 @@ const VehiculosJerarquicos = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '300px', padding: '40px 20px', textAlign: 'center' }}>
-        <Spin size="large" />
-        <div style={{ marginTop: '16px', fontSize: '16px', color: '#666' }}>
-          Cargando vehículos...
-        </div>
-      </div>
-    );
-  }
+  // Loading state moved to the main loading check at the beginning of the component
 
   // Render a single vehicle card
   const renderVehiculoCard = (vehiculo, generacion, modelo, marca) => {
@@ -770,12 +766,14 @@ const VehiculosJerarquicos = () => {
     );
   };
 
-  if (loading) {
+  if (loading || loadingTipos || !tiposTransaccionesCargados) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '300px', padding: '40px 20px', textAlign: 'center' }}>
         <Spin size="large" />
         <div style={{ marginTop: '16px', fontSize: '16px', color: '#666' }}>
-          Cargando vehículos...
+          {loading ? 'Cargando vehículos...' : 
+           loadingTipos ? 'Cargando tipos de transacciones...' : 
+           'Inicializando...'}
         </div>
       </div>
     );
