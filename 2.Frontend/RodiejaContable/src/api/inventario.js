@@ -1,137 +1,166 @@
 import api from './axios';
 
 class InventarioService {
-  // Obtener todo el inventario
-  async getInventario() {
+  // Get all spare parts
+  async getRepuestos() {
     try {
-      const response = await api.get('/inventario');
-      return response.data.map(item => ({
-        id: item.id,
-        codigo: item.codigo,
-        nombre: item.nombre,
-        descripcion: item.descripcion,
-        categoria: item.categoria,
-        cantidadDisponible: item.cantidadDisponible,
-        cantidadMinima: item.cantidadMinima,
-        precioCompra: item.precioCompra,
-        precioVenta: item.precioVenta,
-        estado: item.estado,
-        ubicacion: item.ubicacion,
-        vehiculosCompatibles: item.vehiculosCompatibles || [],
-        fechaUltimaEntrada: item.fechaUltimaEntrada,
-        fechaUltimaSalida: item.fechaUltimaSalida
-      }));
+      const response = await api.get('/inventario-repuestos');
+      return response.data.map(item => this._mapRepuesto(item));
     } catch (error) {
-      console.error('Error al obtener el inventario:', error);
+      console.error('Error fetching spare parts:', error);
       throw error;
     }
   }
   
-  // Obtener un repuesto por su ID
+  // Get a spare part by ID
   async getRepuestoPorId(id) {
     try {
-      const response = await api.get(`/inventario/${id}`);
-      const item = response.data;
-      
-      return {
-        id: item.id,
-        codigo: item.codigo,
-        nombre: item.nombre,
-        descripcion: item.descripcion,
-        categoria: item.categoria,
-        cantidadDisponible: item.cantidadDisponible,
-        cantidadMinima: item.cantidadMinima,
-        precioCompra: item.precioCompra,
-        precioVenta: item.precioVenta,
-        estado: item.estado,
-        ubicacion: item.ubicacion,
-        vehiculosCompatibles: item.vehiculosCompatibles || [],
-        fechaUltimaEntrada: item.fechaUltimaEntrada,
-        fechaUltimaSalida: item.fechaUltimaSalida
-      };
+      const response = await api.get(`/inventario-repuestos/${id}`);
+      return this._mapRepuesto(response.data);
     } catch (error) {
-      console.error('Error al obtener el repuesto:', error);
+      console.error(`Error fetching spare part ${id}:`, error);
       throw error;
     }
   }
-  
-  // Crear un nuevo repuesto
+
+  // Search parts by code
+  async buscarPorCodigo(codigo) {
+    try {
+      const response = await api.get('/inventario-repuestos/buscar', {
+        params: { codigo }
+      });
+      return response.data.map(item => this._mapRepuesto(item));
+    } catch (error) {
+      console.error('Error searching parts by code:', error);
+      throw error;
+    }
+  }
+
+  // Get parts by vehicle
+  async getRepuestosPorVehiculo(vehiculoId) {
+    try {
+      const response = await api.get(`/inventario-repuestos/vehiculo/${vehiculoId}`);
+      return response.data.map(item => this._mapRepuesto(item));
+    } catch (error) {
+      console.error(`Error getting parts for vehicle ${vehiculoId}:`, error);
+      throw error;
+    }
+  }
+
+  // Create new spare part
   async crearRepuesto(repuestoData) {
     try {
-      const response = await api.post('/inventario_repuestos', repuestoData);
-      return response.data;
+      const response = await api.post('/inventario-repuestos', repuestoData);
+      return this._mapRepuesto(response.data);
     } catch (error) {
-      console.error('Error al crear el repuesto:', error);
+      console.error('Error creating spare part:', error);
       throw error;
     }
   }
-  
-  // Actualizar un repuesto existente
+
+  // Update existing part
   async actualizarRepuesto(id, repuestoData) {
     try {
-      const response = await api.put(`/inventario_repuestos/${id}`, repuestoData);
-      return response.data;
+      const response = await api.put(`/inventario-repuestos/${id}`, repuestoData);
+      return this._mapRepuesto(response.data);
     } catch (error) {
-      console.error('Error al actualizar el repuesto:', error);
+      console.error(`Error updating part ${id}:`, error);
       throw error;
     }
   }
-  
-  // Eliminar un repuesto
+
+  // Delete part
   async eliminarRepuesto(id) {
     try {
-      await api.delete(`/inventario_repuestos/${id}`);
+      await api.delete(`/inventario-repuestos/${id}`);
       return true;
     } catch (error) {
-      console.error('Error al eliminar el repuesto:', error);
+      console.error(`Error deleting part ${id}:`, error);
       throw error;
     }
   }
-  
-  // Obtener historial de movimientos de un repuesto
-  async getHistorialRepuesto(id) {
-    try {
-      const response = await api.get('/historial_repuestos', {
-        params: {
-          repuestoId: id,
-          _sort: 'fecha:desc'
-        }
-      });
-      
-      return response.data.map(item => ({
-        id: item.id,
-        fecha: item.fecha,
-        tipo: item.tipo,
-        cantidad: item.cantidad,
-        motivo: item.motivo,
-        usuario: item.usuario,
-        observaciones: item.observaciones
-      }));
-    } catch (error) {
-      console.error('Error al obtener el historial del repuesto:', error);
-      throw error;
-    }
-  }
-  
-  // Obtener repuestos con stock bajo
-  async getRepuestosStockBajo() {
-    try {
-      const response = await api.get('/inventario/critico');
-      return response.data.map(item => ({
-        id: item.id,
-        codigo: item.codigo,
-        nombre: item.nombre,
-        cantidadDisponible: item.cantidadDisponible,
-        cantidadMinima: item.cantidadMinima,
-        estado: item.estado,
-        ubicacion: item.ubicacion
-      }));
-    } catch (error) {
-      console.error('Error al obtener repuestos con stock bajo:', error);
-      throw error;
-    }
+
+  // Map API response to frontend format
+  _mapRepuesto(item) {
+    if (!item) return null;
+    
+    // Format the creation and update dates
+    const formatDate = (dateArray) => {
+      if (!dateArray || !Array.isArray(dateArray)) return null;
+      const [year, month, day, hours = 0, minutes = 0, seconds = 0] = dateArray;
+      return new Date(year, month - 1, day, hours, minutes, seconds).toISOString();
+    };
+
+    // Build the location string
+    const ubicacion = [
+      item.bodega,
+      item.zona,
+      item.pared,
+      item.malla,
+      item.horizontal,
+      item.estante,
+      item.nivel,
+      item.piso
+    ].filter(Boolean).join(' ');
+
+    // Get the status display text based on estado
+    const getEstadoDisplay = (estado) => {
+      const estados = {
+        'STOCK': 'En Stock',
+        'VENDIDO': 'Vendido',
+        'AGOTADO': 'Agotado',
+        'DISPONIBLE': 'Disponible',
+        'DESARMADO': 'Desarmado',
+        'REPARACION': 'En Reparación'
+      };
+      return estados[estado] || estado;
+    };
+
+    return {
+      id: item.id,
+      codigo: item.codigoRepuesto || item.codigo_repuesto,
+      codigoUbicacion: item.codigoUbicacion || item.codigo_ubicacion,
+      vehiculoOrigenId: item.vehiculoOrigenId || item.vehiculo_origen_id,
+      anioRegistro: item.anioRegistro || item.anio_registro,
+      mesRegistro: item.mesRegistro || item.mes_registro,
+      parteVehiculo: item.parteVehiculo || item.parte_vehiculo,
+      descripcion: item.descripcion,
+      precioCosto: item.precioCosto || item.precio_costo,
+      precioVenta: item.precioVenta || item.precio_venta,
+      precioMayoreo: item.precioMayoreo || item.precio_mayoreo,
+      formula15: item.formula_15,
+      formula30: item.formula_30,
+      bodega: item.bodega,
+      zona: item.zona,
+      pared: item.pared,
+      malla: item.malla,
+      horizontal: item.horizontal,
+      estante: item.estante,
+      nivel: item.nivel,
+      piso: item.piso,
+      plastica: item.plastica,
+      carton: item.carton,
+      posicion: item.posicion,
+      cantidad: item.cantidad,
+      estado: item.estado,
+      estadoDisplay: getEstadoDisplay(item.estado),
+      condicion: item.condicion,
+      imagenUrl: item.imagenUrl || item.imagen_url,
+      fechaCreacion: formatDate(item.fechaCreacion) || item.fecha_creacion,
+      fechaActualizacion: formatDate(item.fechaActualizacion) || item.fecha_actualizacion,
+      ubicacion: ubicacion,
+      // Add additional fields that might be useful for display
+      esVendido: (item.estado === 'VENDIDO' || item.estado === 'AGOTADO'),
+      tieneStock: (item.cantidad > 0),
+      // Add a formatted price for display
+      precioVentaFormatted: new Intl.NumberFormat('es-CL', {
+        style: 'currency',
+        currency: 'CLP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(item.precioVenta || item.precio_venta || 0)
+    };
   }
 }
 
-// Export a singleton instance
 export default new InventarioService();
