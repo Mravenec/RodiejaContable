@@ -247,6 +247,10 @@ const Inventario = () => {
       title: 'Precio Mayoreo',
       dataIndex: 'precioMayoreo',
       key: 'precioMayoreo',
+      render: (precio) => `₡${precio.toLocaleString('es-CR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      })}`,
       render: (precio) => formatCurrency(precio),
       sorter: (a, b) => a.precioMayoreo - b.precioMayoreo,
       width: 150,

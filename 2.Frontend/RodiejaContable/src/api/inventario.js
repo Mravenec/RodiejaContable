@@ -152,13 +152,21 @@ class InventarioService {
       // Add additional fields that might be useful for display
       esVendido: (item.estado === 'VENDIDO' || item.estado === 'AGOTADO'),
       tieneStock: (item.cantidad > 0),
-      // Add a formatted price for display
-      precioVentaFormatted: new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
+      // Add a formatted price for display in Costa Rican Colones (₡)
+      precioVentaFormatted: `₡${(item.precioVenta || item.precio_venta || 0).toLocaleString('es-CR', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
-      }).format(item.precioVenta || item.precio_venta || 0)
+      })}`,
+      // Add formatted price for costo
+      precioCostoFormatted: `₡${(item.precioCosto || item.precio_costo || 0).toLocaleString('es-CR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      })}`,
+      // Add formatted price for mayoreo
+      precioMayoreoFormatted: `₡${(item.precioMayoreo || item.precio_mayoreo || 0).toLocaleString('es-CR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      })}`
     };
   }
 }
