@@ -13,7 +13,8 @@ import {
   Drawer,
   Grid,
   message,
-  Spin
+  Spin,
+  Image
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -131,6 +132,39 @@ const Inventario = () => {
 
   // Table columns
   const columns = [
+    {
+      title: 'Imagen',
+      dataIndex: 'imagenUrl',
+      key: 'imagen',
+      width: 100,
+      render: (imagenUrl) => (
+        imagenUrl ? (
+          <Image
+            width={50}
+            height={50}
+            src={imagenUrl}
+            alt="Imagen del repuesto"
+            style={{ objectFit: 'cover' }}
+            fallback="https://via.placeholder.com/50?text=Sin+imagen"
+          />
+        ) : (
+          <div style={{
+            width: 50,
+            height: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f0f0f0',
+            color: '#999',
+            fontSize: 10,
+            textAlign: 'center',
+            padding: 5
+          }}>
+            Sin imagen
+          </div>
+        )
+      ),
+    },
     {
       title: 'Código',
       dataIndex: 'codigo',
