@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import moment from 'moment';
+import finanzaService from '../../api/finanzas';
 import { 
   Card, 
   Table, 
@@ -41,7 +44,6 @@ import {
   FileTextOutlined,
   TransactionOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -51,78 +53,27 @@ const { TabPane } = Tabs;
 
 const Finanzas = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState({
+    transacciones: false,
+    resumen: false
+  });
+  const [error, setError] = useState(null);
   const [filtros, setFiltros] = useState({
     tipo: null,
     categoria: null,
     estado: null,
-    rangoFechas: null,
+    rangoFechas: [moment().startOf('month'), moment().endOf('day')],
+    busqueda: ''
   });
   const [tabActivo, setTabActivo] = useState('transacciones');
-  
-  // Datos de ejemplo (serán reemplazados con datos reales)
-  const transacciones = [
-    {
-      id: 'TXN-2023-001',
-      fecha: '2023-10-25',
-      tipo: 'ingreso',
-      monto: 450000,
-      categoria: 'Venta de vehículo',
-      descripcion: 'Venta de Toyota Corolla 2021',
-      referencia: 'VTA-2023-045',
-      estado: 'completado',
-      metodoPago: 'Transferencia',
-      cuenta: 'Banco Principal',
-    },
-    {
-      id: 'TXN-2023-002',
-      fecha: '2023-10-24',
-      tipo: 'egreso',
-      monto: 12500,
-      categoria: 'Compra de repuestos',
-      descripcion: 'Compra de repuestos para inventario',
-      referencia: 'CMP-2023-128',
-      estado: 'completado',
-      metodoPago: 'Tarjeta de crédito',
-      cuenta: 'Tarjeta Empresarial',
-    },
-    {
-      id: 'TXN-2023-003',
-      fecha: '2023-10-23',
-      tipo: 'ingreso',
-      monto: 2500,
-      categoria: 'Servicio de mantenimiento',
-      descripcion: 'Cambio de aceite y filtros',
-      referencia: 'SER-2023-078',
-      estado: 'pendiente',
-      metodoPago: 'Efectivo',
-      cuenta: 'Caja Chica',
-    },
-    {
-      id: 'TXN-2023-004',
-      fecha: '2023-10-22',
-      tipo: 'egreso',
-      monto: 8500,
-      categoria: 'Gastos de oficina',
-      descripcion: 'Material de oficina y suministros',
-      referencia: 'GTO-2023-056',
-      estado: 'completado',
-      metodoPago: 'Transferencia',
-      cuenta: 'Banco Principal',
-    },
-    {
-      id: 'TXN-2023-005',
-      fecha: '2023-10-21',
-      tipo: 'ingreso',
-      monto: 320000,
-      categoria: 'Venta de vehículo',
-      descripcion: 'Venta de Honda Civic 2019',
-      referencia: 'VTA-2023-044',
-      estado: 'completado',
-      metodoPago: 'Crédito',
-      cuenta: 'Cuentas por Cobrar',
-    },
-  ];
-  
+  const [transacciones, setTransacciones] = useState([]);
+  const [resumen, setResumen] = useState({
+    ingresos: 0,
+    egresos: 0,
+    balance: 0
+  });
+
+  // Constantes para filtros
   const categoriasIngresos = [
     'Venta de vehículo',
     'Servicio de mantenimiento',
@@ -161,10 +112,9 @@ const Finanzas = () => {
   ];
   
   const estados = [
-    { value: 'completado', label: 'Completado', color: 'success' },
-    { value: 'pendiente', label: 'Pendiente', color: 'processing' },
-    { value: 'cancelado', label: 'Cancelado', color: 'error' },
-    { value: 'reembolsado', label: 'Reembolsado', color: 'default' },
+    { value: 'COMPLETADA', label: 'Completada', color: 'success' },
+    { value: 'PENDIENTE', label: 'Pendiente', color: 'processing' },
+    { value: 'CANCELADA', label: 'Cancelada', color: 'error' },
   ];
   
   const columns = [
@@ -211,16 +161,17 @@ const Finanzas = () => {
       dataIndex: 'monto',
       key: 'monto',
       width: 150,
-      render: (monto, record) => (
-        <Text 
-          strong 
-          style={{ 
-            color: record.tipo === 'ingreso' ? '#52c41a' : '#f5222d' 
-          }}
-        >
-          {record.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(monto)}
-        </Text>
-      ),
+      render: (monto, record) => {
+        const esIngreso = record.tipo === 'ingreso';
+        const color = esIngreso ? '#52c41a' : '#f5222d';
+        const signo = esIngreso ? '+' : '-';
+        
+        return (
+          <Text strong style={{ color }}>
+            {signo}{formatCurrency(monto)}
+          </Text>
+        );
+      },
       sorter: (a, b) => a.monto - b.monto,
     },
     {
@@ -289,20 +240,167 @@ const Finanzas = () => {
     },
   ];
   
-  // Calcular totales
-  const totalIngresos = transacciones
-    .filter(t => t.tipo === 'ingreso' && t.estado === 'completado')
-    .reduce((sum, t) => sum + t.monto, 0);
+  // Obtener transacciones
+  const obtenerTransacciones = async () => {
+    try {
+      setLoading(prev => ({ ...prev, transacciones: true }));
+      setError(null);
+      
+      const { rangoFechas, busqueda, tipo, categoria, estado, searchFields } = filtros;
+      const [fechaInicio, fechaFin] = rangoFechas || [null, null];
+      
+      // Construir parámetros de consulta
+      const params = {
+        tipo: tipo || undefined,
+        categoria: categoria || undefined,
+        estado: estado || undefined,
+        fechaInicio: fechaInicio ? fechaInicio.format('YYYY-MM-DD') : undefined,
+        fechaFin: fechaFin ? fechaFin.format('YYYY-MM-DD') : undefined,
+        search: busqueda || undefined,
+        searchFields: searchFields || undefined
+      };
+      
+      // Limpiar parámetros undefined
+      Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
+      
+      // Obtener transacciones
+      const data = await finanzaService.getTransacciones(params);
+      
+      // Mapear datos de la API al formato esperado por el componente
+      const transaccionesMapeadas = Array.isArray(data) ? data.map(transaccion => {
+        // Determinar el tipo basado en la categoría
+        const esIngreso = transaccion?.categoria === 'INGRESO';
+        const tipo = esIngreso ? 'ingreso' : 'egreso';
+        
+        // Formatear fecha
+        const fechaFormateada = transaccion?.fecha 
+          ? moment(transaccion.fecha).format('DD/MM/YYYY') 
+          : 'Fecha no disponible';
+        
+        // Obtener el monto como número
+        const monto = parseFloat(transaccion?.monto) || 0;
+        
+        return {
+          id: transaccion?.codigo_transaccion || transaccion?.id || 'N/A',
+          fecha: fechaFormateada,
+          descripcion: transaccion?.descripcion || 'Sin descripción',
+          referencia: transaccion?.referencia || '',
+          categoria: transaccion?.tipo_transaccion || transaccion?.categoria || 'Sin categoría',
+          monto: monto,
+          tipo: tipo,
+          metodoPago: transaccion?.metodo_pago || 'No especificado',
+          cuenta: transaccion?.cuenta || 'No especificada',
+          estado: transaccion?.estado || 'PENDIENTE',
+          // Campos adicionales para filtros
+          codigo_vehiculo: transaccion?.codigo_vehiculo,
+          codigo_repuesto: transaccion?.codigo_repuesto,
+          marca: transaccion?.marca,
+          modelo: transaccion?.modelo,
+          generacion: transaccion?.generacion
+        };
+      }) : [];
+      
+      setTransacciones(transaccionesMapeadas);
+      
+    } catch (err) {
+      console.error('Error al obtener transacciones:', err);
+      const errorMessage = err?.message || 'Error al cargar las transacciones';
+      setError(errorMessage);
+      message.error(errorMessage);
+    } finally {
+      setLoading(prev => ({ ...prev, transacciones: false }));
+    }
+  };
+
+  // Obtener resumen financiero
+  const obtenerResumenFinanciero = async () => {
+    try {
+      setLoading(prev => ({ ...prev, resumen: true }));
+      setError(null);
+      
+      const { rangoFechas } = filtros;
+      const [fechaInicio, fechaFin] = rangoFechas || [null, null];
+      
+      // Construir parámetros de consulta
+      const params = {
+        fechaInicio: fechaInicio ? fechaInicio.format('YYYY-MM-DD') : undefined,
+        fechaFin: fechaFin ? fechaFin.format('YYYY-MM-DD') : undefined,
+        estado: 'COMPLETADA' // Solo transacciones completadas para el resumen
+      };
+      
+      // Limpiar parámetros undefined
+      Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
+      
+      // Obtener transacciones completadas para el resumen
+      const transacciones = await finanzaService.getTransacciones(params);
+      
+      // Calcular totales
+      const totales = Array.isArray(transacciones) ? transacciones.reduce((acc, t) => {
+        const monto = parseFloat(t.monto) || 0;
+        if (t.categoria === 'INGRESO') {
+          acc.ingresos += monto;
+        } else if (t.categoria === 'EGRESO') {
+          acc.egresos += monto;
+        }
+        return acc;
+      }, { ingresos: 0, egresos: 0 }) : { ingresos: 0, egresos: 0 };
+      
+      // Actualizar el estado con los totales
+      setResumen({
+        ingresos: totales.ingresos,
+        egresos: totales.egresos,
+        balance: totales.ingresos - totales.egresos
+      });
+      
+    } catch (err) {
+      console.error('Error al obtener resumen financiero:', err);
+      const errorMessage = err?.message || 'Error al cargar el resumen financiero';
+      setError(errorMessage);
+      message.error(errorMessage);
+      
+      // Establecer valores por defecto en caso de error
+      setResumen({
+        ingresos: 0,
+        egresos: 0,
+        balance: 0
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, resumen: false }));
+    }
+  };
+
+  // Cargar datos cuando cambian los filtros o la pestaña
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        if (tabActivo === 'transacciones') {
+          await obtenerTransacciones();
+        } else if (tabActivo === 'resumen') {
+          await obtenerResumenFinanciero();
+        }
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        message.error('Error al cargar los datos. Por favor, intente nuevamente.');
+      }
+    };
     
-  const totalEgresos = transacciones
-    .filter(t => t.tipo === 'egreso' && t.estado === 'completado')
-    .reduce((sum, t) => sum + t.monto, 0);
+    cargarDatos();
     
-  const balance = totalIngresos - totalEgresos;
+    // Limpiar el error cuando se desmonta el componente
+    return () => {
+      setError(null);
+    };
+  }, [filtros, tabActivo]);
+
+  // Desestructurar resumen para facilitar el acceso
+  const { ingresos: totalIngresos, egresos: totalEgresos, balance } = resumen;
   
   const handleSearch = (value) => {
-    console.log('Buscar:', value);
-    // Implementar búsqueda
+    setFiltros(prev => ({
+      ...prev,
+      busqueda: value,
+      searchFields: 'codigo_transaccion,descripcion,referencia,codigo_vehiculo,codigo_repuesto,marca,modelo,generacion'
+    }));
   };
   
   const handleFilterChange = (key, value) => {
@@ -310,7 +408,6 @@ const Finanzas = () => {
       ...prev,
       [key]: value
     }));
-    // Aplicar filtros
   };
   
   const clearFilters = () => {
@@ -318,7 +415,8 @@ const Finanzas = () => {
       tipo: null,
       categoria: null,
       estado: null,
-      rangoFechas: null,
+      rangoFechas: [moment().startOf('month'), moment().endOf('day')],
+      busqueda: ''
     });
   };
   
@@ -327,7 +425,28 @@ const Finanzas = () => {
   };
   
   const handleNuevaTransaccion = (tipo) => {
-    navigate(`/finanzas/nueva-transaccion?tipo=${tipo}`);
+    if (tipo === 'ingreso') {
+      navigate('/finanzas/nueva-transaccion?tipo=INGRESO');
+    } else if (tipo === 'egreso') {
+      navigate('/finanzas/nueva-transaccion?tipo=EGRESO');
+    } else if (tipo === 'transferencia') {
+      navigate('/finanzas/transferencia');
+    }
+  };
+
+  const handleEditarTransaccion = (id) => {
+    navigate(`/finanzas/editar/${id}`);
+  };
+
+  const handleEliminarTransaccion = async (id) => {
+    try {
+      await finanzaService.deleteTransaccion(id);
+      message.success('Transacción eliminada correctamente');
+      await obtenerTransacciones();
+    } catch (error) {
+      console.error('Error al eliminar la transacción:', error);
+      message.error('Error al eliminar la transacción');
+    }
   };
   
   const menu = (
@@ -347,6 +466,15 @@ const Finanzas = () => {
       </Menu.Item>
     </Menu>
   );
+
+  // Mapear los datos de la API al formato esperado por la tabla
+  const mapearTransacciones = (data) => {
+    return data.map(transaccion => ({
+      ...transaccion,
+      tipo: transaccion.tipo?.toLowerCase() || '',
+      estado: transaccion.estado?.toLowerCase() || ''
+    }));
+  };
   
   return (
     <div>
@@ -475,14 +603,18 @@ const Finanzas = () => {
             
             <Table 
               columns={columns} 
-              dataSource={transacciones} 
+              dataSource={mapearTransacciones(transacciones)} 
               rowKey="id"
+              loading={loading.transacciones}
               pagination={{ 
                 pageSize: 10,
                 showSizeChanger: true,
                 showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} transacciones`
               }}
               scroll={{ x: 1500 }}
+              locale={{
+                emptyText: error || 'No hay transacciones para mostrar'
+              }}
             />
           </TabPane>
           
@@ -556,16 +688,27 @@ const Finanzas = () => {
       
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between' }}>
         <div>
-          <Button type="text" icon={<DownloadOutlined />}>
+          <Button 
+            type="text" 
+            icon={<DownloadOutlined />}
+            onClick={() => message.info('Exportando datos a Excel...')}
+            loading={loading.transacciones}
+          >
             Exportar a Excel
           </Button>
-          <Button type="text" icon={<FileTextOutlined />}>
+          <Button 
+            type="text" 
+            icon={<FileTextOutlined />}
+            onClick={() => message.info('Generando reporte...')}
+            loading={loading.transacciones}
+          >
             Generar Reporte
           </Button>
         </div>
         <div>
           <Text type="secondary">
-            Mostrando {transacciones.length} transacciones
+            Mostrando {transacciones.length} transacci{transacciones.length === 1 ? 'ón' : 'ones'}
+            {filtros.rangoFechas && ` del ${filtros.rangoFechas[0].format('DD/MM/YYYY')} al ${filtros.rangoFechas[1].format('DD/MM/YYYY')}`}
           </Text>
         </div>
       </div>
