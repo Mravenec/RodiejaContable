@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Layout } from 'antd';
@@ -90,95 +90,119 @@ const AuthRoute = ({ children }) => {
 
 // Componente de layout principal
 const MainLayout = ({ children }) => {
-  const { user } = useAuth();
-  const [collapsed, setCollapsed] = React.useState(false);
+  const LayoutWrapper = ({ children }) => {
+    const [collapsed, setCollapsed] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const { user } = useAuth();
 
-  const menuItems = [
-    {
-      key: 'dashboard',
-      icon: <HomeOutlined />,
-      label: 'Dashboard',
-      path: '/',
-    },
-    {
-      key: 'vehiculos',
-      icon: <CarOutlined />,
-      label: 'Vehículos',
-      path: '/vehiculos',
-      children: [
-        { key: 'nuevo-vehiculo', label: 'Nuevo Vehículo', path: '/vehiculos/nuevo' },
-      ],
-    },
-    {
-      key: 'inventario',
-      icon: <ToolOutlined />,
-      label: 'Inventario',
-      path: '/inventario',
-      children: [
-        { key: 'nuevo-repuesto', label: 'Nuevo Repuesto', path: '/inventario/nuevo' },
-      ],
-    },
-    {
-      key: 'finanzas',
-      icon: <DollarOutlined />,
-      label: 'Finanzas',
-      path: '/finanzas',
-      children: [
-        { key: 'nueva-transaccion', label: 'Nueva Transacción', path: '/finanzas/nueva' },
-      ],
-    },
-    {
-      key: 'reportes',
-      icon: <BarChartOutlined />,
-      label: 'Reportes',
-      path: '/reportes',
-    },
-  ];
+    useEffect(() => {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth <= 768);
+      };
 
-  return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sidebar menuItems={menuItems} collapsed={collapsed} />
-      <Layout style={{ marginLeft: collapsed ? '80px' : '200px', transition: 'margin-left 0.2s' }}>
-        <div style={{ height: '64px' }}>
-          <Header collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} user={user} />
-        </div>
-        <Layout.Content style={{ 
-          margin: '24px 16px 80px', 
-          padding: 24,
-          minHeight: 'calc(100vh - 64px - 64px - 32px)', // 64px header + 64px footer + 32px margins
-          background: '#f0f2f5',
-          borderRadius: '8px 8px 0 0',
-          overflow: 'auto',
-          flex: '1 1 auto'
-        }}>
-          {children}
-        </Layout.Content>
-        <Layout.Footer style={{ 
-          textAlign: 'center',
-          height: '64px',
-          lineHeight: '64px',
-          padding: '0 24px',
-          background: '#001529',
-          color: 'rgba(255, 255, 255, 0.85)',
-          borderTop: '1px solid #15395b',
-          margin: 0,
-          left: collapsed ? '80px' : '200px',
-          right: 0,
-          bottom: 0,
-          position: 'fixed',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 1px 4px rgba(0, 21, 41, 0.08)',
-          zIndex: 1,
-          transition: 'left 0.2s',
-          boxSizing: 'border-box'
-        }}>
-          Rodieja Contable {new Date().getFullYear()} - Todos los derechos reservados
-        </Layout.Footer>
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const menuItems = [
+      {
+        key: 'vehiculos',
+        icon: <CarOutlined />,
+        label: 'Vehículos',
+        path: '/vehiculos',
+        children: [
+          { key: 'nuevo-vehiculo', label: 'Nuevo Vehículo', path: '/vehiculos/nuevo' },
+        ],
+      },
+      {
+        key: 'inventario',
+        icon: <ToolOutlined />,
+        label: 'Inventario',
+        path: '/inventario',
+        children: [
+          { key: 'nuevo-repuesto', label: 'Nuevo Repuesto', path: '/inventario/nuevo' },
+        ],
+      },
+      {
+        key: 'finanzas',
+        icon: <DollarOutlined />,
+        label: 'Finanzas',
+        path: '/finanzas',
+        children: [
+          { key: 'nueva-transaccion', label: 'Nueva Transacción', path: '/finanzas/nueva' },
+        ],
+      },
+      {
+        key: 'reportes',
+        icon: <BarChartOutlined />,
+        label: 'Reportes',
+        path: '/reportes',
+      }
+    ];
+
+    return (
+      <Layout style={{ minHeight: '100vh' }}>
+        <Sidebar menuItems={menuItems} collapsed={collapsed} />
+        <Layout style={{ marginLeft: collapsed ? '80px' : '200px', transition: 'margin-left 0.2s' }}>
+          <div style={{ height: '64px', background: '#141414', borderBottom: '1px solid #303030' }}>
+            <Header collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} user={user} />
+          </div>
+          <Layout.Content style={{ 
+            margin: '24px 16px 64px', 
+            padding: 24,
+            minHeight: 'calc(100vh - 64px - 64px - 32px)', // 64px header + 64px footer + 32px margins
+            background: '#f0f2f5',
+            borderRadius: '8px 8px 0 0',
+            overflow: 'auto',
+            flex: '1 1 auto',
+            ...(isMobile ? {
+              margin: '16px 8px 56px',
+              padding: '16px',
+              minHeight: 'calc(100vh - 56px - 56px - 24px)'
+            } : {})
+          }}>
+            {children}
+          </Layout.Content>
+          <Layout.Footer style={{ 
+            textAlign: 'center',
+            height: isMobile ? 'auto' : '64px',
+            minHeight: isMobile ? '48px' : '64px',
+            lineHeight: isMobile ? '1.4' : '64px',
+            padding: isMobile ? '8px' : '0 16px',
+            background: '#fff',
+            borderTop: '1px solid #f0f0f0',
+            margin: 0,
+            width: '100%',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            position: 'fixed',
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)',
+            zIndex: 1,
+            transition: 'all 0.2s',
+            boxSizing: 'border-box'
+          }}>
+            <span style={{
+              background: 'linear-gradient(90deg, #1890ff 0%, #096dd9 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              textFillColor: 'transparent',
+              fontWeight: 500
+            }}>
+              Rodieja Contable {new Date().getFullYear()} - Todos los derechos reservados
+            </span>
+          </Layout.Footer>
+        </Layout>
       </Layout>
-    </Layout>
-  );
+    );
+  };
+
+  return <LayoutWrapper>{children}</LayoutWrapper>;
 };
 
 function App() {
