@@ -667,7 +667,7 @@ const VehiculosJerarquicos = () => {
     return (
       <div 
         key={`veh-${vehiculo.id}`} 
-        ref={el => vehiculoRefs.current[vehiculo.id] = el}
+        ref={el => (vehiculoRefs.current[vehiculo.id] = el)}
         style={{
           marginBottom: 16,
           transition: 'all 0.3s ease',
@@ -686,38 +686,81 @@ const VehiculosJerarquicos = () => {
   const renderGeneracion = (generacion, modelo, marca) => {
     const isExpanded = expandedGensByModelo[modelo.id]?.includes(generacion.id);
     
+    // Get vehicles from the generation object
+    const vehiculos = generacion.vehiculos || [];
+    
+    // Calculate financials
+    const totalInversion = vehiculos.reduce((sum, v) => sum + (v.inversion_total || 0), 0);
+    const totalVentas = vehiculos.reduce((sum, v) => sum + (v.precio_venta || 0), 0);
+    const totalGastos = vehiculos.reduce((sum, v) => sum + ((v.costo_grua || 0) + (v.comisiones || 0)), 0);
+    const balanceNeto = totalVentas - totalInversion - totalGastos;
+    
+    // Determine color for balance
+    const balanceColor = balanceNeto > 0 ? '#52c41a' : balanceNeto < 0 ? '#f5222d' : 'inherit';
+    
+    // Get generation info
+    const genName = generacion.nombre || 'Sin nombre';
+    const years = `${generacion.anio_inicio || '?'}-${generacion.anio_fin || 'Actual'}`;
+    
     return (
       <div key={`gen-${generacion.id}`} style={{ marginBottom: 16 }}>
         <div 
           onClick={() => toggleGeneration(modelo.id, generacion.id)}
           style={{
             display: 'flex',
-            alignItems: 'center',
-            padding: '8px 16px',
+            flexDirection: 'column',
+            padding: '12px 16px',
             background: '#f9f9f9',
             borderRadius: 4,
             cursor: 'pointer',
             marginBottom: 8,
-            borderLeft: '3px solid #1890ff'
+            borderLeft: '3px solid #1890ff',
+            transition: 'all 0.2s'
           }}
         >
-          <div style={{ flex: 1 }}>
-            <Text strong>{generacion.nombre || 'Sin nombre'}</Text>
-            <Text type="secondary" style={{ marginLeft: 8 }}>
-              ({generacion.anio_inicio || '?'} - {generacion.anio_fin || 'Actual'})
-            </Text>
-          </div>
-          <div>
-            <Text type="secondary">
-              {generacion.vehiculos?.length || 0} vehículo{generacion.vehiculos?.length !== 1 ? 's' : ''}
-            </Text>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ flex: 1 }}>
+              <Text strong style={{ fontSize: '1.05em' }}>{genName}</Text>
+              <Text type="secondary" style={{ marginLeft: 8 }}>({years})</Text>
+            </div>
+            <div style={{ textAlign: 'right', marginRight: 24 }}>
+              <div style={{ fontSize: '0.85em', color: '#666' }}>Vehículos</div>
+              <Text strong>{vehiculos.length || 0}</Text>
+            </div>
             {isExpanded ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}
+          </div>
+          
+          {/* Financial Summary */}
+          <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap',
+            gap: '16px',
+            marginTop: '8px',
+            paddingTop: '8px',
+            borderTop: '1px dashed #e8e8e8'
+          }}>
+            <div style={{ textAlign: 'center', minWidth: '100px' }}>
+              <div style={{ fontSize: '0.8em', color: '#666' }}>Inversión</div>
+              <div style={{ fontWeight: 500 }}>{formatMonto(totalInversion)}</div>
+            </div>
+            <div style={{ textAlign: 'center', minWidth: '100px' }}>
+              <div style={{ fontSize: '0.8em', color: '#666' }}>Ventas</div>
+              <div style={{ color: '#52c41a', fontWeight: 500 }}>{formatMonto(totalVentas)}</div>
+            </div>
+            <div style={{ textAlign: 'center', minWidth: '100px' }}>
+              <div style={{ fontSize: '0.8em', color: '#666' }}>Gastos</div>
+              <div style={{ color: '#f5222d', fontWeight: 500 }}>{formatMonto(totalGastos)}</div>
+            </div>
+            <div style={{ textAlign: 'center', minWidth: '100px' }}>
+              <div style={{ fontSize: '0.8em', color: '#666' }}>Balance Neto</div>
+              <div style={{ color: balanceColor, fontWeight: 700 }}>{formatMonto(balanceNeto)}</div>
+            </div>
           </div>
         </div>
         
-        {isExpanded && generacion.vehiculos?.length > 0 && (
+        {isExpanded && vehiculos.length > 0 && (
           <div style={{ marginLeft: 16 }}>
-            {generacion.vehiculos.map(vehiculo => 
+            {vehiculos.map(vehiculo => 
               renderVehiculoCard(vehiculo, generacion, modelo, marca)
             )}
           </div>
