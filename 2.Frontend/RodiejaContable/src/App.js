@@ -143,9 +143,9 @@ const MainLayout = ({ children }) => {
           <Header collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} user={user} />
         </div>
         <Layout.Content style={{ 
-          margin: '24px 16px 0', 
+          margin: '24px 16px 80px', 
           padding: 24,
-          minHeight: 'calc(100vh - 180px)',
+          minHeight: 'calc(100vh - 64px - 64px - 32px)', // 64px header + 64px footer + 32px margins
           background: '#f0f2f5',
           borderRadius: '8px 8px 0 0',
           overflow: 'auto',
@@ -154,17 +154,27 @@ const MainLayout = ({ children }) => {
           {children}
         </Layout.Content>
         <Layout.Footer style={{ 
-          textAlign: 'center', 
-          padding: '16px',
-          background: '#fff',
-          borderTop: '1px solid #f0f0f0',
-          margin: '0 16px 16px',
-          borderRadius: '0 0 8px 8px',
-          position: 'sticky',
+          textAlign: 'center',
+          height: '64px',
+          lineHeight: '64px',
+          padding: '0 24px',
+          background: '#001529',
+          color: 'rgba(255, 255, 255, 0.85)',
+          borderTop: '1px solid #15395b',
+          margin: 0,
+          left: collapsed ? '80px' : '200px',
+          right: 0,
           bottom: 0,
-          zIndex: 1
+          position: 'fixed',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 1px 4px rgba(0, 21, 41, 0.08)',
+          zIndex: 1,
+          transition: 'left 0.2s',
+          boxSizing: 'border-box'
         }}>
-          Rodieja Contable ©{new Date().getFullYear()} - Todos los derechos reservados
+          Rodieja Contable {new Date().getFullYear()} - Todos los derechos reservados
         </Layout.Footer>
       </Layout>
     </Layout>
