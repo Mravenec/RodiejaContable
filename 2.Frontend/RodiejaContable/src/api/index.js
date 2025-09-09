@@ -9,6 +9,7 @@ import vehiculoService from './vehiculos';
 import inventarioService from './inventario';
 import authService from './auth';
 import finanzaService from './finanzas';
+import generacionesService from './generaciones';
 
 // Configuración global de axios
 const api = axios.create({
@@ -64,13 +65,14 @@ api.interceptors.request.use(
 // Exportar instancia de axios configurada
 export { api };
 
-// Exportar servicios
+// Export services
 export {
   dashboardService,
   vehiculoService,
   inventarioService,
   authService,
-  finanzaService
+  finanzaService,
+  generacionesService
 };
 
 // Default export
@@ -80,6 +82,7 @@ const apiServices = {
   inventarioService,
   authService,
   finanzaService,
+  generacionesService,
   api
 };
 
