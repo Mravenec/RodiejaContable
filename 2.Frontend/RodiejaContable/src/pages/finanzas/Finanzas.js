@@ -442,8 +442,8 @@ const Finanzas = () => {
               value={estadisticas.ingresos}
               precision={2}
               valueStyle={{ color: '#52c41a' }}
-              prefix={<ArrowUpOutlined />}
-              suffix="₡"
+              prefix={<><ArrowUpOutlined /> ₡</>}
+              suffix=""
             />
           </Card>
         </Col>
@@ -454,8 +454,8 @@ const Finanzas = () => {
               value={estadisticas.egresos}
               precision={2}
               valueStyle={{ color: '#f5222d' }}
-              prefix={<ArrowDownOutlined />}
-              suffix="₡"
+              prefix={<><ArrowDownOutlined /> ₡</>}
+              suffix=""
             />
           </Card>
         </Col>
@@ -465,11 +465,9 @@ const Finanzas = () => {
               title="Balance"
               value={estadisticas.balance}
               precision={2}
-              valueStyle={{ 
-                color: estadisticas.balance >= 0 ? '#52c41a' : '#f5222d' 
-              }}
-              prefix={<DollarOutlined />}
-              suffix="₡"
+              valueStyle={{ color: estadisticas.balance >= 0 ? '#52c41a' : '#f5222d' }}
+              prefix={<>{estadisticas.balance >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />} ₡</>}
+              suffix=""
             />
           </Card>
         </Col>
