@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 const { Header: AntdHeader } = Layout;
 const { Text } = Typography;
 
-const Header = ({ collapsed, toggleCollapse }) => {
+const Header = ({ collapsed, toggleCollapse, isMobile = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -79,16 +79,22 @@ const Header = ({ collapsed, toggleCollapse }) => {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <Button
-          type="text"
-          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          onClick={toggleCollapse}
-          style={{
-            fontSize: '16px',
-            width: 64,
-            height: 64,
-          }}
-        />
+        {(isMobile || !collapsed) && (
+          <Button
+            type="text"
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={toggleCollapse}
+            style={{
+              fontSize: '16px',
+              width: 64,
+              height: 64,
+              display: isMobile ? 'inline-flex' : 'none',
+              '@media (min-width: 768px)': {
+                display: collapsed ? 'inline-flex' : 'none'
+              }
+            }}
+          />
+        )}
         <div style={{
           marginLeft: '16px',
           fontSize: '20px',

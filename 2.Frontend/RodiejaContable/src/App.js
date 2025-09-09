@@ -145,7 +145,12 @@ const MainLayout = ({ children }) => {
         <Sidebar menuItems={menuItems} collapsed={collapsed} />
         <Layout style={{ marginLeft: collapsed ? '80px' : '200px', transition: 'margin-left 0.2s' }}>
           <div style={{ height: '64px', background: '#141414', borderBottom: '1px solid #303030' }}>
-            <Header collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} user={user} />
+            <Header 
+              collapsed={collapsed} 
+              onCollapse={() => setCollapsed(!collapsed)} 
+              user={user}
+              isMobile={isMobile}
+            />
           </div>
           <Layout.Content style={{ 
             margin: '24px 16px 64px', 
