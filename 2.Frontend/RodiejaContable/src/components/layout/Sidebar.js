@@ -53,8 +53,8 @@ const Sidebar = ({ collapsed }) => {
       icon: <BarChartOutlined />, 
       label: 'Reportes',
       children: [
-        { key: '/reportes/ventas', label: 'Ventas' },
-        { key: '/reportes/inventario', label: 'Inventario' },
+        { key: '/reportes', label: 'General' },
+        { key: '/reportes/ventas', label: 'Ventas' }
       ]
     },
     { 

@@ -34,6 +34,7 @@ import DetalleTransaccion from './pages/finanzas/DetalleTransaccion';
 
 // Componentes de reportes
 import Reportes from './pages/reportes/Reportes';
+import VentasReportes from './pages/reportes/VentasReportes';
 
 // Componentes de configuración
 import Perfil from './pages/configuracion/Perfil';
@@ -362,6 +363,16 @@ function App() {
           <PrivateRoute roles={['admin', 'gerente']}>
             <MainLayout>
               <Reportes />
+            </MainLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/reportes/ventas"
+        element={
+          <PrivateRoute roles={['admin', 'gerente']}>
+            <MainLayout>
+              <VentasReportes />
             </MainLayout>
           </PrivateRoute>
         }
