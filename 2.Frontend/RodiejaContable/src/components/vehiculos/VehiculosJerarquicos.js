@@ -27,6 +27,7 @@ import {
 import vehiculoService from '../../api/vehiculos';
 import finanzaService from '../../api/finanzas'; // Importar el servicio de finanzas
 import { getTiposTransacciones } from '../../api/transacciones'; // Importar el servicio de tipos de transacciones
+import generacionesAPI from '../../api/generaciones'; // ✅ NUEVO: import del API de generaciones
 import { renderEstado } from '../../utils/vehicleUtils';
 
 const { Panel } = Collapse;
@@ -98,7 +99,11 @@ const toDateStr = (v) => {
 };
 
 /* ========== Normalización: soporta snake_case y camelCase ========== */
-const normalizarEOrdenar = (data) => {
+/**
+ * @param {any} data respuesta del servicio de vehículos agrupados (marcas->modelos->generaciones->vehículos)
+ * @param {Object} genIdx índices de /generaciones: { byId:Map, byModelName:Map, byModelYears:Map }
+ */
+const normalizarEOrdenar = (data, genIdx = { byId: new Map(), byModelName: new Map(), byModelYears: new Map() }) => {
   const marcas = Array.isArray(data?.marcas) ? data.marcas : (Array.isArray(data) ? data : []);
 
   const normVehiculo = (v) => {
@@ -137,22 +142,51 @@ const normalizarEOrdenar = (data) => {
     };
   };
 
-  const normGeneracion = (g) => {
-    const anioInicio = g.anio_inicio ?? g.anioInicio;
-    const anioFin = g.anio_fin ?? g.anioFin;
+  // ✅ CORREGIDO: normGeneracion recibe el modeloId del padre para indexar bien
+  const normGeneracion = (g, parentModeloId) => {
+    const idGen = g.id ?? g.generacion_id;
+    const modeloId = g.modelo_id ?? g.modeloId ?? parentModeloId;
+    const nombre = g.nombre;
+
+    // 1) por id
+    let fromApi = !isNullish(idGen) ? genIdx.byId.get(idGen) : undefined;
+
+    // 2) por (modeloId|nombre)
+    if (!fromApi && !isNullish(modeloId) && nombre) {
+      fromApi = genIdx.byModelName.get(`${modeloId}|${String(nombre).toLowerCase()}`);
+    }
+
+    // 3) por (modeloId|anioInicio|anioFin)
+    if (!fromApi) {
+      const aI = g.anio_inicio ?? g.anioInicio;
+      const aF = g.anio_fin ?? g.anioFin;
+      if (!isNullish(modeloId) && !isNullish(aI) && !isNullish(aF)) {
+        fromApi = genIdx.byModelYears.get(`${modeloId}|${aI}|${aF}`);
+      }
+    }
+
+    // Valores finales priorizando fromApi
+    const anioInicio = !isNullish(fromApi?.anioInicio) ? fromApi.anioInicio : (g.anio_inicio ?? g.anioInicio);
+    const anioFin = !isNullish(fromApi?.anioFin) ? fromApi.anioFin : (g.anio_fin ?? g.anioFin);
+
+    const totalInversion = !isNullish(fromApi?.totalInversion) ? fromApi.totalInversion : (g.total_inversion ?? g.totalInversion);
+    const totalIngresos = !isNullish(fromApi?.totalIngresos) ? fromApi.totalIngresos : (g.total_ingresos ?? g.totalIngresos);
+    const totalEgresos  = !isNullish(fromApi?.totalEgresos)  ? fromApi.totalEgresos  : (g.total_egresos  ?? g.totalEgresos);
+    const balanceNeto   = !isNullish(fromApi?.balanceNeto)   ? fromApi.balanceNeto   : (g.balance_neto   ?? g.balanceNeto);
+
     return {
-      id: g.id,
-      modelo_id: g.modelo_id,
-      nombre: toStr(g.nombre, 'Sin generación'),
-      descripcion: toStr(g.descripcion),
+      id: idGen ?? fromApi?.id,
+      modelo_id: modeloId ?? fromApi?.modeloId,
+      nombre: toStr(nombre ?? fromApi?.nombre, 'Sin generación'),
+      descripcion: toStr(g.descripcion ?? fromApi?.descripcion, ''), // ✅ se muestra abajo
       anio_inicio: isNullish(anioInicio) ? undefined : Number(anioInicio),
       anio_fin: isNullish(anioFin) ? null : Number(anioFin),
-      total_inversion: toNum(g.total_inversion),
-      total_ingresos: toNum(g.total_ingresos),
-      total_egresos: toNum(g.total_egresos),
-      balance_neto: toNum(g.balance_neto),
-      activo: toNum(g.activo, 0),
-      fecha_creacion: toStr(g.fecha_creacion ?? g.fechaCreacion),
+      total_inversion: toNum(totalInversion),
+      total_ingresos: toNum(totalIngresos),
+      total_egresos: toNum(totalEgresos),
+      balance_neto: toNum(balanceNeto),
+      activo: toNum(g.activo ?? fromApi?.activo, 0),
+      fecha_creacion: toStr(g.fecha_creacion ?? g.fechaCreacion ?? fromApi?.fechaCreacion),
       vehiculos: (Array.isArray(g.vehiculos) ? g.vehiculos.map(normVehiculo) : [])
         .sort((a, b) => (a.anio ?? 0) - (b.anio ?? 0))
     };
@@ -164,7 +198,7 @@ const normalizarEOrdenar = (data) => {
     nombre: toStr(mo.nombre, 'Sin modelo'),
     activo: toNum(mo.activo, 0),
     fecha_creacion: toStr(mo.fecha_creacion ?? mo.fechaCreacion),
-    generaciones: (Array.isArray(mo.generaciones) ? mo.generaciones.map(normGeneracion) : [])
+    generaciones: (Array.isArray(mo.generaciones) ? mo.generaciones.map((g) => normGeneracion(g, mo.id)) : []) // ✅ pasa parentModeloId
       .sort((a, b) => (a.anio_inicio ?? 0) - (b.anio_inicio ?? 0))
   });
 
@@ -203,11 +237,59 @@ const VehiculosJerarquicos = () => {
   const cargarDatos = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await vehiculoService.getVehiculosAgrupados();
-      if (!response) throw new Error('Respuesta vacía del servidor');
 
-      setRawData(response);
-      const datos = normalizarEOrdenar(response);
+      // ✅ Traemos ambas fuentes en paralelo:
+      // - Vehículos agrupados (estructura jerárquica)
+      // - Generaciones (totales ya calculados por BD)
+      const [vehResp, genResp] = await Promise.all([
+        vehiculoService.getVehiculosAgrupados(),
+        generacionesAPI.getAll().catch(() => null)
+      ]);
+
+      if (!vehResp) throw new Error('Respuesta vacía del servidor');
+
+      // Soportar axios (data) o respuesta directa
+      const vehData = vehResp?.data ?? vehResp;
+      const gensList = genResp ? (genResp.data ?? genResp) : [];
+
+      // 🔑 Índices por ID y claves alternativas para resolver correctamente cada generación
+      const byId = new Map();
+      const byModelName = new Map();   // clave: `${modeloId}|${nombreLower}`
+      const byModelYears = new Map();  // clave: `${modeloId}|${anioInicio}|${anioFin}`
+
+      gensList.forEach((g) => {
+        const id = g.id;
+        const modeloId = g.modeloId ?? g.modelo_id;
+        const nombre = (g.nombre ?? '').toLowerCase();
+        const anioInicio = g.anioInicio ?? g.anio_inicio;
+        const anioFin = g.anioFin ?? g.anio_fin;
+
+        const obj = {
+          id,
+          modeloId,
+          nombre: g.nombre,
+          descripcion: g.descripcion,
+          anioInicio: toNum(anioInicio, undefined),
+          anioFin: toNum(anioFin, undefined),
+          totalInversion: toNum(g.totalInversion ?? g.total_inversion),
+          totalIngresos: toNum(g.totalIngresos ?? g.total_ingresos),
+          totalEgresos: toNum(g.totalEgresos ?? g.total_egresos),
+          balanceNeto: toNum(g.balanceNeto ?? g.balance_neto),
+          activo: g.activo,
+          fechaCreacion: g.fechaCreacion ?? g.fecha_creacion
+        };
+
+        if (!isNullish(id)) byId.set(id, obj);
+        if (!isNullish(modeloId) && nombre) byModelName.set(`${modeloId}|${nombre}`, obj);
+        if (!isNullish(modeloId) && !isNullish(anioInicio) && !isNullish(anioFin)) {
+          byModelYears.set(`${modeloId}|${anioInicio}|${anioFin}`, obj);
+        }
+      });
+
+      setRawData({ vehiculosAgrupados: vehData, generaciones: gensList });
+
+      // ✅ Normalizamos e INYECTAMOS los totales por generación, resolviendo por id o claves alternativas
+      const datos = normalizarEOrdenar(vehData, { byId, byModelName, byModelYears });
 
       if (!datos.length) {
         message.info('No se encontraron vehículos para mostrar');
@@ -215,8 +297,8 @@ const VehiculosJerarquicos = () => {
       setMarcas(datos);
       setFilteredMarcas(datos); // Initialize filtered list with all brands
     } catch (error) {
-      console.error('Error al cargar los vehículos:', error);
-      message.error(`Error al cargar los vehículos: ${error.message || 'Error desconocido'}`);
+      console.error('Error al cargar los vehículos/generaciones:', error);
+      message.error(`Error al cargar los datos: ${error.message || 'Error desconocido'}`);
     } finally {
       setLoading(false);
     }
@@ -356,7 +438,7 @@ const VehiculosJerarquicos = () => {
   }, []);
 
   useEffect(() => {
-    cargarDatos();
+    cargarDatos(); // ✅ aquí es donde cambiamos el estado con la data fusionada
   }, [cargarDatos]);
 
   // Cargar tipos de transacciones al montar el componente
@@ -397,7 +479,7 @@ const VehiculosJerarquicos = () => {
   // Cargar vehículos después de que los tipos de transacciones estén listos
   useEffect(() => {
     if (tiposTransaccionesCargados) {
-      cargarDatos();
+      cargarDatos(); // ✅ recarga para asegurar fusión completa
     }
   }, [tiposTransaccionesCargados, cargarDatos]);
 
@@ -416,7 +498,7 @@ const VehiculosJerarquicos = () => {
       // Asegurarse de que tenemos un array, incluso si la respuesta es null/undefined
       const transaccionesNormalizadas = Array.isArray(response) ? response : [];
 
-      // Ordenar por fecha (más reciente primero) - por si acaso el backend no lo hace
+      // Ordenar por fecha (más reciente primero)
       const transaccionesOrdenadas = [...transaccionesNormalizadas].sort((a, b) => {
         const fechaA = toDate(a.fecha || a.fecha_transaccion);
         const fechaB = toDate(b.fecha || b.fecha_transaccion);
@@ -657,8 +739,6 @@ const VehiculosJerarquicos = () => {
     );
   };
 
-  // Loading state moved to the main loading check at the beginning of the component
-
   // Render a single vehicle card
   const renderVehiculoCard = (vehiculo, generacion, modelo, marca) => {
     const estaExpandido = expandedKeys[vehiculo.id];
@@ -682,29 +762,24 @@ const VehiculosJerarquicos = () => {
     );
   };
 
-  // Render a generation with its vehicles
+  // Render a generation with its vehicles (MOSTRAR solamente, sin cálculos)
   const renderGeneracion = (generacion, modelo, marca) => {
     const isExpanded = expandedGensByModelo[modelo.id]?.includes(generacion.id);
-    
-    // Get vehicles from the generation object
-    const vehiculos = generacion.vehiculos || [];
-    
-    // Calculate financials
-    const totalInversion = vehiculos.reduce((sum, v) => sum + (v.inversion_total || 0), 0);
-    const totalVentas = vehiculos.reduce((sum, v) => sum + (v.precio_venta || 0), 0);
-    const totalGastos = vehiculos.reduce((sum, v) => sum + ((v.costo_grua || 0) + (v.comisiones || 0)), 0);
-    const balanceNeto = totalVentas - totalInversion - totalGastos;
-    
-    // Determine color for balance
+  
+    const totalInversion = generacion.total_inversion || 0;
+    const totalVentas = generacion.total_ingresos || 0;
+    const totalEgresos = generacion.total_egresos || 0;
+    const balanceNeto = generacion.balance_neto || 0;
+  
     const balanceColor = balanceNeto > 0 ? '#52c41a' : balanceNeto < 0 ? '#f5222d' : 'inherit';
-    
-    // Get generation info
+  
     const genName = generacion.nombre || 'Sin nombre';
-    const years = `${generacion.anio_inicio || '?'}-${generacion.anio_fin || 'Actual'}`;
-    
+    const years = `${generacion.anio_inicio || '?'}-${isNullish(generacion.anio_fin) ? 'Actual' : generacion.anio_fin}`;
+    const descripcion = generacion.descripcion || '';
+  
     return (
       <div key={`gen-${generacion.id}`} style={{ marginBottom: 16 }}>
-        <div 
+        <div
           onClick={() => toggleGeneration(modelo.id, generacion.id)}
           style={{
             display: 'flex',
@@ -718,21 +793,28 @@ const VehiculosJerarquicos = () => {
             transition: 'all 0.2s'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
             <div style={{ flex: 1 }}>
               <Text strong style={{ fontSize: '1.05em' }}>{genName}</Text>
               <Text type="secondary" style={{ marginLeft: 8 }}>({years})</Text>
             </div>
             <div style={{ textAlign: 'right', marginRight: 24 }}>
               <div style={{ fontSize: '0.85em', color: '#666' }}>Vehículos</div>
-              <Text strong>{vehiculos.length || 0}</Text>
+              <Text strong>{generacion.vehiculos?.length || 0}</Text>
             </div>
             {isExpanded ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}
           </div>
-          
-          {/* Financial Summary */}
-          <div style={{ 
-            display: 'flex', 
+
+          {/* ✅ Descripción de la generación (solo mostrar, viene del API) */}
+          {descripcion && (
+            <div style={{ marginTop: 2 }}>
+              <Text type="secondary" style={{ fontSize: '0.9em' }}>{descripcion}</Text>
+            </div>
+          )}
+  
+          {/* Resumen financiero: SOLO mostrar lo del endpoint */}
+          <div style={{
+            display: 'flex',
             flexWrap: 'wrap',
             gap: '16px',
             marginTop: '8px',
@@ -744,12 +826,12 @@ const VehiculosJerarquicos = () => {
               <div style={{ fontWeight: 500 }}>{formatMonto(totalInversion)}</div>
             </div>
             <div style={{ textAlign: 'center', minWidth: '100px' }}>
-              <div style={{ fontSize: '0.8em', color: '#666' }}>Ventas</div>
+              <div style={{ fontSize: '0.8em', color: '#666' }}>Ingresos</div>
               <div style={{ color: '#52c41a', fontWeight: 500 }}>{formatMonto(totalVentas)}</div>
             </div>
             <div style={{ textAlign: 'center', minWidth: '100px' }}>
-              <div style={{ fontSize: '0.8em', color: '#666' }}>Gastos</div>
-              <div style={{ color: '#f5222d', fontWeight: 500 }}>{formatMonto(totalGastos)}</div>
+              <div style={{ fontSize: '0.8em', color: '#666' }}>Egresos</div>
+              <div style={{ color: '#f5222d', fontWeight: 500 }}>{formatMonto(totalEgresos)}</div>
             </div>
             <div style={{ textAlign: 'center', minWidth: '100px' }}>
               <div style={{ fontSize: '0.8em', color: '#666' }}>Balance Neto</div>
@@ -757,10 +839,10 @@ const VehiculosJerarquicos = () => {
             </div>
           </div>
         </div>
-        
-        {isExpanded && vehiculos.length > 0 && (
+  
+        {isExpanded && generacion.vehiculos?.length > 0 && (
           <div style={{ marginLeft: 16 }}>
-            {vehiculos.map(vehiculo => 
+            {generacion.vehiculos.map(vehiculo =>
               renderVehiculoCard(vehiculo, generacion, modelo, marca)
             )}
           </div>
