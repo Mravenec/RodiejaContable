@@ -101,9 +101,19 @@ const toDateStr = (v) => {
 /* ========== Normalización: soporta snake_case y camelCase ========== */
 /**
  * @param {any} data respuesta del servicio de vehículos agrupados (marcas->modelos->generaciones->vehículos)
- * @param {Object} genIdx índices de /generaciones: { byId:Map, byModelName:Map, byModelYears:Map }
+ * @param {Object} genIdx índices de /generaciones: { byId, byModelId, byModelName, byModelYears, byNameUnique, byYearsUnique }
  */
-const normalizarEOrdenar = (data, genIdx = { byId: new Map(), byModelName: new Map(), byModelYears: new Map() }) => {
+const normalizarEOrdenar = (
+  data,
+  genIdx = {
+    byId: new Map(),
+    byModelId: new Map(),
+    byModelName: new Map(),
+    byModelYears: new Map(),
+    byNameUnique: new Map(),
+    byYearsUnique: new Map()
+  }
+) => {
   const marcas = Array.isArray(data?.marcas) ? data.marcas : (Array.isArray(data) ? data : []);
 
   const normVehiculo = (v) => {
@@ -142,32 +152,52 @@ const normalizarEOrdenar = (data, genIdx = { byId: new Map(), byModelName: new M
     };
   };
 
-  // ✅ CORREGIDO: normGeneracion recibe el modeloId del padre para indexar bien
+  // ✅ CORREGIDO y endurecido: preferir match por nombre/años; el id es último y verificado
   const normGeneracion = (g, parentModeloId) => {
     const idGen = g.id ?? g.generacion_id;
     const modeloId = g.modelo_id ?? g.modeloId ?? parentModeloId;
     const nombre = g.nombre;
+    const nombreLower = (nombre ?? '').toLowerCase();
+    const aI = g.anio_inicio ?? g.anioInicio;
+    const aF = g.anio_fin ?? g.anioFin;
 
-    // 1) por id
-    let fromApi = !isNullish(idGen) ? genIdx.byId.get(idGen) : undefined;
+    let fromApi;
 
-    // 2) por (modeloId|nombre)
-    if (!fromApi && !isNullish(modeloId) && nombre) {
-      fromApi = genIdx.byModelName.get(`${modeloId}|${String(nombre).toLowerCase()}`);
+    // 1) por (modeloId|nombre)
+    if (!fromApi && !isNullish(modeloId) && nombreLower) {
+      fromApi = genIdx.byModelName.get(`${modeloId}|${nombreLower}`);
     }
 
-    // 3) por (modeloId|anioInicio|anioFin)
-    if (!fromApi) {
-      const aI = g.anio_inicio ?? g.anioInicio;
-      const aF = g.anio_fin ?? g.anioFin;
-      if (!isNullish(modeloId) && !isNullish(aI) && !isNullish(aF)) {
-        fromApi = genIdx.byModelYears.get(`${modeloId}|${aI}|${aF}`);
+    // 2) por (modeloId|anioInicio|anioFin)
+    if (!fromApi && !isNullish(modeloId) && !isNullish(aI) && !isNullish(aF)) {
+      fromApi = genIdx.byModelYears.get(`${modeloId}|${aI}|${aF}`);
+    }
+
+    // 3) por nombre único global (solo si es único)
+    if (!fromApi && nombreLower) {
+      const unique = genIdx.byNameUnique.get(nombreLower);
+      if (unique) fromApi = unique;
+    }
+
+    // 4) por años únicos globales (solo si son únicos)
+    if (!fromApi && !isNullish(aI) && !isNullish(aF)) {
+      const uniqueYears = genIdx.byYearsUnique.get(`${aI}|${aF}`);
+      if (uniqueYears) fromApi = uniqueYears;
+    }
+
+    // 5) por id (solo si nombre coincide o explícitamente el modelo coincide y NO hay nombre)
+    if (!fromApi && !isNullish(idGen)) {
+      const cand = genIdx.byId.get(idGen);
+      const nombreCoincide = cand && nombreLower && (cand.nombre ?? '').toLowerCase() === nombreLower;
+      const modeloCoincide = cand && (isNullish(modeloId) || cand.modeloId === modeloId);
+      if (nombreCoincide || (!nombreLower && modeloCoincide)) {
+        fromApi = cand;
       }
     }
 
-    // Valores finales priorizando fromApi
-    const anioInicio = !isNullish(fromApi?.anioInicio) ? fromApi.anioInicio : (g.anio_inicio ?? g.anioInicio);
-    const anioFin = !isNullish(fromApi?.anioFin) ? fromApi.anioFin : (g.anio_fin ?? g.anioFin);
+    // Valores finales priorizando fromApi (pero sin pisar con nulls)
+    const anioInicio = !isNullish(fromApi?.anioInicio) ? fromApi.anioInicio : aI;
+    const anioFin = !isNullish(fromApi?.anioFin) ? fromApi.anioFin : aF;
 
     const totalInversion = !isNullish(fromApi?.totalInversion) ? fromApi.totalInversion : (g.total_inversion ?? g.totalInversion);
     const totalIngresos = !isNullish(fromApi?.totalIngresos) ? fromApi.totalIngresos : (g.total_ingresos ?? g.totalIngresos);
@@ -175,10 +205,10 @@ const normalizarEOrdenar = (data, genIdx = { byId: new Map(), byModelName: new M
     const balanceNeto   = !isNullish(fromApi?.balanceNeto)   ? fromApi.balanceNeto   : (g.balance_neto   ?? g.balanceNeto);
 
     return {
-      id: idGen ?? fromApi?.id,
-      modelo_id: modeloId ?? fromApi?.modeloId,
+      id: isNullish(idGen) ? fromApi?.id : idGen,
+      modelo_id: isNullish(modeloId) ? fromApi?.modeloId : modeloId,
       nombre: toStr(nombre ?? fromApi?.nombre, 'Sin generación'),
-      descripcion: toStr(g.descripcion ?? fromApi?.descripcion, ''), // ✅ se muestra abajo
+      descripcion: toStr(g.descripcion ?? fromApi?.descripcion, ''),
       anio_inicio: isNullish(anioInicio) ? undefined : Number(anioInicio),
       anio_fin: isNullish(anioFin) ? null : Number(anioFin),
       total_inversion: toNum(totalInversion),
@@ -198,7 +228,7 @@ const normalizarEOrdenar = (data, genIdx = { byId: new Map(), byModelName: new M
     nombre: toStr(mo.nombre, 'Sin modelo'),
     activo: toNum(mo.activo, 0),
     fecha_creacion: toStr(mo.fecha_creacion ?? mo.fechaCreacion),
-    generaciones: (Array.isArray(mo.generaciones) ? mo.generaciones.map((g) => normGeneracion(g, mo.id)) : []) // ✅ pasa parentModeloId
+    generaciones: (Array.isArray(mo.generaciones) ? mo.generaciones.map((g) => normGeneracion(g, mo.id)) : [])
       .sort((a, b) => (a.anio_inicio ?? 0) - (b.anio_inicio ?? 0))
   });
 
@@ -252,10 +282,13 @@ const VehiculosJerarquicos = () => {
       const vehData = vehResp?.data ?? vehResp;
       const gensList = genResp ? (genResp.data ?? genResp) : [];
 
-      // 🔑 Índices por ID y claves alternativas para resolver correctamente cada generación
-      const byId = new Map();
-      const byModelName = new Map();   // clave: `${modeloId}|${nombreLower}`
-      const byModelYears = new Map();  // clave: `${modeloId}|${anioInicio}|${anioFin}`
+      // 🔑 Índices robustos para resolver correctamente cada generación
+      const byId = new Map();           // id global del endpoint /generaciones
+      const byModelId = new Map();      // `${modeloId}|${id}` para ids locales vs globales
+      const byModelName = new Map();    // `${modeloId}|${nombreLower}`
+      const byModelYears = new Map();   // `${modeloId}|${anioInicio}|${anioFin}`
+      const nameBuckets = new Map();    // nombreLower -> [objs]
+      const yearsBuckets = new Map();   // `${anioInicio}|${anioFin}` -> [objs]
 
       gensList.forEach((g) => {
         const id = g.id;
@@ -280,16 +313,47 @@ const VehiculosJerarquicos = () => {
         };
 
         if (!isNullish(id)) byId.set(id, obj);
+        if (!isNullish(id) && !isNullish(modeloId)) byModelId.set(`${modeloId}|${id}`, obj);
         if (!isNullish(modeloId) && nombre) byModelName.set(`${modeloId}|${nombre}`, obj);
         if (!isNullish(modeloId) && !isNullish(anioInicio) && !isNullish(anioFin)) {
           byModelYears.set(`${modeloId}|${anioInicio}|${anioFin}`, obj);
         }
+
+        // buckets para match “único” global
+        if (nombre) {
+          const arr = nameBuckets.get(nombre) ?? [];
+          arr.push(obj);
+          nameBuckets.set(nombre, arr);
+        }
+        if (!isNullish(anioInicio) && !isNullish(anioFin)) {
+          const key = `${anioInicio}|${anioFin}`;
+          const arr = yearsBuckets.get(key) ?? [];
+          arr.push(obj);
+          yearsBuckets.set(key, arr);
+        }
+      });
+
+      // Indices de acceso directo cuando el bucket es único
+      const byNameUnique = new Map();
+      nameBuckets.forEach((arr, key) => {
+        if (arr.length === 1) byNameUnique.set(key, arr[0]);
+      });
+      const byYearsUnique = new Map();
+      yearsBuckets.forEach((arr, key) => {
+        if (arr.length === 1) byYearsUnique.set(key, arr[0]);
       });
 
       setRawData({ vehiculosAgrupados: vehData, generaciones: gensList });
 
-      // ✅ Normalizamos e INYECTAMOS los totales por generación, resolviendo por id o claves alternativas
-      const datos = normalizarEOrdenar(vehData, { byId, byModelName, byModelYears });
+      // ✅ Normalizamos e INYECTAMOS los totales por generación con los nuevos índices
+      const datos = normalizarEOrdenar(vehData, {
+        byId,
+        byModelId,
+        byModelName,
+        byModelYears,
+        byNameUnique,
+        byYearsUnique
+      });
 
       if (!datos.length) {
         message.info('No se encontraron vehículos para mostrar');
@@ -366,7 +430,7 @@ const VehiculosJerarquicos = () => {
             });
           }
           
-          // Remove highlight after 3 seconds
+          // Remove highlight after 3 segundos
           setTimeout(() => setVehiculoMatchId(null), 3000);
         }, 100);
       } else {
