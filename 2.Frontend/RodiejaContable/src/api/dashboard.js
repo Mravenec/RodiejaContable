@@ -77,7 +77,7 @@ class DashboardService {
   // Obtener comisiones de vendedores
   async getComisionesVendedores() {
     try {
-      const response = await api.get('/ventas-empleados');
+      const response = await api.get('/v1/ventas-empleados');
       return response.data;
     } catch (error) {
       console.error('Error al obtener comisiones por vendedor:', error);
