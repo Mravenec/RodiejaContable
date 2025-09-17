@@ -20,12 +20,31 @@ export const AuthProvider = ({ children }) => {
 
   // Cargar el usuario al iniciar la aplicación
   const loadUser = useCallback(() => {
+    setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const user = authService.getCurrentUser();
-      setUser(user);
-      return user;
+      
+      // Si hay token pero no hay usuario, forzar el cierre de sesión
+      if (token && !user) {
+        console.log('Token encontrado pero sin usuario, cerrando sesión...');
+        authService.logout();
+        setUser(null);
+        return null;
+      }
+      
+      // Si hay usuario, actualizar el estado
+      if (user) {
+        setUser(user);
+        return user;
+      }
+      
+      return null;
     } catch (err) {
       console.error('Error al cargar el usuario:', err);
+      // En caso de error, limpiar la autenticación
+      authService.logout();
+      setUser(null);
       return null;
     } finally {
       setLoading(false);
@@ -87,8 +106,11 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar si el usuario está autenticado
   const isAuthenticated = useCallback(() => {
-    return authService.isAuthenticated();
-  }, []);
+    // Verificar tanto el token como que el usuario esté cargado
+    const hasToken = authService.isAuthenticated();
+    const hasUser = !!user;
+    return hasToken && hasUser;
+  }, [user]);
 
   // Verificar si el usuario tiene un rol específico
   const hasRole = useCallback((role) => {

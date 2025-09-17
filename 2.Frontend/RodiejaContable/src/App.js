@@ -50,19 +50,37 @@ import Header from './components/layout/Header';
 
 // Componente para rutas privadas
 const PrivateRoute = ({ children, roles = [] }) => {
-  const { isAuthenticated, loading, hasRole } = useAuth();
+  const { isAuthenticated, loading, hasRole, user } = useAuth();
   const location = useLocation();
+  const [initialized, setInitialized] = useState(false);
 
-  if (loading) {
+  // Efecto para manejar la inicialización
+  useEffect(() => {
+    if (!loading) {
+      setInitialized(true);
+    }
+  }, [loading]);
+
+  // Mostrar pantalla de carga mientras se verifica la autenticación
+  if (loading || !initialized) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <div>Cargando...</div>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <div style={{ fontSize: '18px', color: '#1890ff' }}>Verificando autenticación...</div>
+        <div>Cargando la aplicación, por favor espere...</div>
       </div>
     );
   }
 
+  // Si no está autenticado, redirigir al login
   if (!isAuthenticated()) {
-    // Redirigir al login si no está autenticado
+    // Guardar la ruta a la que intentó acceder para redirigir después del login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
