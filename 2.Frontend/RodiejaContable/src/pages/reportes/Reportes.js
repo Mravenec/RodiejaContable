@@ -142,7 +142,12 @@ const Reportes = () => {
       dataIndex: 'monto',
       key: 'monto',
       render: (monto) => (
-        <Text strong>${monto.toLocaleString()}</Text>
+        <Text strong>
+          ${(monto || 0).toLocaleString('es-CR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}
+        </Text>
       ),
     },
     {
@@ -424,8 +429,11 @@ const Reportes = () => {
                       title: 'Monto Total', 
                       dataIndex: 'monto', 
                       key: 'monto',
-                      render: (monto) => `$${monto.toLocaleString()}`,
-                      sorter: (a, b) => a.monto - b.monto,
+                      render: (monto) => `$${(monto || 0).toLocaleString('es-CR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}`,
+                      sorter: (a, b) => (a.monto || 0) - (b.monto || 0),
                     },
                   ]} 
                   dataSource={ventasMensuales} 
@@ -455,7 +463,12 @@ const Reportes = () => {
                       strokeColor={index % 2 === 0 ? '#1890ff' : '#52c41a'}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>${(empleado.montoTotal || 0).toLocaleString()}</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        ${(empleado.montoTotal || 0).toLocaleString('es-CR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </Text>
                       <Text type="secondary" style={{ fontSize: 12 }}>{empleado.porcentaje || 0}% del total</Text>
                     </div>
                   </div>
