@@ -116,10 +116,14 @@ const VentasReportes = () => {
       dataIndex: 'totalVentas',
       key: 'totalVentas',
       render: (value) => (
-        <Text strong>₡{new Intl.NumberFormat('es-CR', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }).format(value)}</Text>
+        <Text strong>
+          {value !== null && value !== undefined 
+            ? `₡${new Intl.NumberFormat('es-CR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(value)}`
+            : '₡0.00'}
+        </Text>
       ),
       align: 'right',
       sorter: (a, b) => a.totalVentas - b.totalVentas,
@@ -131,10 +135,12 @@ const VentasReportes = () => {
       key: 'totalComisiones',
       render: (value) => (
         <Text type={value > 0 ? 'success' : 'default'}>
-          {value !== null ? `₡${new Intl.NumberFormat('es-CR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          }).format(value)}` : 'N/A'}
+          {value !== null && value !== undefined 
+            ? `₡${new Intl.NumberFormat('es-CR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(value)}` 
+            : 'N/A'}
         </Text>
       ),
       align: 'right',
@@ -146,10 +152,14 @@ const VentasReportes = () => {
       dataIndex: 'promedioVenta',
       key: 'promedioVenta',
       render: (value) => (
-        <Text>₡{new Intl.NumberFormat('es-CR', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }).format(value || 0)}</Text>
+        <Text>
+          {value !== null && value !== undefined 
+            ? `₡${new Intl.NumberFormat('es-CR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(value)}`
+            : '₡0.00'}
+        </Text>
       ),
       align: 'right',
       sorter: (a, b) => (a.promedioVenta || 0) - (b.promedioVenta || 0),
@@ -160,7 +170,7 @@ const VentasReportes = () => {
       dataIndex: 'porcentajeComision',
       key: 'porcentajeComision',
       render: (value) => (
-        <Text>{value !== null ? `${value.toFixed(2)}%` : 'N/A'}</Text>
+        <Text>{value !== null && value !== undefined ? `${Number(value).toFixed(2)}%` : 'N/A'}</Text>
       ),
       align: 'right',
       sorter: (a, b) => (a.porcentajeComision || 0) - (b.porcentajeComision || 0),
