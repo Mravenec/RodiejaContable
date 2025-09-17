@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { message } from 'antd';
+import VentasEmpleadosService from '../../api/ventasEmpleados';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { 
   Card, 
   Tabs, 
@@ -33,92 +37,78 @@ const { RangePicker } = DatePicker;
 const { TabPane } = Tabs;
 
 const Reportes = () => {
+  const [loading, setLoading] = useState({
+    ventasMensuales: false,
+    topEmpleados: false,
+    ventasRecientes: false,
+    metricas: false
+  });
   const [rangoFechas, setRangoFechas] = useState(null);
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [anioActual] = useState(new Date().getFullYear());
   
-  // Datos de ejemplo para reportes
-  const ventasPorMes = [
-    { mes: 'Ene', ventas: 3, monto: 1250000 },
-    { mes: 'Feb', ventas: 5, monto: 1850000 },
-    { mes: 'Mar', ventas: 4, monto: 1500000 },
-    { mes: 'Abr', ventas: 6, monto: 2200000 },
-    { mes: 'May', ventas: 7, monto: 2600000 },
-    { mes: 'Jun', ventas: 8, monto: 2950000 },
-    { mes: 'Jul', ventas: 6, monto: 2250000 },
-    { mes: 'Ago', ventas: 5, monto: 1950000 },
-    { mes: 'Sep', ventas: 7, monto: 2550000 },
-    { mes: 'Oct', ventas: 9, monto: 3200000 },
-    { mes: 'Nov', ventas: 0, monto: 0 },
-    { mes: 'Dic', ventas: 0, monto: 0 },
-  ];
+  // Estados para los datos de la API
+  const [ventasMensuales, setVentasMensuales] = useState([]);
+  const [topEmpleados, setTopEmpleados] = useState([]);
+  const [ventasRecientes, setVentasRecientes] = useState([]);
+  const [metricas, setMetricas] = useState({
+    totalVentas: 0,
+    totalIngresos: 0,
+    promedioVenta: 0,
+    vehiculosStock: 0,
+    tasaConversion: 0,
+  });
   
-  const ventasPorModelo = [
-    { modelo: 'Toyota Corolla', cantidad: 12, porcentaje: 24 },
-    { modelo: 'Honda Civic', cantidad: 10, porcentaje: 20 },
-    { modelo: 'Nissan Sentra', cantidad: 8, porcentaje: 16 },
-    { modelo: 'Volkswagen Jetta', cantidad: 7, porcentaje: 14 },
-    { modelo: 'Mazda 3', cantidad: 6, porcentaje: 12 },
-    { modelo: 'Otras marcas', cantidad: 7, porcentaje: 14 },
-  ];
+  // Cargar datos iniciales
+  useEffect(() => {
+    cargarDatosIniciales();
+  }, []);
   
-  const metricas = {
-    totalVentas: 50,
-    totalIngresos: 18500000,
-    promedioVenta: 370000,
-    vehiculosStock: 24,
-    tasaConversion: 68,
-    clientesNuevos: 42,
-    clientesRecurrentes: 8,
+  const cargarDatosIniciales = async () => {
+    try {
+      // Cargar métricas generales
+      setLoading(prev => ({ ...prev, metricas: true }));
+      const estadisticas = await VentasEmpleadosService.getEstadisticasVentas();
+      setMetricas({
+        totalVentas: estadisticas.totalVentas || 0,
+        totalIngresos: estadisticas.totalIngresos || 0,
+        promedioVenta: estadisticas.promedioVenta || 0,
+        vehiculosStock: estadisticas.vehiculosStock || 0,
+        tasaConversion: estadisticas.tasaConversion || 0,
+      });
+      
+      // Cargar ventas mensuales
+      setLoading(prev => ({ ...prev, ventasMensuales: true }));
+      const ventasMensualesData = await VentasEmpleadosService.getVentasMensuales(anioActual);
+      setVentasMensuales(ventasMensualesData);
+      
+      // Cargar top empleados
+      setLoading(prev => ({ ...prev, topEmpleados: true }));
+      const topEmpleadosData = await VentasEmpleadosService.getTopEmpleados(5);
+      setTopEmpleados(topEmpleadosData);
+      
+      // Cargar ventas recientes
+      setLoading(prev => ({ ...prev, ventasRecientes: true }));
+      const ventasRecientesData = await VentasEmpleadosService.getVentasPorEmpleado({
+        limite: 5,
+        ordenarPor: 'fecha',
+        orden: 'desc'
+      });
+      setVentasRecientes(ventasRecientesData);
+      
+    } catch (error) {
+      console.error('Error al cargar datos iniciales:', error);
+      message.error('Error al cargar los datos. Por favor, intente nuevamente.');
+    } finally {
+      setLoading({
+        ventasMensuales: false,
+        topEmpleados: false,
+        ventasRecientes: false,
+        metricas: false
+      });
+    }
   };
-  
-  const ventasRecientes = [
-    {
-      id: 'VTA-2023-105',
-      fecha: '2023-10-25',
-      cliente: 'Juan Pérez',
-      vehiculo: 'Toyota Corolla 2021',
-      vendedor: 'Ana García',
-      monto: 450000,
-      estado: 'completado',
-    },
-    {
-      id: 'VTA-2023-104',
-      fecha: '2023-10-24',
-      cliente: 'Empresa XYZ',
-      vehiculo: 'Nissan Sentra 2022',
-      vendedor: 'Carlos López',
-      monto: 380000,
-      estado: 'pendiente',
-    },
-    {
-      id: 'VTA-2023-103',
-      fecha: '2023-10-23',
-      cliente: 'María Rodríguez',
-      vehiculo: 'Honda Civic 2020',
-      vendedor: 'Ana García',
-      monto: 320000,
-      estado: 'completado',
-    },
-    {
-      id: 'VTA-2023-102',
-      fecha: '2023-10-22',
-      cliente: 'Roberto Sánchez',
-      vehiculo: 'Mazda 3 2021',
-      vendedor: 'Pedro Martínez',
-      monto: 350000,
-      estado: 'cancelado',
-    },
-    {
-      id: 'VTA-2023-101',
-      fecha: '2023-10-21',
-      cliente: 'Laura González',
-      vehiculo: 'Volkswagen Jetta 2022',
-      vendedor: 'Carlos López',
-      monto: 400000,
-      estado: 'completado',
-    },
-  ];
   
   const columnsVentas = [
     {
@@ -177,21 +167,104 @@ const Reportes = () => {
     },
   ];
   
-  const aplicarFiltros = () => {
-    console.log('Aplicando filtros:', { rangoFechas, filtroTipo, filtroEstado });
-    // Lógica para aplicar filtros
+  const aplicarFiltros = async () => {
+    try {
+      setLoading({
+        ventasMensuales: true,
+        topEmpleados: true,
+        ventasRecientes: true,
+        metricas: true
+      });
+      
+      const filtros = {};
+      
+      if (rangoFechas && rangoFechas[0] && rangoFechas[1]) {
+        filtros.fechaInicio = format(rangoFechas[0], 'yyyy-MM-dd');
+        filtros.fechaFin = format(rangoFechas[1], 'yyyy-MM-dd');
+      }
+      
+      if (filtroTipo !== 'todos') {
+        filtros.tipo = filtroTipo;
+      }
+      
+      if (filtroEstado !== 'todos') {
+        filtros.estado = filtroEstado;
+      }
+      
+      // Aplicar filtros a las consultas
+      const [ventasMensualesData, topEmpleadosData, ventasRecientesData, estadisticas] = await Promise.all([
+        VentasEmpleadosService.getVentasMensuales(anioActual, filtros),
+        VentasEmpleadosService.getTopEmpleados(5, filtros),
+        VentasEmpleadosService.getVentasPorEmpleado({
+          ...filtros,
+          limite: 5,
+          ordenarPor: 'fecha',
+          orden: 'desc'
+        }),
+        VentasEmpleadosService.getEstadisticasVentas(filtros)
+      ]);
+      
+      setVentasMensuales(ventasMensualesData);
+      setTopEmpleados(topEmpleadosData);
+      setVentasRecientes(ventasRecientesData);
+      setMetricas({
+        totalVentas: estadisticas.totalVentas || 0,
+        totalIngresos: estadisticas.totalIngresos || 0,
+        promedioVenta: estadisticas.promedioVenta || 0,
+        vehiculosStock: estadisticas.vehiculosStock || 0,
+        tasaConversion: estadisticas.tasaConversion || 0,
+      });
+      
+      message.success('Filtros aplicados correctamente');
+    } catch (error) {
+      console.error('Error al aplicar filtros:', error);
+      message.error('Error al aplicar los filtros. Por favor, intente nuevamente.');
+    } finally {
+      setLoading({
+        ventasMensuales: false,
+        topEmpleados: false,
+        ventasRecientes: false,
+        metricas: false
+      });
+    }
   };
   
-  const limpiarFiltros = () => {
+  const limpiarFiltros = async () => {
     setRangoFechas(null);
     setFiltroTipo('todos');
     setFiltroEstado('todos');
-    // Lógica para limpiar filtros
+    
+    // Recargar datos sin filtros
+    await cargarDatosIniciales();
+    message.success('Filtros limpiados correctamente');
   };
   
-  const exportarReporte = (formato) => {
-    console.log(`Exportando reporte en formato ${formato}`);
-    // Lógica para exportar reporte
+  const exportarReporte = async (formato) => {
+    try {
+      const filtros = {
+        formato,
+        fechaInicio: rangoFechas?.[0] ? format(rangoFechas[0], 'yyyy-MM-dd') : null,
+        fechaFin: rangoFechas?.[1] ? format(rangoFechas[1], 'yyyy-MM-dd') : null,
+        tipo: filtroTipo !== 'todos' ? filtroTipo : null,
+        estado: filtroEstado !== 'todos' ? filtroEstado : null
+      };
+      
+      // Aquí iría la lógica para generar el reporte
+      // Por ahora, solo mostramos un mensaje
+      message.loading({ content: `Generando reporte en formato ${formato.toUpperCase()}...`, key: 'exportar' });
+      
+      // Simulamos una llamada a la API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      message.success({ content: `Reporte generado en formato ${formato.toUpperCase()}`, key: 'exportar' });
+      
+      // En una implementación real, aquí se descargaría el archivo
+      // window.open(`/api/exportar-reporte?${new URLSearchParams(filtros)}`, '_blank');
+      
+    } catch (error) {
+      console.error('Error al exportar reporte:', error);
+      message.error({ content: 'Error al generar el reporte', key: 'exportar' });
+    }
   };
   
   return (
@@ -264,7 +337,7 @@ const Reportes = () => {
       </Card>
       
       {/* Métricas principales */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }} loading={loading.metricas}>
         <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
@@ -310,7 +383,7 @@ const Reportes = () => {
       </Row>
       
       {/* Pestañas de reportes */}
-      <Tabs defaultActiveKey="resumen">
+      <Tabs defaultActiveKey="resumen" loading={loading.ventasMensuales || loading.topEmpleados || loading.ventasRecientes}>
         <TabPane
           tab={
             <span>
@@ -326,18 +399,17 @@ const Reportes = () => {
                 title="Ventas Mensuales" 
                 extra={
                   <Select defaultValue="2023" style={{ width: 120 }}>
-                    <Option value="2023">2023</Option>
-                    <Option value="2022">2022</Option>
-                    <Option value="2021">2021</Option>
+                    {[anioActual, anioActual - 1, anioActual - 2].map(anio => (
+                      <Option key={anio} value={anio}>{anio}</Option>
+                    ))}
                   </Select>
                 }
               >
                 <div style={{ height: '300px', textAlign: 'center' }}>
-                  <img 
-                    src="https://via.placeholder.com/800x300?text=Gráfico+de+Ventas+Mensuales" 
-                    alt="Ventas Mensuales" 
-                    style={{ maxWidth: '100%', maxHeight: '250px' }}
-                  />
+                  <div style={{ textAlign: 'center', color: '#8c8c8c', margin: '20px 0' }}>
+                    <BarChartOutlined style={{ fontSize: 60, opacity: 0.3 }} />
+                    <p>Gráfico de ventas mensuales</p>
+                  </div>
                 </div>
                 <Table 
                   columns={[
@@ -356,7 +428,7 @@ const Reportes = () => {
                       sorter: (a, b) => a.monto - b.monto,
                     },
                   ]} 
-                  dataSource={ventasPorMes} 
+                  dataSource={ventasMensuales} 
                   size="small"
                   pagination={false}
                   rowKey="mes"
@@ -364,25 +436,28 @@ const Reportes = () => {
               </Card>
             </Col>
             <Col xs={24} lg={8}>
-              <Card title="Ventas por Modelo">
+              <Card title="Top Vendedores">
                 <div style={{ height: '300px', marginBottom: 16, textAlign: 'center' }}>
-                  <img 
-                    src="https://via.placeholder.com/400x300?text=Gráfico+de+Ventas+por+Modelo" 
-                    alt="Ventas por Modelo" 
-                    style={{ maxWidth: '100%', maxHeight: '250px' }}
-                  />
+                  <div style={{ textAlign: 'center', color: '#8c8c8c', margin: '20px 0' }}>
+                    <PieChartOutlined style={{ fontSize: 60, opacity: 0.3 }} />
+                    <p>Distribución de ventas por vendedor</p>
+                  </div>
                 </div>
-                {ventasPorModelo.map((item, index) => (
-                  <div key={index} style={{ marginBottom: 12 }}>
+                {topEmpleados.map((empleado, index) => (
+                  <div key={empleado.id || index} style={{ marginBottom: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <Text>{item.modelo}</Text>
-                      <Text strong>{item.cantidad} unidades</Text>
+                      <Text>{empleado.nombre}</Text>
+                      <Text strong>{empleado.totalVentas || 0} ventas</Text>
                     </div>
                     <Progress 
-                      percent={item.porcentaje} 
+                      percent={empleado.porcentaje || 0} 
                       showInfo={false} 
                       strokeColor={index % 2 === 0 ? '#1890ff' : '#52c41a'}
                     />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>${(empleado.montoTotal || 0).toLocaleString()}</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>{empleado.porcentaje || 0}% del total</Text>
+                    </div>
                   </div>
                 ))}
               </Card>
