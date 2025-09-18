@@ -9,6 +9,32 @@ export function useVehiculos(params = {}) {
       try {
         const data = await vehiculoService.getVehiculos(params);
         console.log('API Response:', data);
+        
+        // Sort vehicles in the specified order: DISPONIBLE > EN_REPARACION > DESARMADO > VENDIDO
+        if (Array.isArray(data)) {
+          // Debug: Log unique status values
+          const uniqueStatuses = [...new Set(data.map(v => v.estado))];
+          console.log('Unique status values in data:', uniqueStatuses);
+          
+          // Normalize status values to uppercase to handle any case sensitivity
+          const statusOrder = {
+            'DISPONIBLE': 1,
+            'EN_REPARACION': 2,
+            'DESARMADO': 3,
+            'VENDIDO': 4
+          };
+          
+          return [...data].sort((a, b) => {
+            const statusA = (a.estado || '').toUpperCase();
+            const statusB = (b.estado || '').toUpperCase();
+            const orderA = statusOrder[statusA] || 5; // Default to end if status not in list
+            const orderB = statusOrder[statusB] || 5;
+            
+            console.log(`Comparing ${statusA} (${orderA}) with ${statusB} (${orderB})`);
+            return orderA - orderB;
+          });
+        }
+        
         return data;
       } catch (error) {
         console.error('Error in useVehiculos:', {
