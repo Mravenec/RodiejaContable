@@ -11,20 +11,16 @@ import {
   DatePicker, 
   InputNumber, 
   message, 
-  Divider,
   Steps,
   Row,
   Col,
   Upload,
-  Spin,
-  Alert,
   Space
 } from 'antd';
 import { 
   SaveOutlined, 
   ArrowLeftOutlined, 
-  PlusOutlined, 
-  UploadOutlined
+  PlusOutlined
 } from '@ant-design/icons';
 import { Loading } from '../../components/Loading';
 import { useMarcas } from '../../hooks/useMarcas';
@@ -43,7 +39,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [fileList, setFileList] = useState([]);
-  const [error, setError] = useState(null);
+  const [, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Estados para manejar la selección en cascada
@@ -83,7 +79,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
   }, [errorMarcas, errorModelos, errorGeneraciones]);
   
   // Cargar datos del vehículo si está en modo edición
-  const { data: vehiculo, isLoading: isLoadingVehiculo } = useVehiculo(id, { 
+  const { isLoading: isLoadingVehiculo } = useVehiculo(id, { 
     enabled: editMode,
     onSuccess: (data) => {
       console.log('Datos del vehículo cargados:', data);

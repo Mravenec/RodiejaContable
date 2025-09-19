@@ -22,8 +22,8 @@ public class Vehiculos implements Serializable {
 
     private Integer id;
     private String codigoVehiculo;
-    private String imagenUrl;
     private Integer generacionId;
+    private String imagenUrl;
     private Integer anio;
     private BigDecimal precioCompra;
     private BigDecimal costoGrua;
@@ -45,8 +45,8 @@ public class Vehiculos implements Serializable {
     public Vehiculos(Vehiculos value) {
         this.id = value.id;
         this.codigoVehiculo = value.codigoVehiculo;
-        this.imagenUrl = value.imagenUrl;
         this.generacionId = value.generacionId;
+        this.imagenUrl = value.imagenUrl;
         this.anio = value.anio;
         this.precioCompra = value.precioCompra;
         this.costoGrua = value.costoGrua;
@@ -67,8 +67,8 @@ public class Vehiculos implements Serializable {
     public Vehiculos(
         Integer id,
         String codigoVehiculo,
-        String imagenUrl,
         Integer generacionId,
+        String imagenUrl,
         Integer anio,
         BigDecimal precioCompra,
         BigDecimal costoGrua,
@@ -87,8 +87,8 @@ public class Vehiculos implements Serializable {
     ) {
         this.id = id;
         this.codigoVehiculo = codigoVehiculo;
-        this.imagenUrl = imagenUrl;
         this.generacionId = generacionId;
+        this.imagenUrl = imagenUrl;
         this.anio = anio;
         this.precioCompra = precioCompra;
         this.costoGrua = costoGrua;
@@ -137,21 +137,6 @@ public class Vehiculos implements Serializable {
     }
 
     /**
-     * Getter for <code>sistema_vehicular.vehiculos.imagen_url</code>.
-     */
-    public String getImagenUrl() {
-        return this.imagenUrl;
-    }
-
-    /**
-     * Setter for <code>sistema_vehicular.vehiculos.imagen_url</code>.
-     */
-    public Vehiculos setImagenUrl(String imagenUrl) {
-        this.imagenUrl = imagenUrl;
-        return this;
-    }
-
-    /**
      * Getter for <code>sistema_vehicular.vehiculos.generacion_id</code>.
      */
     public Integer getGeneracionId() {
@@ -163,6 +148,21 @@ public class Vehiculos implements Serializable {
      */
     public Vehiculos setGeneracionId(Integer generacionId) {
         this.generacionId = generacionId;
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.vehiculos.imagen_url</code>.
+     */
+    public String getImagenUrl() {
+        return this.imagenUrl;
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.vehiculos.imagen_url</code>.
+     */
+    public Vehiculos setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
         return this;
     }
 
@@ -412,17 +412,17 @@ public class Vehiculos implements Serializable {
         }
         else if (!this.codigoVehiculo.equals(other.codigoVehiculo))
             return false;
-        if (this.imagenUrl == null) {
-            if (other.imagenUrl != null)
-                return false;
-        }
-        else if (!this.imagenUrl.equals(other.imagenUrl))
-            return false;
         if (this.generacionId == null) {
             if (other.generacionId != null)
                 return false;
         }
         else if (!this.generacionId.equals(other.generacionId))
+            return false;
+        if (this.imagenUrl == null) {
+            if (other.imagenUrl != null)
+                return false;
+        }
+        else if (!this.imagenUrl.equals(other.imagenUrl))
             return false;
         if (this.anio == null) {
             if (other.anio != null)
@@ -523,8 +523,8 @@ public class Vehiculos implements Serializable {
         int result = 1;
         result = prime * result + ((this.id == null) ? 0 : this.id.hashCode());
         result = prime * result + ((this.codigoVehiculo == null) ? 0 : this.codigoVehiculo.hashCode());
-        result = prime * result + ((this.imagenUrl == null) ? 0 : this.imagenUrl.hashCode());
         result = prime * result + ((this.generacionId == null) ? 0 : this.generacionId.hashCode());
+        result = prime * result + ((this.imagenUrl == null) ? 0 : this.imagenUrl.hashCode());
         result = prime * result + ((this.anio == null) ? 0 : this.anio.hashCode());
         result = prime * result + ((this.precioCompra == null) ? 0 : this.precioCompra.hashCode());
         result = prime * result + ((this.costoGrua == null) ? 0 : this.costoGrua.hashCode());
@@ -549,8 +549,8 @@ public class Vehiculos implements Serializable {
 
         sb.append(id);
         sb.append(", ").append(codigoVehiculo);
-        sb.append(", ").append(imagenUrl);
         sb.append(", ").append(generacionId);
+        sb.append(", ").append(imagenUrl);
         sb.append(", ").append(anio);
         sb.append(", ").append(precioCompra);
         sb.append(", ").append(costoGrua);

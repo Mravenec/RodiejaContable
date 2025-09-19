@@ -69,14 +69,14 @@ public class Vehiculos extends TableImpl<VehiculosRecord> {
     public final TableField<VehiculosRecord, String> CODIGO_VEHICULO = createField(DSL.name("codigo_vehiculo"), SQLDataType.VARCHAR(20).defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.VARCHAR)), this, "");
 
     /**
-     * The column <code>sistema_vehicular.vehiculos.imagen_url</code>.
-     */
-    public final TableField<VehiculosRecord, String> IMAGEN_URL = createField(DSL.name("imagen_url"), SQLDataType.CLOB.defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.CLOB)), this, "");
-
-    /**
      * The column <code>sistema_vehicular.vehiculos.generacion_id</code>.
      */
     public final TableField<VehiculosRecord, Integer> GENERACION_ID = createField(DSL.name("generacion_id"), SQLDataType.INTEGER.nullable(false), this, "");
+
+    /**
+     * The column <code>sistema_vehicular.vehiculos.imagen_url</code>.
+     */
+    public final TableField<VehiculosRecord, String> IMAGEN_URL = createField(DSL.name("imagen_url"), SQLDataType.CLOB.defaultValue(DSL.field(DSL.raw("NULL"), SQLDataType.CLOB)), this, "");
 
     /**
      * The column <code>sistema_vehicular.vehiculos.anio</code>.
@@ -275,14 +275,14 @@ public class Vehiculos extends TableImpl<VehiculosRecord> {
     // -------------------------------------------------------------------------
 
     @Override
-    public Row19<Integer, String, String, Integer, Integer, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, LocalDate, VehiculosEstado, BigDecimal, LocalDate, Byte, String, LocalDateTime, LocalDateTime> fieldsRow() {
+    public Row19<Integer, String, Integer, String, Integer, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, BigDecimal, LocalDate, VehiculosEstado, BigDecimal, LocalDate, Byte, String, LocalDateTime, LocalDateTime> fieldsRow() {
         return (Row19) super.fieldsRow();
     }
 
     /**
      * Convenience mapping calling {@link SelectField#convertFrom(Function)}.
      */
-    public <U> SelectField<U> mapping(Function19<? super Integer, ? super String, ? super String, ? super Integer, ? super Integer, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super LocalDate, ? super VehiculosEstado, ? super BigDecimal, ? super LocalDate, ? super Byte, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
+    public <U> SelectField<U> mapping(Function19<? super Integer, ? super String, ? super Integer, ? super String, ? super Integer, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super LocalDate, ? super VehiculosEstado, ? super BigDecimal, ? super LocalDate, ? super Byte, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
         return convertFrom(Records.mapping(from));
     }
 
@@ -290,7 +290,7 @@ public class Vehiculos extends TableImpl<VehiculosRecord> {
      * Convenience mapping calling {@link SelectField#convertFrom(Class,
      * Function)}.
      */
-    public <U> SelectField<U> mapping(Class<U> toType, Function19<? super Integer, ? super String, ? super String, ? super Integer, ? super Integer, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super LocalDate, ? super VehiculosEstado, ? super BigDecimal, ? super LocalDate, ? super Byte, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
+    public <U> SelectField<U> mapping(Class<U> toType, Function19<? super Integer, ? super String, ? super Integer, ? super String, ? super Integer, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super BigDecimal, ? super LocalDate, ? super VehiculosEstado, ? super BigDecimal, ? super LocalDate, ? super Byte, ? super String, ? super LocalDateTime, ? super LocalDateTime, ? extends U> from) {
         return convertFrom(toType, Records.mapping(from));
     }
 }
