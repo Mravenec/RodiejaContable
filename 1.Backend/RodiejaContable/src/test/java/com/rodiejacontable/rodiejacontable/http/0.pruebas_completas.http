@@ -278,6 +278,7 @@ Content-Type: application/json
   "precioCompra": 10000000.00,
   "costoGrua": 50000.00,
   "comisiones": 100000.00,
+  "imagenUrl": "https://ejemplo.com/imagenes/corolla-2023.jpg",
   "fechaIngreso": "2023-01-15",
   "estado": "DISPONIBLE"
 }
@@ -292,6 +293,7 @@ Content-Type: application/json
   "precioCompra": 6000000.00,
   "costoGrua": 40000.00,
   "comisiones": 80000.00,
+  "imagenUrl": "https://ejemplo.com/imagenes/civic-2018.jpg",
   "fechaIngreso": "2023-01-15",
   "estado": "DESARMADO"
 }
@@ -430,6 +432,7 @@ Content-Type: application/json
   "precioCompra": 8000000.00,
   "costoGrua": 50000.00,
   "comisiones": 0.00,
+  "imagenUrl": "https://ejemplo.com/imagenes/hilux-2020.jpg",
   "fechaIngreso": "2023-06-10",
   "estado": "REPARACION"
 }

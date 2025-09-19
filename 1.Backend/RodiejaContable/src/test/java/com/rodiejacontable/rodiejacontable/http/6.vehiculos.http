@@ -21,6 +21,7 @@ Content-Type: application/json
   "precioCompra": 3500000.00,
   "costoGrua": 25000.00,
   "comisiones": 50000.00,
+  "imagenUrl": "https://ejemplo.com/imagenes/corolla-2015.jpg",
   "fechaIngreso": "2023-01-15",
   "estado": "VENDIDO",
   "precioVenta": 4200000.00,
@@ -302,7 +303,8 @@ Content-Type: application/json
   "estado": "VENDIDO",
   "precioVenta": 3800000.00,
   "fechaVenta": "2023-02-25",
-  "notas": "Económico, ideal para trabajo"
+  "notas": "Económico, ideal para trabajo",
+  "imagenUrl": "https://ejemplo.com/imagenes/sentra-2015.jpg"
 }
 
 ### Vehículo 19 - Sentra 2016
@@ -319,7 +321,8 @@ Content-Type: application/json
   "estado": "VENDIDO",
   "precioVenta": 4300000.00,
   "fechaVenta": "2023-03-20",
-  "notas": "Automático, muy cómodo"
+  "notas": "Automático, muy cómodo",
+  "imagenUrl": "https://ejemplo.com/imagenes/sentra-2016.jpg"
 }
 
 ### Vehículo 20 - Sentra 2017
@@ -497,4 +500,23 @@ Content-Type: application/json
   "fechaIngreso": "2023-03-20",
   "estado": "DISPONIBLE",
   "notas": "Perfecto para principiantes"
+}
+
+### Ejemplo completo con todos los campos
+### Vehículo 31 - Corolla 2021 (Ejemplo completo)
+POST http://localhost:8080/api/vehiculos
+Content-Type: application/json
+
+{
+  "generacionId": 1,
+  "anio": 2021,
+  "precioCompra": 150000.00,
+  "costoGrua": 5000.00,
+  "comisiones": 2000.00,
+  "imagenUrl": "https://mi-servidor/vehiculos/TOCO-001.jpg",
+  "fechaIngreso": "2025-09-18",
+  "estado": "DISPONIBLE",
+  "precioVenta": null,
+  "fechaVenta": null,
+  "notas": "Vehículo en buen estado, recuperado de aseguradora, llantas al 80%."
 }

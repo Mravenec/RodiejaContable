@@ -72,6 +72,30 @@ public class VehiculosController {
     
     @PostMapping
     public ResponseEntity<Vehiculos> create(@RequestBody Vehiculos vehiculo) {
+        // Validar que se proporcione un vehículo
+        if (vehiculo == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        // Validar campos obligatorios
+        if (vehiculo.getGeneracionId() == null || vehiculo.getAnio() == null || 
+            vehiculo.getPrecioCompra() == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        // Establecer valores por defecto para campos opcionales
+        if (vehiculo.getCostoGrua() == null) {
+            vehiculo.setCostoGrua(BigDecimal.ZERO);
+        }
+        
+        if (vehiculo.getComisiones() == null) {
+            vehiculo.setComisiones(BigDecimal.ZERO);
+        }
+        
+        if (vehiculo.getFechaIngreso() == null) {
+            vehiculo.setFechaIngreso(LocalDate.now());
+        }
+        
         Vehiculos nuevoVehiculo = vehiculosService.create(vehiculo);
         return new ResponseEntity<>(nuevoVehiculo, HttpStatus.CREATED);
     }
@@ -81,8 +105,71 @@ public class VehiculosController {
             @PathVariable Integer id, 
             @RequestBody Vehiculos vehiculo) {
         
-        vehiculo.setId(id); // Asegurar que el ID del path coincida con el del body
-        Vehiculos vehiculoActualizado = vehiculosService.update(id, vehiculo);
+        // Validar que se proporcione un vehículo
+        if (vehiculo == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        // Asegurar que el ID del path coincida con el del body
+        vehiculo.setId(id);
+        
+        // Validar que el vehículo exista
+        Vehiculos existente = vehiculosService.findById(id);
+        if (existente == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        
+        // Actualizar solo los campos que se hayan proporcionado
+        if (vehiculo.getImagenUrl() != null) {
+            existente.setImagenUrl(vehiculo.getImagenUrl());
+        }
+        
+        // Actualizar otros campos si se proporcionan
+        if (vehiculo.getCodigoVehiculo() != null) {
+            existente.setCodigoVehiculo(vehiculo.getCodigoVehiculo());
+        }
+        
+        if (vehiculo.getGeneracionId() != null) {
+            existente.setGeneracionId(vehiculo.getGeneracionId());
+        }
+        
+        if (vehiculo.getAnio() != null) {
+            existente.setAnio(vehiculo.getAnio());
+        }
+        
+        if (vehiculo.getPrecioCompra() != null) {
+            existente.setPrecioCompra(vehiculo.getPrecioCompra());
+        }
+        
+        if (vehiculo.getCostoGrua() != null) {
+            existente.setCostoGrua(vehiculo.getCostoGrua());
+        }
+        
+        if (vehiculo.getComisiones() != null) {
+            existente.setComisiones(vehiculo.getComisiones());
+        }
+        
+        if (vehiculo.getFechaIngreso() != null) {
+            existente.setFechaIngreso(vehiculo.getFechaIngreso());
+        }
+        
+        if (vehiculo.getEstado() != null) {
+            existente.setEstado(vehiculo.getEstado());
+        }
+        
+        if (vehiculo.getPrecioVenta() != null) {
+            existente.setPrecioVenta(vehiculo.getPrecioVenta());
+        }
+        
+        if (vehiculo.getFechaVenta() != null) {
+            existente.setFechaVenta(vehiculo.getFechaVenta());
+        }
+        
+        if (vehiculo.getNotas() != null) {
+            existente.setNotas(vehiculo.getNotas());
+        }
+        
+        Vehiculos vehiculoActualizado = vehiculosService.update(id, existente);
         return new ResponseEntity<>(vehiculoActualizado, HttpStatus.OK);
     }
     

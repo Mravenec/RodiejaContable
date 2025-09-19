@@ -79,6 +79,7 @@ CREATE TABLE vehiculos (
     id INT PRIMARY KEY AUTO_INCREMENT,
     codigo_vehiculo VARCHAR(20) UNIQUE,
     generacion_id INT NOT NULL,
+    imagen_url       TEXT,
     anio INT NOT NULL,
     precio_compra DECIMAL(12,2) NOT NULL,
     costo_grua DECIMAL(10,2) DEFAULT 0,

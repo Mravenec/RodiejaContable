@@ -115,6 +115,7 @@ public class VehiculosService {
         existingVehiculo.setPrecioCompra(vehiculo.getPrecioCompra() != null ? vehiculo.getPrecioCompra() : existingVehiculo.getPrecioCompra());
         existingVehiculo.setCostoGrua(vehiculo.getCostoGrua() != null ? vehiculo.getCostoGrua() : existingVehiculo.getCostoGrua());
         existingVehiculo.setComisiones(vehiculo.getComisiones() != null ? vehiculo.getComisiones() : existingVehiculo.getComisiones());
+        existingVehiculo.setImagenUrl(vehiculo.getImagenUrl() != null ? vehiculo.getImagenUrl() : existingVehiculo.getImagenUrl());
         
         // Recalcular inversión total si se modificó algún campo relacionado
         if (vehiculo.getPrecioCompra() != null || vehiculo.getCostoGrua() != null || vehiculo.getComisiones() != null) {

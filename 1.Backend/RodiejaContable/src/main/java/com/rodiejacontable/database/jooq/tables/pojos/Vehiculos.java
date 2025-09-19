@@ -22,6 +22,7 @@ public class Vehiculos implements Serializable {
 
     private Integer id;
     private String codigoVehiculo;
+    private String imagenUrl;
     private Integer generacionId;
     private Integer anio;
     private BigDecimal precioCompra;
@@ -44,6 +45,7 @@ public class Vehiculos implements Serializable {
     public Vehiculos(Vehiculos value) {
         this.id = value.id;
         this.codigoVehiculo = value.codigoVehiculo;
+        this.imagenUrl = value.imagenUrl;
         this.generacionId = value.generacionId;
         this.anio = value.anio;
         this.precioCompra = value.precioCompra;
@@ -65,6 +67,7 @@ public class Vehiculos implements Serializable {
     public Vehiculos(
         Integer id,
         String codigoVehiculo,
+        String imagenUrl,
         Integer generacionId,
         Integer anio,
         BigDecimal precioCompra,
@@ -84,6 +87,7 @@ public class Vehiculos implements Serializable {
     ) {
         this.id = id;
         this.codigoVehiculo = codigoVehiculo;
+        this.imagenUrl = imagenUrl;
         this.generacionId = generacionId;
         this.anio = anio;
         this.precioCompra = precioCompra;
@@ -129,6 +133,21 @@ public class Vehiculos implements Serializable {
      */
     public Vehiculos setCodigoVehiculo(String codigoVehiculo) {
         this.codigoVehiculo = codigoVehiculo;
+        return this;
+    }
+
+    /**
+     * Getter for <code>sistema_vehicular.vehiculos.imagen_url</code>.
+     */
+    public String getImagenUrl() {
+        return this.imagenUrl;
+    }
+
+    /**
+     * Setter for <code>sistema_vehicular.vehiculos.imagen_url</code>.
+     */
+    public Vehiculos setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
         return this;
     }
 
@@ -393,6 +412,12 @@ public class Vehiculos implements Serializable {
         }
         else if (!this.codigoVehiculo.equals(other.codigoVehiculo))
             return false;
+        if (this.imagenUrl == null) {
+            if (other.imagenUrl != null)
+                return false;
+        }
+        else if (!this.imagenUrl.equals(other.imagenUrl))
+            return false;
         if (this.generacionId == null) {
             if (other.generacionId != null)
                 return false;
@@ -498,6 +523,7 @@ public class Vehiculos implements Serializable {
         int result = 1;
         result = prime * result + ((this.id == null) ? 0 : this.id.hashCode());
         result = prime * result + ((this.codigoVehiculo == null) ? 0 : this.codigoVehiculo.hashCode());
+        result = prime * result + ((this.imagenUrl == null) ? 0 : this.imagenUrl.hashCode());
         result = prime * result + ((this.generacionId == null) ? 0 : this.generacionId.hashCode());
         result = prime * result + ((this.anio == null) ? 0 : this.anio.hashCode());
         result = prime * result + ((this.precioCompra == null) ? 0 : this.precioCompra.hashCode());
@@ -523,6 +549,7 @@ public class Vehiculos implements Serializable {
 
         sb.append(id);
         sb.append(", ").append(codigoVehiculo);
+        sb.append(", ").append(imagenUrl);
         sb.append(", ").append(generacionId);
         sb.append(", ").append(anio);
         sb.append(", ").append(precioCompra);
