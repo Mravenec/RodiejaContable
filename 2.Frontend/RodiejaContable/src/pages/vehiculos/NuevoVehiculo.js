@@ -261,14 +261,40 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   showSearch
                   optionFilterProp="children"
                   filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
+                    option.children[1].props.children[0].props.children.toLowerCase().includes(input.toLowerCase())
                   }
+                  dropdownMatchSelectWidth={false}
+                  dropdownStyle={{ minWidth: '600px' }}
+                  style={{ width: '100%' }}
                 >
-                  {generaciones.map((generacion) => (
-                    <Option key={generacion.id} value={generacion.id}>
-                      {generacion.nombre}
-                    </Option>
-                  ))}
+                  {generaciones.map((generacion) => {
+                    const startYear = generacion.anioInicio || 'N/A';
+                    const endYear = generacion.anioFin || 'Actual';
+                    
+                    return (
+                      <Option key={generacion.id} value={generacion.id}>
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '8px 0',
+                          gap: '16px'
+                        }}>
+                          <div style={{ flex: '0 0 150px', fontWeight: '500' }}>
+                            {generacion.nombre}
+                          </div>
+                          <div style={{ flex: '1 1 auto', color: '#666', fontSize: '0.95em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {generacion.descripcion || 'Sin descripción'}
+                          </div>
+                          <div style={{ flex: '0 0 150px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                            <span style={{ color: '#666' }}>{startYear}</span>
+                            <span style={{ color: '#999' }}>—</span>
+                            <span style={{ color: '#666' }}>{endYear}</span>
+                          </div>
+                        </div>
+                      </Option>
+                    );
+                  })}
                 </Select>
               </Form.Item>
             </Col>
