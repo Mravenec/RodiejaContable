@@ -76,15 +76,23 @@ export function useCreateVehiculo() {
   const queryClient = useQueryClient();
   
   return useMutation(
-    (vehiculoData) => vehiculoService.createVehiculo(vehiculoData),
+    (vehiculoData) => {
+      console.log('Enviando datos al servidor:', vehiculoData);
+      return vehiculoService.crearVehiculo(vehiculoData);
+    },
     {
       onSuccess: () => {
         message.success('Vehículo creado correctamente');
         queryClient.invalidateQueries('vehiculos');
       },
       onError: (error) => {
-        message.error('Error al crear el vehículo');
-        console.error('Error en useCreateVehiculo:', error);
+        const errorMessage = error.response?.data?.message || 'Error al crear el vehículo';
+        console.error('Error en useCreateVehiculo:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        message.error(errorMessage);
       },
     }
   );

@@ -86,40 +86,53 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const { data: vehiculo, isLoading: isLoadingVehiculo } = useVehiculo(id, { 
     enabled: editMode,
     onSuccess: (data) => {
-      if (data) {
-        // Si hay un vehículo, establecer los IDs para cargar los datos relacionados
-        setMarcaId(data.marcaId);
-        setModeloId(data.modeloId);
-        
-        const datosFormateados = {
-          ...data,
-          fechaIngreso: data.fechaIngreso ? moment(data.fechaIngreso) : null,
-          marcaId: data.marcaId,
-          modeloId: data.modeloId
-        };
-        form.setFieldsValue(datosFormateados);
-      }
+      console.log('Datos del vehículo cargados:', data);
+      // Si hay un vehículo, establecer los IDs para cargar los datos relacionados
+      setMarcaId(data.marcaId);
+      setModeloId(data.modeloId);
+      
+      const datosFormateados = {
+        ...data,
+        fechaIngreso: data.fechaIngreso ? moment(data.fechaIngreso) : null,
+        marcaId: data.marcaId,
+        modeloId: data.modeloId,
+        generacionId: data.generacionId
+      };
+      
+      console.log('Datos formateados para el formulario:', datosFormateados);
+      form.setFieldsValue(datosFormateados);
     },
     onError: (error) => {
+      console.error('Error al cargar el vehículo:', error);
       message.error('Error al cargar los datos del vehículo: ' + (error.message || 'Error desconocido'));
     }
   });
   
+  // Manejar cambios en los valores del formulario
+  const handleFormValuesChange = (changedValues, allValues) => {
+    console.log('Cambio en el formulario:', { changedValues, allValues });
+  };
+  
   // Resetear modelos y generaciones cuando cambia la marca
   const handleMarcaChange = (value) => {
+    console.log('Marca seleccionada:', value);
     setMarcaId(value);
     setModeloId(null);
     form.setFieldsValue({ 
       modeloId: undefined, 
       generacionId: undefined 
-    });
+    });  
   };
   
   // Resetear generaciones cuando cambia el modelo
   const handleModeloChange = (value) => {
+    console.log('Modelo seleccionado:', value, 'Tipo:', typeof value);
     setModeloId(value);
-    form.setFieldsValue({ generacionId: undefined });
+    // Usar null en lugar de undefined para limpiar el valor
+    form.setFieldsValue({ generacionId: null });
   };
+  
+  // No necesitamos handleGeneracionChange ya que Ant Design maneja el valor automáticamente
   
   const createVehiculo = useCreateVehiculo({
     onSuccess: () => {
@@ -150,30 +163,101 @@ const NuevoVehiculo = ({ editMode = false }) => {
       setIsSubmitting(true);
       setError(null);
       
+      console.log('=== DEPURACIÓN DEL FORMULARIO ===');
+      console.log('Valores del formulario:', values);
+      
+      // Validar campos requeridos
+      if (!values.generacionId) {
+        console.error('Error: No se ha seleccionado ninguna generación');
+        message.error('Debe seleccionar una generación');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (!values.anio) {
+        console.error('Error: No se ha especificado el año');
+        message.error('El año es requerido');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validar que el año sea un número válido
+      const anio = Number(values.anio);
+      if (isNaN(anio) || anio < 1900 || anio > new Date().getFullYear() + 1) {
+        message.error('El año debe ser un valor entre 1900 y ' + (new Date().getFullYear() + 1));
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Obtener la generación seleccionada
+      const generacionId = Number(values.generacionId);
+      const generacionSeleccionada = generaciones.find(g => g.id === generacionId);
+      
+      if (!generacionSeleccionada) {
+        console.error('No se encontró la generación con ID:', generacionId);
+        console.log('Generaciones disponibles:', generaciones);
+        message.error('La generación seleccionada no es válida');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('Generación seleccionada:', generacionSeleccionada);
+      
+      // Preparar los datos para enviar
       const vehiculoData = {
-        marcaId: Number(values.marcaId),
-        modeloId: Number(values.modeloId),
-        generacionId: Number(values.generacionId),
-        anio: Number(values.anio),
-        precioCompra: Number(values.precioCompra),
-        costoGrua: Number(values.costoGrua) || 0,
-        comisiones: Number(values.comisiones) || 0,
+        generacionId: generacionSeleccionada.id,
+        modeloId: generacionSeleccionada.modeloId, // Asegurarse de incluir el modeloId
+        anio: anio,
+        precioCompra: values.precioCompra ? Number(values.precioCompra) : 0,
+        costoGrua: values.costoGrua ? Number(values.costoGrua) : 0,
+        comisiones: values.comisiones ? Number(values.comisiones) : 0,
         imagenUrl: values.imagenUrl || null,
-        fechaIngreso: values.fechaIngreso ? values.fechaIngreso.format('YYYY-MM-DD') : null,
-        estado: 'DISPONIBLE',
+        fechaIngreso: values.fechaIngreso ? values.fechaIngreso.format('YYYY-MM-DD') : new Date().toISOString().split('T')[0],
+        estado: values.estado || 'DISPONIBLE',
+        precioVenta: null,
+        fechaVenta: null,
         notas: values.notas || null
       };
-
-      if (editMode && id) {
-        await updateVehiculo.mutateAsync({ id, ...vehiculoData });
-      } else {
-        await createVehiculo.mutateAsync(vehiculoData);
+      
+      console.log('Datos a enviar al servidor:', vehiculoData);
+      
+      // Llamar a la API para crear o actualizar el vehículo
+      try {
+        if (editMode && id) {
+          await updateVehiculo.mutateAsync({ id, ...vehiculoData });
+          message.success('Vehículo actualizado exitosamente');
+        } else {
+          await createVehiculo.mutateAsync(vehiculoData);
+          message.success('Vehículo creado exitosamente');
+        }
+        navigate('/vehiculos');
+      } catch (mutationError) {
+        console.error('Error en la operación:', mutationError);
+        const errorMessage = mutationError.response?.data?.message || 
+                           (mutationError.response?.data?.error || 'Error al guardar el vehículo');
+        
+        // Mostrar errores de validación específicos si existen
+        if (mutationError.response?.data?.errors) {
+          const validationErrors = Object.entries(mutationError.response.data.errors)
+            .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+            .join('\n');
+          message.error(validationErrors);
+          setError(validationErrors);
+        } else {
+          message.error(errorMessage);
+          setError(errorMessage);
+        }
+        
+        throw mutationError; // Relanzar para que React Query lo maneje
       }
     } catch (error) {
       console.error('Error al procesar el formulario:', error);
-      const errorMessage = error.response?.data?.message || 'Ocurrió un error al procesar el formulario';
-      message.error(errorMessage);
-      setError(errorMessage);
+      // Mostrar mensaje de error solo si no es un error de validación del backend
+      if (!error.response?.data?.errors) {
+        const errorMessage = error.message || 'Ocurrió un error inesperado al procesar el formulario';
+        message.error(errorMessage);
+        setError(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -253,28 +337,35 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 name="generacionId"
                 label="Generación"
                 rules={[{ required: true, message: 'Por favor selecciona una generación' }]}
+                style={{ margin: 0 }}
               >
                 <Select 
                   placeholder="Selecciona una generación"
                   loading={isLoadingGeneraciones}
                   disabled={!modeloId}
                   showSearch
-                  optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    option.children[1].props.children[0].props.children.toLowerCase().includes(input.toLowerCase())
-                  }
-                  dropdownMatchSelectWidth={false}
-                  dropdownStyle={{ minWidth: '600px' }}
+                  optionFilterProp="label"
+                  filterOption={(input, option) => {
+                    if (!option || !option.label) return false;
+                    return option.label.toLowerCase().includes(input.toLowerCase());
+                  }}
+                  popupMatchSelectWidth={false}
                   style={{ width: '100%' }}
+                  dropdownStyle={{ minWidth: '600px' }}
                 >
                   {generaciones.map((generacion) => {
                     const startYear = generacion.anioInicio || 'N/A';
                     const endYear = generacion.anioFin || 'Actual';
+                    const label = `${generacion.nombre} (${startYear}-${endYear})`;
                     
                     return (
-                      <Option key={generacion.id} value={generacion.id}>
-                        <div style={{ 
-                          display: 'flex', 
+                      <Option 
+                        key={generacion.id}
+                        value={generacion.id}
+                        label={label}
+                      >
+                        <div style={{
+                          display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
                           padding: '8px 0',
@@ -302,34 +393,60 @@ const NuevoVehiculo = ({ editMode = false }) => {
               <Form.Item
                 name="anio"
                 label="Año"
-                rules={[{ 
-                  required: true, 
-                  message: 'Por favor ingresa el año',
-                  type: 'number',
-                  min: 1900,
-                  max: new Date().getFullYear() + 1
-                }]}
+                rules={[ 
+                  { required: true, message: 'Por favor ingresa el año' },
+                  { 
+                    type: 'number',
+                    min: 1900,
+                    max: new Date().getFullYear() + 1,
+                    message: `El año debe estar entre 1900 y ${new Date().getFullYear() + 1}`
+                  }
+                ]}
+                normalize={value => value ? Number(value) : null}
               >
                 <InputNumber 
                   style={{ width: '100%' }} 
                   min={1900}
                   max={new Date().getFullYear() + 1}
+                  placeholder="Ej: 2023"
                 />
               </Form.Item>
             </Col>
           </Row>
           
-          <Form.Item
-            name="notas"
-            label="Notas"
-          >
-            <TextArea 
-              rows={4} 
-              placeholder="Ingresa notas adicionales sobre el vehículo" 
-              maxLength={500}
-              showCount
-            />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="estado"
+                label="Estado del vehículo"
+                initialValue="DISPONIBLE"
+                rules={[{ required: true, message: 'Por favor selecciona el estado del vehículo' }]}
+              >
+                <Select 
+                  placeholder="Selecciona el estado"
+                  style={{ width: '100%' }}
+                >
+                  <Option value="DISPONIBLE">Disponible</Option>
+                  <Option value="EN_REPARACION">En reparación</Option>
+                  <Option value="DESARMADO">Desarmado</Option>
+                  <Option value="VENDIDO">Vendido</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="notas"
+                label="Notas"
+              >
+                <TextArea 
+                  rows={4} 
+                  placeholder="Ingresa notas adicionales sobre el vehículo" 
+                  maxLength={500}
+                  showCount
+                />
+              </Form.Item>
+            </Col>
+          </Row>
         </>
       ),
     },
@@ -499,6 +616,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        onValuesChange={handleFormValuesChange}
         autoComplete="off"
       >
         <div style={{ minHeight: '300px' }}>

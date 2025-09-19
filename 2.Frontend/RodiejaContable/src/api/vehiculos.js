@@ -255,10 +255,25 @@ class VehiculoService {
   // Crear un nuevo vehículo
   async crearVehiculo(vehiculoData) {
     try {
+      this.log('Creando vehículo con datos:', vehiculoData);
       const response = await api.post('/vehiculos', vehiculoData);
+      this.log('Vehículo creado exitosamente:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error al crear el vehículo:', error);
+      this.error('Error al crear el vehículo:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      });
+      
+      // Si hay errores de validación del servidor, los propagamos
+      if (error.response?.data?.errors) {
+        const validationError = new Error('Error de validación');
+        validationError.response = error.response;
+        throw validationError;
+      }
+      
       throw error;
     }
   }
