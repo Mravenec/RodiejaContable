@@ -52,8 +52,21 @@ const Login = () => {
   };
 
   return (
-    <div style={{ width: '100%' }}>
-      <Card style={{ width: '100%', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      padding: '20px',
+      backgroundColor: '#f0f2f5'
+    }}>
+      <Card style={{
+        width: '100%',
+        maxWidth: '420px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        borderRadius: '8px',
+        margin: '0 auto'
+      }}>
       <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Iniciar Sesión</h2>
       
       <Form
