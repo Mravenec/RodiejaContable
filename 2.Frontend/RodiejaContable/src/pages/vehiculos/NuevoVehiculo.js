@@ -83,10 +83,12 @@ const NuevoVehiculo = ({ editMode = false }) => {
     enabled: editMode,
     onSuccess: (data) => {
       console.log('Datos del vehículo cargados:', data);
-      // Si hay un vehículo, establecer los IDs para cargar los datos relacionados
+      
+      // Establecer los IDs para cargar los datos relacionados
       setMarcaId(data.marcaId);
       setModeloId(data.modeloId);
       
+      // Crear objeto con los datos formateados para el formulario
       const datosFormateados = {
         ...data,
         fechaIngreso: data.fechaIngreso ? moment(data.fechaIngreso) : null,
@@ -96,7 +98,15 @@ const NuevoVehiculo = ({ editMode = false }) => {
       };
       
       console.log('Datos formateados para el formulario:', datosFormateados);
+      
+      // Establecer los valores del formulario
       form.setFieldsValue(datosFormateados);
+      
+      // Si hay un error de generación, mostrarlo
+      if (errorGeneraciones) {
+        console.error('Error al cargar generaciones:', errorGeneraciones);
+        message.error('Error al cargar las generaciones. Por favor, intente nuevamente.');
+      }
     },
     onError: (error) => {
       console.error('Error al cargar el vehículo:', error);
@@ -107,6 +117,16 @@ const NuevoVehiculo = ({ editMode = false }) => {
   // Manejar cambios en los valores del formulario
   const handleFormValuesChange = (changedValues, allValues) => {
     console.log('Cambio en el formulario:', { changedValues, allValues });
+    
+    // Si cambia la marca, limpiar modelo y generación
+    if ('marcaId' in changedValues) {
+      handleMarcaChange(changedValues.marcaId);
+    }
+    
+    // Si cambia el modelo, limpiar generación
+    if ('modeloId' in changedValues) {
+      handleModeloChange(changedValues.modeloId);
+    }
   };
   
   // Resetear modelos y generaciones cuando cambia la marca
@@ -114,18 +134,27 @@ const NuevoVehiculo = ({ editMode = false }) => {
     console.log('Marca seleccionada:', value);
     setMarcaId(value);
     setModeloId(null);
+    
+    // Limpiar los campos de modelo y generación
     form.setFieldsValue({ 
       modeloId: undefined, 
       generacionId: undefined 
-    });  
+    });
+    
+    // Forzar la validación del formulario
+    form.validateFields(['modeloId', 'generacionId']).catch(() => {});
   };
   
   // Resetear generaciones cuando cambia el modelo
   const handleModeloChange = (value) => {
     console.log('Modelo seleccionado:', value, 'Tipo:', typeof value);
     setModeloId(value);
-    // Usar null en lugar de undefined para limpiar el valor
-    form.setFieldsValue({ generacionId: null });
+    
+    // Limpiar el campo de generación
+    form.setFieldsValue({ generacionId: undefined });
+    
+    // Forzar la validación del campo generación
+    form.validateFields(['generacionId']).catch(() => {});
   };
   
   // No necesitamos handleGeneracionChange ya que Ant Design maneja el valor automáticamente
@@ -154,6 +183,31 @@ const NuevoVehiculo = ({ editMode = false }) => {
     }
   });
   
+  // Reglas de validación para los campos del formulario
+  const formRules = {
+    marcaId: [
+      { required: true, message: 'Por favor seleccione una marca' }
+    ],
+    modeloId: [
+      { required: true, message: 'Por favor seleccione un modelo' }
+    ],
+    generacionId: [
+      { required: true, message: 'Por favor seleccione una generación' }
+    ],
+    anio: [
+      { required: true, message: 'Por favor ingrese el año' },
+      {
+        validator: (_, value) => {
+          const anio = Number(value);
+          if (isNaN(anio) || anio < 1900 || anio > new Date().getFullYear() + 1) {
+            return Promise.reject(`El año debe estar entre 1900 y ${new Date().getFullYear() + 1}`);
+          }
+          return Promise.resolve();
+        }
+      }
+    ]
+  };
+
   const onFinish = async (values) => {
     try {
       setIsSubmitting(true);
@@ -162,7 +216,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
       console.log('=== DEPURACIÓN DEL FORMULARIO ===');
       console.log('Valores del formulario:', values);
       
-      // Validar campos requeridos
+      // Validar que se haya seleccionado una generación
       if (!values.generacionId) {
         console.error('Error: No se ha seleccionado ninguna generación');
         message.error('Debe seleccionar una generación');
@@ -170,6 +224,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
         return;
       }
       
+      // Validar que se haya ingresado un año
       if (!values.anio) {
         console.error('Error: No se ha especificado el año');
         message.error('El año es requerido');
@@ -281,9 +336,9 @@ const NuevoVehiculo = ({ editMode = false }) => {
           <Row gutter={16}>
             <Col xs={24} md={8}>
               <Form.Item
-                name="marcaId"
                 label="Marca"
-                rules={[{ required: true, message: 'Por favor selecciona una marca' }]}
+                name="marcaId"
+                rules={formRules.marcaId}
               >
                 <Select 
                   placeholder="Selecciona una marca"
@@ -305,9 +360,9 @@ const NuevoVehiculo = ({ editMode = false }) => {
             </Col>
             <Col xs={24} md={8}>
               <Form.Item
-                name="modeloId"
                 label="Modelo"
-                rules={[{ required: true, message: 'Por favor selecciona un modelo' }]}
+                name="modeloId"
+                rules={formRules.modeloId}
               >
                 <Select 
                   placeholder="Selecciona un modelo"
@@ -330,10 +385,9 @@ const NuevoVehiculo = ({ editMode = false }) => {
             </Col>
             <Col xs={24} md={8}>
               <Form.Item
-                name="generacionId"
                 label="Generación"
-                rules={[{ required: true, message: 'Por favor selecciona una generación' }]}
-                style={{ margin: 0 }}
+                name="generacionId"
+                rules={formRules.generacionId}
               >
                 <Select 
                   placeholder="Selecciona una generación"
