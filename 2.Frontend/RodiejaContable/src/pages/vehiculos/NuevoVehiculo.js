@@ -15,7 +15,7 @@ import {
   Row,
   Col,
   Upload,
-  Space
+  Alert
 } from 'antd';
 import { 
   SaveOutlined, 
@@ -39,12 +39,22 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [fileList, setFileList] = useState([]);
-  const [, setError] = useState(null);
+  const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Estados para manejar la selección en cascada
   const [marcaId, setMarcaId] = useState(null);
   const [modeloId, setModeloId] = useState(null);
+  const [selectedGeneracionId, setSelectedGeneracionId] = useState(null);
+  
+  // Estados para manejar valores del formulario manualmente
+  const [anioValue, setAnioValue] = useState(null);
+  const [estadoValue, setEstadoValue] = useState('DISPONIBLE');
+  const [notasValue, setNotasValue] = useState('');
+  const [precioCompraValue, setPrecioCompraValue] = useState(null);
+  
+  // DEBUG: Estado para mostrar información
+  const [debugInfo, setDebugInfo] = useState('');
   
   // Hooks para cargar datos
   const { 
@@ -65,6 +75,29 @@ const NuevoVehiculo = ({ editMode = false }) => {
     error: errorGeneraciones 
   } = useGeneraciones(modeloId);
   
+  // DEBUG: Efecto para mostrar información de estado
+  useEffect(() => {
+    const formValues = form.getFieldsValue();
+    const info = `
+      📊 Estado del formulario:
+      - MarcaId: ${marcaId}
+      - ModeloId: ${modeloId}
+      - SelectedGeneracionId: ${selectedGeneracionId}
+      - Generaciones disponibles: ${generaciones.length}
+      - Cargando generaciones: ${isLoadingGeneraciones}
+      - Error generaciones: ${errorGeneraciones ? 'SÍ' : 'NO'}
+      - Año en formulario: ${formValues.anio} (${typeof formValues.anio})
+      - Año en estado: ${anioValue} (${typeof anioValue})
+      - Precio en formulario: ${formValues.precioCompra} (${typeof formValues.precioCompra})
+      - Precio en estado: ${precioCompraValue} (${typeof precioCompraValue})
+      - Estado en formulario: ${formValues.estado}
+      - Estado en estado: ${estadoValue}
+      - Fecha en formulario: ${formValues.fechaIngreso ? 'SÍ' : 'NO'}
+      - Notas en estado: ${notasValue ? 'SÍ' : 'NO'}
+    `;
+    setDebugInfo(info);
+  }, [marcaId, modeloId, selectedGeneracionId, generaciones, isLoadingGeneraciones, errorGeneraciones, form, anioValue, estadoValue, notasValue, precioCompraValue]);
+  
   // Mostrar errores si los hay
   useEffect(() => {
     if (errorMarcas) {
@@ -82,41 +115,56 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const { isLoading: isLoadingVehiculo } = useVehiculo(id, { 
     enabled: editMode,
     onSuccess: (data) => {
-      console.log('Datos del vehículo cargados:', data);
+      console.log('✅ Datos del vehículo cargados:', data);
       
       // Establecer los IDs para cargar los datos relacionados
       setMarcaId(data.marcaId);
       setModeloId(data.modeloId);
+      setSelectedGeneracionId(data.generacionId);
       
       // Crear objeto con los datos formateados para el formulario
       const datosFormateados = {
         ...data,
-        fechaIngreso: data.fechaIngreso ? moment(data.fechaIngreso) : null,
+        fechaIngreso: data.fechaIngreso ? moment(data.fechaIngreso) : moment(),
         marcaId: data.marcaId,
         modeloId: data.modeloId,
         generacionId: data.generacionId
       };
       
-      console.log('Datos formateados para el formulario:', datosFormateados);
+      console.log('📋 Datos formateados para el formulario:', datosFormateados);
       
-      // Establecer los valores del formulario
-      form.setFieldsValue(datosFormateados);
-      
-      // Si hay un error de generación, mostrarlo
-      if (errorGeneraciones) {
-        console.error('Error al cargar generaciones:', errorGeneraciones);
-        message.error('Error al cargar las generaciones. Por favor, intente nuevamente.');
-      }
+      // Establecer los valores del formulario después de un delay
+      setTimeout(() => {
+        form.setFieldsValue(datosFormateados);
+        console.log('✏️ Valores establecidos en el formulario');
+      }, 1000);
     },
     onError: (error) => {
-      console.error('Error al cargar el vehículo:', error);
+      console.error('❌ Error al cargar el vehículo:', error);
       message.error('Error al cargar los datos del vehículo: ' + (error.message || 'Error desconocido'));
     }
   });
   
+  // Efecto para establecer valores iniciales en modo creación
+  useEffect(() => {
+    if (!editMode) {
+      const defaultValues = {
+        estado: 'DISPONIBLE',
+        fechaIngreso: moment(),
+        anio: new Date().getFullYear()
+      };
+      
+      setEstadoValue('DISPONIBLE');
+      setAnioValue(new Date().getFullYear());
+      
+      form.setFieldsValue(defaultValues);
+      console.log('🆕 Valores iniciales establecidos para nuevo vehículo');
+    }
+  }, [form, editMode]);
+  
   // Manejar cambios en los valores del formulario
   const handleFormValuesChange = (changedValues, allValues) => {
-    console.log('Cambio en el formulario:', { changedValues, allValues });
+    console.log('🔄 Cambio en el formulario:', { changedValues, allValues });
     
     // Si cambia la marca, limpiar modelo y generación
     if ('marcaId' in changedValues) {
@@ -127,13 +175,20 @@ const NuevoVehiculo = ({ editMode = false }) => {
     if ('modeloId' in changedValues) {
       handleModeloChange(changedValues.modeloId);
     }
+    
+    // Si cambia la generación, actualizarla
+    if ('generacionId' in changedValues) {
+      console.log('🎯 Generación seleccionada:', changedValues.generacionId);
+      setSelectedGeneracionId(changedValues.generacionId);
+    }
   };
   
   // Resetear modelos y generaciones cuando cambia la marca
   const handleMarcaChange = (value) => {
-    console.log('Marca seleccionada:', value);
+    console.log('🏷️ Marca seleccionada:', value);
     setMarcaId(value);
     setModeloId(null);
+    setSelectedGeneracionId(null);
     
     // Limpiar los campos de modelo y generación
     form.setFieldsValue({ 
@@ -141,23 +196,20 @@ const NuevoVehiculo = ({ editMode = false }) => {
       generacionId: undefined 
     });
     
-    // Forzar la validación del formulario
-    form.validateFields(['modeloId', 'generacionId']).catch(() => {});
+    console.log('🧹 Campos limpiados por cambio de marca');
   };
   
   // Resetear generaciones cuando cambia el modelo
   const handleModeloChange = (value) => {
-    console.log('Modelo seleccionado:', value, 'Tipo:', typeof value);
+    console.log('🚗 Modelo seleccionado:', value);
     setModeloId(value);
+    setSelectedGeneracionId(null);
     
     // Limpiar el campo de generación
     form.setFieldsValue({ generacionId: undefined });
     
-    // Forzar la validación del campo generación
-    form.validateFields(['generacionId']).catch(() => {});
+    console.log('🧹 Campo generación limpiado por cambio de modelo');
   };
-  
-  // No necesitamos handleGeneracionChange ya que Ant Design maneja el valor automáticamente
   
   const createVehiculo = useCreateVehiculo({
     onSuccess: () => {
@@ -194,134 +246,256 @@ const NuevoVehiculo = ({ editMode = false }) => {
     generacionId: [
       { required: true, message: 'Por favor seleccione una generación' }
     ],
-    anio: [
-      { required: true, message: 'Por favor ingrese el año' },
-      {
-        validator: (_, value) => {
-          const anio = Number(value);
-          if (isNaN(anio) || anio < 1900 || anio > new Date().getFullYear() + 1) {
-            return Promise.reject(`El año debe estar entre 1900 y ${new Date().getFullYear() + 1}`);
-          }
-          return Promise.resolve();
-        }
-      }
+    precioCompra: [
+      { required: true, message: 'Por favor ingrese el precio de compra' }
+    ],
+    fechaIngreso: [
+      { required: true, message: 'Por favor seleccione la fecha de ingreso' }
     ]
   };
 
   const onFinish = async (values) => {
+    console.log('🚀 === INICIANDO ENVÍO DEL FORMULARIO ===');
+    setIsSubmitting(true);
+    setError(null);
+    
     try {
-      setIsSubmitting(true);
-      setError(null);
-      
-      console.log('=== DEPURACIÓN DEL FORMULARIO ===');
-      console.log('Valores del formulario:', values);
-      
-      // Validar que se haya seleccionado una generación
-      if (!values.generacionId) {
-        console.error('Error: No se ha seleccionado ninguna generación');
-        message.error('Debe seleccionar una generación');
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Validar que se haya ingresado un año
-      if (!values.anio) {
-        console.error('Error: No se ha especificado el año');
-        message.error('El año es requerido');
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Validar que el año sea un número válido
-      const anio = Number(values.anio);
-      if (isNaN(anio) || anio < 1900 || anio > new Date().getFullYear() + 1) {
-        message.error('El año debe ser un valor entre 1900 y ' + (new Date().getFullYear() + 1));
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Obtener la generación seleccionada
-      const generacionId = Number(values.generacionId);
-      const generacionSeleccionada = generaciones.find(g => g.id === generacionId);
-      
-      if (!generacionSeleccionada) {
-        console.error('No se encontró la generación con ID:', generacionId);
-        console.log('Generaciones disponibles:', generaciones);
-        message.error('La generación seleccionada no es válida');
-        setIsSubmitting(false);
-        return;
-      }
-      
-      console.log('Generación seleccionada:', generacionSeleccionada);
-      
-      // Preparar los datos para enviar
-      const vehiculoData = {
-        generacionId: generacionSeleccionada.id,
-        modeloId: generacionSeleccionada.modeloId, // Asegurarse de incluir el modeloId
-        anio: anio,
-        precioCompra: values.precioCompra ? Number(values.precioCompra) : 0,
-        costoGrua: values.costoGrua ? Number(values.costoGrua) : 0,
-        comisiones: values.comisiones ? Number(values.comisiones) : 0,
-        imagenUrl: values.imagenUrl || null,
-        fechaIngreso: values.fechaIngreso ? values.fechaIngreso.format('YYYY-MM-DD') : new Date().toISOString().split('T')[0],
-        estado: values.estado || 'DISPONIBLE',
-        precioVenta: null,
-        fechaVenta: null,
-        notas: values.notas || null
+      // Usar valores del estado como respaldo para los campos del formulario
+      const formData = {
+        ...values,
+        anio: values.anio ? parseInt(values.anio) : parseInt(anioValue || new Date().getFullYear()),
+        estado: values.estado || estadoValue || 'DISPONIBLE',
+        notas: values.notas || notasValue || null,
+        precioCompra: values.precioCompra ? parseFloat(values.precioCompra) : parseFloat(precioCompraValue || 0),
+        generacionId: values.generacionId ? parseInt(values.generacionId) : parseInt(selectedGeneracionId || 0),
+        marcaId: values.marcaId ? parseInt(values.marcaId) : parseInt(marcaId || 0),
+        modeloId: values.modeloId ? parseInt(values.modeloId) : parseInt(modeloId || 0),
+        // Asegurar que los campos numéricos tengan el tipo correcto
+        costoGrua: values.costoGrua ? parseFloat(values.costoGrua) : 0,
+        comisiones: values.comisiones ? parseFloat(values.comisiones) : 0,
+        // Formatear la fecha correctamente
+        fechaIngreso: values.fechaIngreso ? values.fechaIngreso.format('YYYY-MM-DD') : moment().format('YYYY-MM-DD')
       };
       
-      console.log('Datos a enviar al servidor:', vehiculoData);
+      console.log('📝 Datos del formulario (combinados con estado):', formData);
+      
+      // Validar que se haya seleccionado una generación
+      if (!formData.generacionId || isNaN(formData.generacionId) || formData.generacionId <= 0) {
+        const errorMsg = 'Debe seleccionar una generación válida';
+        console.error('❌', errorMsg);
+        message.error(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validar año
+      if (!formData.anio || isNaN(formData.anio) || formData.anio < 1900 || formData.anio > new Date().getFullYear() + 1) {
+        const errorMsg = `El año debe estar entre 1900 y ${new Date().getFullYear() + 1}`;
+        console.error('❌', errorMsg);
+        message.error(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validar precio de compra
+      if (formData.precioCompra === undefined || formData.precioCompra === null || isNaN(formData.precioCompra) || formData.precioCompra <= 0) {
+        const errorMsg = 'El precio de compra es requerido y debe ser mayor a 0';
+        console.error('❌', errorMsg);
+        message.error(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Buscar la generación seleccionada para verificar que existe
+      const generacionSeleccionada = generaciones.find(g => g.id === formData.generacionId);
+      
+      if (!generacionSeleccionada) {
+        const errorMsg = 'La generación seleccionada no es válida';
+        console.error('❌', errorMsg, 'ID:', formData.generacionId);
+        console.error('🏗️ Generaciones disponibles:', generaciones.map(g => ({ id: g.id, nombre: g.nombre })));
+        message.error(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('✅ Generación encontrada:', generacionSeleccionada);
+      
+      // Preparar los datos para enviar al backend
+      const vehiculoData = {
+        generacionId: formData.generacionId,
+        anio: formData.anio,
+        precioCompra: formData.precioCompra,
+        costoGrua: formData.costoGrua,
+        comisiones: formData.comisiones,
+        imagenUrl: formData.imagenUrl || null,
+        fechaIngreso: formData.fechaIngreso,
+        estado: formData.estado,
+        notas: formData.notas
+      };
+    
+      console.log('📤 Datos finales a enviar:', vehiculoData);
+      
+      // Validar estructura antes de enviar
+      const requiredFields = ['generacionId', 'anio', 'precioCompra', 'fechaIngreso', 'estado'];
+      const missingFields = requiredFields.filter(field => 
+        vehiculoData[field] === null || vehiculoData[field] === undefined
+      );
+      
+      if (missingFields.length > 0) {
+        const errorMsg = `Faltan campos requeridos: ${missingFields.join(', ')}`;
+        console.error('❌', errorMsg);
+        message.error(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('✅ Todos los campos requeridos están presentes');
       
       // Llamar a la API para crear o actualizar el vehículo
-      try {
-        if (editMode && id) {
-          await updateVehiculo.mutateAsync({ id, ...vehiculoData });
-          message.success('Vehículo actualizado exitosamente');
-        } else {
-          await createVehiculo.mutateAsync(vehiculoData);
-          message.success('Vehículo creado exitosamente');
-        }
-        navigate('/vehiculos');
-      } catch (mutationError) {
-        console.error('Error en la operación:', mutationError);
-        const errorMessage = mutationError.response?.data?.message || 
-                           (mutationError.response?.data?.error || 'Error al guardar el vehículo');
-        
-        // Mostrar errores de validación específicos si existen
-        if (mutationError.response?.data?.errors) {
-          const validationErrors = Object.entries(mutationError.response.data.errors)
-            .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
-            .join('\n');
-          message.error(validationErrors);
-          setError(validationErrors);
-        } else {
-          message.error(errorMessage);
-          setError(errorMessage);
-        }
-        
-        throw mutationError; // Relanzar para que React Query lo maneje
+      if (editMode && id) {
+        console.log('🔄 Actualizando vehículo existente...');
+        await updateVehiculo.mutateAsync({ id, ...vehiculoData });
+      } else {
+        console.log('🆕 Creando nuevo vehículo...');
+        console.log('📤 Datos que se enviarán:', vehiculoData);
+        await createVehiculo.mutateAsync(vehiculoData);
       }
     } catch (error) {
-      console.error('Error al procesar el formulario:', error);
-      // Mostrar mensaje de error solo si no es un error de validación del backend
-      if (!error.response?.data?.errors) {
-        const errorMessage = error.message || 'Ocurrió un error inesperado al procesar el formulario';
-        message.error(errorMessage);
-        setError(errorMessage);
+      console.error('❌ Error al procesar el formulario:', error);
+      
+      // Manejo detallado de errores
+      let errorMessage = 'Error al procesar el formulario';
+      
+      if (error.response) {
+        // El servidor respondió con un código de estado fuera del rango 2xx
+        if (error.response.data) {
+          if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.response.data.error) {
+            errorMessage = error.response.data.error;
+          } else if (error.response.status === 400) {
+            errorMessage = 'Datos inválidos. Por favor verifique la información ingresada.';
+          } else if (error.response.status === 401 || error.response.status === 403) {
+            errorMessage = 'No tiene permisos para realizar esta acción';
+          } else if (error.response.status === 404) {
+            errorMessage = 'Recurso no encontrado';
+          } else if (error.response.status >= 500) {
+            errorMessage = 'Error en el servidor. Por favor intente más tarde.';
+          }
+        }
+      } else if (error.request) {
+        // La solicitud fue hecha pero no se recibió respuesta
+        errorMessage = 'No se recibió respuesta del servidor. Verifique su conexión a internet.';
+      } else if (error.message) {
+        // Algo sucedió en la configuración de la solicitud
+        errorMessage = error.message;
       }
+      
+      console.error('📌 Detalles del error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers,
+        request: error.request
+      });
+      
+      message.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleNext = () => {
-    form.validateFields()
-      .then(() => {
-        setCurrentStep(currentStep + 1);
-      })
-      .catch((error) => {
-        console.log('Validation Failed:', error);
-      });
+  const handleNext = async () => {
+    try {
+      console.log('🔄 Iniciando proceso de siguiente paso...');
+      
+      // PASO 1: Obtener valores actuales del formulario
+      const currentValues = form.getFieldsValue();
+      console.log('📋 Valores actuales en formulario:', currentValues);
+      
+      // PASO 2: Forzar que se mantengan los valores en el formulario
+      if (currentStep === 0) {
+        console.log('💾 Guardando valores del paso 1...');
+        
+        // Usar valores de estado como respaldo
+        const paso1Values = {
+          marcaId: currentValues.marcaId || marcaId,
+          modeloId: currentValues.modeloId || modeloId, 
+          generacionId: currentValues.generacionId || selectedGeneracionId,
+          anio: currentValues.anio || anioValue,
+          estado: currentValues.estado || estadoValue,
+          notas: currentValues.notas || notasValue
+        };
+        
+        console.log('📝 Valores a persistir:', paso1Values);
+        
+        // Forzar que los valores se mantengan en el formulario
+        form.setFieldsValue(paso1Values);
+        
+        // Esperar un momento para que se actualice
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verificar que se guardaron correctamente
+        const valoresVerificacion = form.getFieldsValue();
+        console.log('✅ Verificación post-guardado:', valoresVerificacion);
+        
+        // Validaciones manuales críticas
+        if (!paso1Values.anio) {
+          message.error('Por favor ingrese el año del vehículo antes de continuar');
+          return;
+        }
+        
+        if (!paso1Values.generacionId) {
+          message.error('Por favor seleccione una generación antes de continuar');
+          return;
+        }
+        
+        console.log('✅ Validaciones manuales pasaron correctamente');
+      }
+      
+      // PASO 3: Validar campos usando Ant Design
+      let fieldsToValidate = [];
+      
+      if (currentStep === 0) {
+        fieldsToValidate = ['marcaId', 'modeloId', 'generacionId', 'anio', 'estado'];
+      } else if (currentStep === 1) {
+        fieldsToValidate = ['precioCompra', 'fechaIngreso'];
+      }
+      
+      console.log('🔍 Validando campos con Ant Design:', fieldsToValidate);
+      
+      try {
+        const validatedValues = await form.validateFields(fieldsToValidate);
+        console.log('✅ Validación Ant Design exitosa:', validatedValues);
+        
+        // Verificación final específica para el año
+        if (currentStep === 0 && !validatedValues.anio) {
+          throw new Error('El año no está presente después de la validación');
+        }
+        
+      } catch (validationError) {
+        console.error('❌ Error en validación Ant Design:', validationError);
+        
+        if (validationError.errorFields && validationError.errorFields.length > 0) {
+          const errorMessages = validationError.errorFields.map(field => 
+            `${field.name[0]}: ${field.errors[0]}`
+          );
+          message.error(`Faltan campos: ${errorMessages.join(', ')}`);
+        } else {
+          message.error('Por favor complete todos los campos requeridos');
+        }
+        return;
+      }
+      
+      // PASO 4: Avanzar al siguiente paso
+      console.log('🎉 Todo validado correctamente, avanzando al paso:', currentStep + 1);
+      setCurrentStep(currentStep + 1);
+      
+    } catch (error) {
+      console.error('❌ Error general en handleNext:', error);
+      message.error('Error inesperado: ' + error.message);
+    }
   };
   
   const handlePrev = () => {
@@ -392,74 +566,35 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 <Select 
                   placeholder="Selecciona una generación"
                   loading={isLoadingGeneraciones}
-                  disabled={!modeloId}
+                  disabled={!modeloId || isLoadingGeneraciones}
                   showSearch
-                  optionFilterProp="label"
+                  optionFilterProp="children"
                   filterOption={(input, option) => {
-                    if (!option || !option.label) return false;
-                    return option.label.toLowerCase().includes(input.toLowerCase());
+                    return option.children.toLowerCase().includes(input.toLowerCase());
                   }}
-                  popupMatchSelectWidth={false}
                   style={{ width: '100%' }}
-                  dropdownStyle={{ minWidth: '600px' }}
+                  value={selectedGeneracionId}
+                  onChange={(value) => {
+                    console.log('🎯 Generación seleccionada en onChange:', value);
+                    setSelectedGeneracionId(value);
+                    form.setFieldsValue({ generacionId: value });
+                  }}
                 >
                   {generaciones.map((generacion) => {
                     const startYear = generacion.anioInicio || 'N/A';
                     const endYear = generacion.anioFin || 'Actual';
-                    const label = `${generacion.nombre} (${startYear}-${endYear})`;
+                    const displayText = `${generacion.nombre} (${startYear}-${endYear})`;
                     
                     return (
                       <Option 
                         key={generacion.id}
                         value={generacion.id}
-                        label={label}
                       >
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '8px 0',
-                          gap: '16px'
-                        }}>
-                          <div style={{ flex: '0 0 150px', fontWeight: '500' }}>
-                            {generacion.nombre}
-                          </div>
-                          <div style={{ flex: '1 1 auto', color: '#666', fontSize: '0.95em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {generacion.descripcion || 'Sin descripción'}
-                          </div>
-                          <div style={{ flex: '0 0 150px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                            <span style={{ color: '#666' }}>{startYear}</span>
-                            <span style={{ color: '#999' }}>—</span>
-                            <span style={{ color: '#666' }}>{endYear}</span>
-                          </div>
-                        </div>
+                        {displayText}
                       </Option>
                     );
                   })}
                 </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="anio"
-                label="Año"
-                rules={[ 
-                  { required: true, message: 'Por favor ingresa el año' },
-                  { 
-                    type: 'number',
-                    min: 1900,
-                    max: new Date().getFullYear() + 1,
-                    message: `El año debe estar entre 1900 y ${new Date().getFullYear() + 1}`
-                  }
-                ]}
-                normalize={value => value ? Number(value) : null}
-              >
-                <InputNumber 
-                  style={{ width: '100%' }} 
-                  min={1900}
-                  max={new Date().getFullYear() + 1}
-                  placeholder="Ej: 2023"
-                />
               </Form.Item>
             </Col>
           </Row>
@@ -467,32 +602,71 @@ const NuevoVehiculo = ({ editMode = false }) => {
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Form.Item
+                name="anio"
+                label="Año"
+                rules={[
+                  { required: true, message: 'Por favor ingrese el año' }
+                ]}
+                preserve={true}
+              >
+                <InputNumber 
+                  style={{ width: '100%' }} 
+                  min={1900}
+                  max={new Date().getFullYear() + 1}
+                  placeholder="Ej: 2023"
+                  value={anioValue}
+                  onChange={(value) => {
+                    console.log('📅 Año cambiado:', value, 'Tipo:', typeof value);
+                    setAnioValue(value);
+                    form.setFieldsValue({ anio: value });
+                  }}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
                 name="estado"
                 label="Estado del vehículo"
-                initialValue="DISPONIBLE"
                 rules={[{ required: true, message: 'Por favor selecciona el estado del vehículo' }]}
+                preserve={true}
               >
                 <Select 
                   placeholder="Selecciona el estado"
                   style={{ width: '100%' }}
+                  value={estadoValue}
+                  onChange={(value) => {
+                    console.log('📋 Estado cambiado:', value);
+                    setEstadoValue(value);
+                    form.setFieldsValue({ estado: value });
+                  }}
                 >
                   <Option value="DISPONIBLE">Disponible</Option>
-                  <Option value="EN_REPARACION">En reparación</Option>
+                  <Option value="REPARACION">En reparación</Option>
                   <Option value="DESARMADO">Desarmado</Option>
                   <Option value="VENDIDO">Vendido</Option>
                 </Select>
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+          </Row>
+          
+          <Row gutter={16}>
+            <Col xs={24}>
               <Form.Item
                 name="notas"
                 label="Notas"
+                preserve={true}
               >
                 <TextArea 
                   rows={4} 
                   placeholder="Ingresa notas adicionales sobre el vehículo" 
                   maxLength={500}
                   showCount
+                  value={notasValue}
+                  onChange={(e) => {
+                    console.log('📝 Notas cambiadas:', e.target.value);
+                    setNotasValue(e.target.value);
+                    form.setFieldsValue({ notas: e.target.value });
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -508,20 +682,22 @@ const NuevoVehiculo = ({ editMode = false }) => {
             <Form.Item
               name="precioCompra"
               label="Precio de compra"
-              rules={[{ 
-                required: true, 
-                message: 'Por favor ingresa el precio de compra',
-                type: 'number',
-                min: 0
-              }]}
+              rules={formRules.precioCompra}
             >
               <InputNumber 
                 style={{ width: '100%' }} 
                 min={0}
                 step={1000}
                 formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/[₡\s]|(,*)/g, '')}
+                parser={value => value.replace(/[₡\s,]/g, '')}
                 precision={2}
+                placeholder="0.00"
+                value={precioCompraValue}
+                onChange={(value) => {
+                  console.log('💰 Precio de compra cambiado:', value, 'Tipo:', typeof value);
+                  setPrecioCompraValue(value);
+                  form.setFieldsValue({ precioCompra: value });
+                }}
               />
             </Form.Item>
           </Col>
@@ -529,19 +705,15 @@ const NuevoVehiculo = ({ editMode = false }) => {
             <Form.Item
               name="costoGrua"
               label="Costo de grúa"
-              rules={[{ 
-                required: false, 
-                type: 'number',
-                min: 0
-              }]}
             >
               <InputNumber 
                 style={{ width: '100%' }} 
                 min={0}
                 step={100}
                 formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/[₡\s]|(,*)/g, '')}
+                parser={value => value.replace(/[₡\s,]/g, '')}
                 precision={2}
+                placeholder="0.00"
               />
             </Form.Item>
           </Col>
@@ -549,19 +721,15 @@ const NuevoVehiculo = ({ editMode = false }) => {
             <Form.Item
               name="comisiones"
               label="Comisiones"
-              rules={[{ 
-                required: false, 
-                type: 'number',
-                min: 0
-              }]}
             >
               <InputNumber 
                 style={{ width: '100%' }} 
                 min={0}
                 step={100}
                 formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={value => value.replace(/[₡\s]|(,*)/g, '')}
+                parser={value => value.replace(/[₡\s,]/g, '')}
                 precision={2}
+                placeholder="0.00"
               />
             </Form.Item>
           </Col>
@@ -569,10 +737,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
             <Form.Item
               name="fechaIngreso"
               label="Fecha de ingreso"
-              rules={[{ 
-                required: true, 
-                message: 'Por favor selecciona la fecha de ingreso' 
-              }]}
+              rules={formRules.fechaIngreso}
             >
               <DatePicker 
                 style={{ width: '100%' }} 
@@ -609,22 +774,24 @@ const NuevoVehiculo = ({ editMode = false }) => {
             name="imagenesAdicionales"
             label="Imágenes adicionales"
           >
-            <Upload
-              action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-              listType="picture-card"
-              fileList={fileList}
-              onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-              multiple
-              accept="image/*"
-            >
-              {fileList.length >= 5 ? null : (
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Subir</div>
-                </div>
-              )}
-            </Upload>
-            <Text type="secondary">Máximo 5 imágenes adicionales</Text>
+            <div>
+              <Upload
+                action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+                listType="picture-card"
+                fileList={fileList}
+                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                multiple
+                accept="image/*"
+              >
+                {fileList.length >= 5 ? null : (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>Subir</div>
+                  </div>
+                )}
+              </Upload>
+              <Text type="secondary">Máximo 5 imágenes adicionales</Text>
+            </div>
           </Form.Item>
         </div>
       ),
@@ -639,72 +806,93 @@ const NuevoVehiculo = ({ editMode = false }) => {
   }
 
   return (
-    <Card 
-      title={
-        <Title level={4} style={{ margin: 0 }}>
-          {editMode ? 'Editar Vehículo' : 'Nuevo Vehículo'}
-        </Title>
-      }
-      extra={
-        <Button 
-          type="text" 
-          icon={<ArrowLeftOutlined />} 
-          onClick={() => navigate('/vehiculos')}
-          disabled={isSubmitting}
-        >
-          Volver al listado
-        </Button>
-      }
-    >
-      <Steps current={currentStep} style={{ marginBottom: 24 }}>
-        {steps.map(item => (
-          <Step key={item.title} title={item.title} />
-        ))}
-      </Steps>
-      
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        onValuesChange={handleFormValuesChange}
-        autoComplete="off"
+    <div>
+      <Card 
+        title={
+          <Title level={4} style={{ margin: 0 }}>
+            {editMode ? 'Editar Vehículo' : 'Nuevo Vehículo'}
+          </Title>
+        }
+        extra={
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate('/vehiculos')}
+            disabled={isSubmitting}
+          >
+            Volver al listado
+          </Button>
+        }
       >
-        <div style={{ minHeight: '300px' }}>
-          {steps[currentStep].content}
-        </div>
+        {/* Panel de debug */}
+        <Alert
+          message="Información de Debug"
+          description={<pre style={{ fontSize: '12px', margin: 0 }}>{debugInfo}</pre>}
+          type="info"
+          showIcon
+          style={{ marginBottom: '16px' }}
+          closable
+        />
         
-        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between' }}>
-          <Form.Item>
-            <Space>
-              {currentStep > 0 && (
-                <Button onClick={handlePrev} disabled={isSubmitting}>
-                  Anterior
-                </Button>
-              )}
-              {currentStep < steps.length - 1 && (
-                <Button 
-                  type="primary" 
-                  onClick={handleNext}
-                  disabled={isSubmitting}
-                >
-                  Siguiente
-                </Button>
-              )}
-              {currentStep === steps.length - 1 && (
-                <Button 
-                  type="primary" 
-                  htmlType="submit"
-                  icon={<SaveOutlined />}
-                  loading={isSubmitting}
-                >
-                  {editMode ? 'Actualizar' : 'Guardar'}
-                </Button>
-              )}
-            </Space>
-          </Form.Item>
-        </div>
-      </Form>
-    </Card>
+        <Steps current={currentStep} style={{ marginBottom: '24px' }}>
+          {steps.map(item => (
+            <Step key={item.title} title={item.title} />
+          ))}
+        </Steps>
+        
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          onValuesChange={handleFormValuesChange}
+          autoComplete="off"
+        >
+          <div style={{ minHeight: '300px' }}>
+            {steps[currentStep].content}
+          </div>
+          
+          <div style={{ marginTop: '24px' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                {currentStep > 0 && (
+                  <Button 
+                    onClick={handlePrev} 
+                    disabled={isSubmitting}
+                  >
+                    Anterior
+                  </Button>
+                )}
+              </div>
+              <div>
+                {currentStep < steps.length - 1 && (
+                  <Button 
+                    type="primary" 
+                    onClick={handleNext}
+                    disabled={isSubmitting}
+                  >
+                    Siguiente
+                  </Button>
+                )}
+                {currentStep === steps.length - 1 && (
+                  <Button 
+                    type="primary" 
+                    htmlType="submit"
+                    icon={<SaveOutlined />}
+                    loading={isSubmitting}
+                  >
+                    {editMode ? 'Actualizar' : 'Guardar'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </Form>
+      </Card>
+    </div>
   );
 };
 
