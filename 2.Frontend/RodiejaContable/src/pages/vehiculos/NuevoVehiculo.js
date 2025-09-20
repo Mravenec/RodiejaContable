@@ -48,7 +48,10 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [selectedGeneracionId, setSelectedGeneracionId] = useState(null);
   
   // Estados para manejar valores del formulario manualmente
-  const [anioValue, setAnioValue] = useState(null);
+  const [anioValue, setAnioValue] = useState(new Date().getFullYear());
+  
+  // Estado para los años disponibles
+  const [aniosDisponibles, setAniosDisponibles] = useState([]);
   const [estadoValue, setEstadoValue] = useState('DISPONIBLE');
   const [notasValue, setNotasValue] = useState('');
   const [precioCompraValue, setPrecioCompraValue] = useState(null);
@@ -74,6 +77,31 @@ const NuevoVehiculo = ({ editMode = false }) => {
     isLoading: isLoadingGeneraciones,
     error: errorGeneraciones 
   } = useGeneraciones(modeloId);
+  
+  // Efecto para actualizar los años disponibles cuando cambia la generación seleccionada
+  useEffect(() => {
+    if (!selectedGeneracionId || !generaciones || generaciones.length === 0) {
+      setAniosDisponibles([]);
+      return;
+    }
+    
+    // Buscar la generación seleccionada
+    const generacionSeleccionada = generaciones.find(g => g.id === selectedGeneracionId);
+    if (!generacionSeleccionada) {
+      setAniosDisponibles([]);
+      return;
+    }
+    
+    const anioInicio = generacionSeleccionada.anioInicio || new Date().getFullYear();
+    const anioFin = generacionSeleccionada.anioFin || new Date().getFullYear();
+    
+    const anios = [];
+    for (let i = anioInicio; i <= anioFin; i++) {
+      anios.push(i);
+    }
+    
+    setAniosDisponibles(anios.sort((a, b) => b - a)); // Orden descendente
+  }, [selectedGeneracionId, generaciones]);
   
   // DEBUG: Efecto para mostrar información de estado
   useEffect(() => {
@@ -213,25 +241,35 @@ const NuevoVehiculo = ({ editMode = false }) => {
   
   const createVehiculo = useCreateVehiculo({
     onSuccess: () => {
-      message.success('Vehículo creado exitosamente');
-      navigate('/vehiculos');
+      message.success('Vehículo guardado exitosamente');
+      // Usar window.location para asegurar la recarga completa de la página
+      window.location.href = '/vehiculos';
     },
     onError: (error) => {
-      const errorMessage = error.response?.data?.message || 'Error al crear el vehículo';
+      const errorMessage = error.response?.data?.message || 'Error al guardar el vehículo';
+      console.error('❌ Error al guardar:', error);
       message.error(errorMessage);
       setError(errorMessage);
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
     }
   });
   
   const updateVehiculo = useUpdateVehiculo({
     onSuccess: () => {
       message.success('Vehículo actualizado exitosamente');
-      navigate('/vehiculos');
+      // Usar window.location para asegurar la recarga completa de la página
+      window.location.href = '/vehiculos';
     },
     onError: (error) => {
       const errorMessage = error.response?.data?.message || 'Error al actualizar el vehículo';
+      console.error('❌ Error al actualizar:', error);
       message.error(errorMessage);
       setError(errorMessage);
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
     }
   });
   
@@ -605,22 +643,32 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 name="anio"
                 label="Año"
                 rules={[
-                  { required: true, message: 'Por favor ingrese el año' }
+                  { required: true, message: 'Por favor seleccione el año' }
                 ]}
                 preserve={true}
               >
-                <InputNumber 
-                  style={{ width: '100%' }} 
-                  min={1900}
-                  max={new Date().getFullYear() + 1}
-                  placeholder="Ej: 2023"
+                <Select 
+                  showSearch
+                  style={{ width: '100%' }}
+                  placeholder={aniosDisponibles.length > 0 ? "Seleccione el año" : "Seleccione una generación primero"}
+                  optionFilterProp="children"
                   value={anioValue}
+                  disabled={!selectedGeneracionId || aniosDisponibles.length === 0}
                   onChange={(value) => {
-                    console.log('📅 Año cambiado:', value, 'Tipo:', typeof value);
+                    console.log('📅 Año seleccionado:', value, 'Tipo:', typeof value);
                     setAnioValue(value);
                     form.setFieldsValue({ anio: value });
                   }}
-                />
+                  filterOption={(input, option) =>
+                    option.children.toString().toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  {aniosDisponibles.map(anio => (
+                    <Option key={anio} value={anio}>
+                      {anio}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
