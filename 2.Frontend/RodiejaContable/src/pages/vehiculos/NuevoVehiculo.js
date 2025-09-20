@@ -56,6 +56,10 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [notasValue, setNotasValue] = useState('');
   const [precioCompraValue, setPrecioCompraValue] = useState(null);
   
+  // NUEVOS ESTADOS para costoGrua y comisiones
+  const [costoGruaValue, setCostoGruaValue] = useState(0);
+  const [comisionesValue, setComisionesValue] = useState(0);
+  
   // DEBUG: Estado para mostrar información
   const [debugInfo, setDebugInfo] = useState('');
   
@@ -103,7 +107,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
     setAniosDisponibles(anios.sort((a, b) => b - a)); // Orden descendente
   }, [selectedGeneracionId, generaciones]);
   
-  // DEBUG: Efecto para mostrar información de estado
+  // DEBUG: Efecto para mostrar información de estado - ACTUALIZADO
   useEffect(() => {
     const formValues = form.getFieldsValue();
     const info = `
@@ -118,13 +122,17 @@ const NuevoVehiculo = ({ editMode = false }) => {
       - Año en estado: ${anioValue} (${typeof anioValue})
       - Precio en formulario: ${formValues.precioCompra} (${typeof formValues.precioCompra})
       - Precio en estado: ${precioCompraValue} (${typeof precioCompraValue})
+      - Costo grúa en formulario: ${formValues.costoGrua} (${typeof formValues.costoGrua})
+      - Costo grúa en estado: ${costoGruaValue} (${typeof costoGruaValue})
+      - Comisiones en formulario: ${formValues.comisiones} (${typeof formValues.comisiones})
+      - Comisiones en estado: ${comisionesValue} (${typeof comisionesValue})
       - Estado en formulario: ${formValues.estado}
       - Estado en estado: ${estadoValue}
       - Fecha en formulario: ${formValues.fechaIngreso ? 'SÍ' : 'NO'}
       - Notas en estado: ${notasValue ? 'SÍ' : 'NO'}
     `;
     setDebugInfo(info);
-  }, [marcaId, modeloId, selectedGeneracionId, generaciones, isLoadingGeneraciones, errorGeneraciones, form, anioValue, estadoValue, notasValue, precioCompraValue]);
+  }, [marcaId, modeloId, selectedGeneracionId, generaciones, isLoadingGeneraciones, errorGeneraciones, form, anioValue, estadoValue, notasValue, precioCompraValue, costoGruaValue, comisionesValue]);
   
   // Mostrar errores si los hay
   useEffect(() => {
@@ -139,7 +147,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
     }
   }, [errorMarcas, errorModelos, errorGeneraciones]);
   
-  // Cargar datos del vehículo si está en modo edición
+  // Cargar datos del vehículo si está en modo edición - ACTUALIZADO
   const { isLoading: isLoadingVehiculo } = useVehiculo(id, { 
     enabled: editMode,
     onSuccess: (data) => {
@@ -150,13 +158,23 @@ const NuevoVehiculo = ({ editMode = false }) => {
       setModeloId(data.modeloId);
       setSelectedGeneracionId(data.generacionId);
       
+      // Establecer valores de estado
+      setAnioValue(data.anio);
+      setEstadoValue(data.estado);
+      setNotasValue(data.notas || '');
+      setPrecioCompraValue(data.precioCompra);
+      setCostoGruaValue(data.costoGrua || 0);
+      setComisionesValue(data.comisiones || 0);
+      
       // Crear objeto con los datos formateados para el formulario
       const datosFormateados = {
         ...data,
         fechaIngreso: data.fechaIngreso ? moment(data.fechaIngreso) : moment(),
         marcaId: data.marcaId,
         modeloId: data.modeloId,
-        generacionId: data.generacionId
+        generacionId: data.generacionId,
+        costoGrua: data.costoGrua || 0,
+        comisiones: data.comisiones || 0
       };
       
       console.log('📋 Datos formateados para el formulario:', datosFormateados);
@@ -173,17 +191,21 @@ const NuevoVehiculo = ({ editMode = false }) => {
     }
   });
   
-  // Efecto para establecer valores iniciales en modo creación
+  // Efecto para establecer valores iniciales en modo creación - ACTUALIZADO
   useEffect(() => {
     if (!editMode) {
       const defaultValues = {
         estado: 'DISPONIBLE',
         fechaIngreso: moment(),
-        anio: new Date().getFullYear()
+        anio: new Date().getFullYear(),
+        costoGrua: 0,
+        comisiones: 0
       };
       
       setEstadoValue('DISPONIBLE');
       setAnioValue(new Date().getFullYear());
+      setCostoGruaValue(0);
+      setComisionesValue(0);
       
       form.setFieldsValue(defaultValues);
       console.log('🆕 Valores iniciales establecidos para nuevo vehículo');
@@ -298,24 +320,28 @@ const NuevoVehiculo = ({ editMode = false }) => {
     setError(null);
     
     try {
-      // Usar valores del estado como respaldo para los campos del formulario
+      // Usar valores del estado como respaldo para los campos del formulario - ACTUALIZADO
       const formData = {
         ...values,
         anio: values.anio ? parseInt(values.anio) : parseInt(anioValue || new Date().getFullYear()),
         estado: values.estado || estadoValue || 'DISPONIBLE',
         notas: values.notas || notasValue || null,
         precioCompra: values.precioCompra ? parseFloat(values.precioCompra) : parseFloat(precioCompraValue || 0),
+        costoGrua: values.costoGrua ? parseFloat(values.costoGrua) : parseFloat(costoGruaValue || 0),
+        comisiones: values.comisiones ? parseFloat(values.comisiones) : parseFloat(comisionesValue || 0),
         generacionId: values.generacionId ? parseInt(values.generacionId) : parseInt(selectedGeneracionId || 0),
         marcaId: values.marcaId ? parseInt(values.marcaId) : parseInt(marcaId || 0),
         modeloId: values.modeloId ? parseInt(values.modeloId) : parseInt(modeloId || 0),
-        // Asegurar que los campos numéricos tengan el tipo correcto
-        costoGrua: values.costoGrua ? parseFloat(values.costoGrua) : 0,
-        comisiones: values.comisiones ? parseFloat(values.comisiones) : 0,
         // Formatear la fecha correctamente
         fechaIngreso: values.fechaIngreso ? values.fechaIngreso.format('YYYY-MM-DD') : moment().format('YYYY-MM-DD')
       };
       
       console.log('📝 Datos del formulario (combinados con estado):', formData);
+      console.log('💰 Valores financieros específicos:', {
+        precioCompra: formData.precioCompra,
+        costoGrua: formData.costoGrua,
+        comisiones: formData.comisiones
+      });
       
       // Validar que se haya seleccionado una generación
       if (!formData.generacionId || isNaN(formData.generacionId) || formData.generacionId <= 0) {
@@ -762,6 +788,12 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 parser={value => value.replace(/[₡\s,]/g, '')}
                 precision={2}
                 placeholder="0.00"
+                value={costoGruaValue}
+                onChange={(value) => {
+                  console.log('🚛 Costo grúa cambiado:', value, 'Tipo:', typeof value);
+                  setCostoGruaValue(value || 0);
+                  form.setFieldsValue({ costoGrua: value || 0 });
+                }}
               />
             </Form.Item>
           </Col>
@@ -778,6 +810,12 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 parser={value => value.replace(/[₡\s,]/g, '')}
                 precision={2}
                 placeholder="0.00"
+                value={comisionesValue}
+                onChange={(value) => {
+                  console.log('💼 Comisiones cambiadas:', value, 'Tipo:', typeof value);
+                  setComisionesValue(value || 0);
+                  form.setFieldsValue({ comisiones: value || 0 });
+                }}
               />
             </Form.Item>
           </Col>
