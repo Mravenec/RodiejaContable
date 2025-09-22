@@ -748,6 +748,24 @@ const VehiculosJerarquicos = () => {
                         <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.comisiones)}</div>
                       </div>
                     </Col>
+                    <Col xs={12} sm={6} md={4}>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Precio de compra</Text>
+                        <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.precio_compra)}</div>
+                      </div>
+                    </Col>
+                    <Col xs={12} sm={6} md={4}>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Monto recuperado</Text>
+                        <div style={{ marginTop: 2, color: '#52c41a' }}>{formatMonto(vehiculo.costo_recuperado)}</div>
+                      </div>
+                    </Col>
+                    <Col xs={12} sm={6} md={4}>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Monto pendiente</Text>
+                        <div style={{ marginTop: 2, color: '#f5222d' }}>{formatMonto(vehiculo.costo_pendiente)}</div>
+                      </div>
+                    </Col>
                   </Row>
                   {!isNullish(vehiculo.notas) && (
                     <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #f0f0f0' }}>
