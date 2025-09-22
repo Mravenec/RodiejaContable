@@ -763,7 +763,9 @@ const VehiculosJerarquicos = () => {
                     <Col xs={12} sm={6} md={4}>
                       <div>
                         <Text type="secondary" style={{ fontSize: '0.85em' }}>Monto pendiente</Text>
-                        <div style={{ marginTop: 2, color: '#f5222d' }}>{formatMonto(vehiculo.costo_pendiente)}</div>
+                        <div style={{ marginTop: 2, color: vehiculo.costo_pendiente < 0 ? '#52c41a' : '#f5222d' }}>
+                          {vehiculo.costo_pendiente < 0 ? '+' : ''}{formatMonto(Math.abs(vehiculo.costo_pendiente))}
+                        </div>
                       </div>
                     </Col>
                   </Row>
