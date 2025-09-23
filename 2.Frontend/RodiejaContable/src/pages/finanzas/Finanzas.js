@@ -94,7 +94,7 @@ const Finanzas = () => {
       const transaccionesMapeadas = Array.isArray(data) ? data.map(transaccion => {
         const categoria = String(transaccion?.categoria || '').toUpperCase();
         const esIngreso = categoria === 'INGRESO';
-        const tipo = esIngreso ? 'ingreso' : 'egreso';
+        const tipo = esIngreso ? 'INGRESO' : 'EGRESO';
         let fechaFormateada = 'Fecha no disponible';
         
         if (Array.isArray(transaccion?.fecha) && transaccion.fecha.length >= 3) {
@@ -111,6 +111,7 @@ const Finanzas = () => {
           key: transaccion?.codigoTransaccion || transaccion?.id?.toString() || Math.random().toString(),
           fecha: transaccion.fecha || [2023, 1, 1], // Default date if not provided
           tipo,
+          tipoTransaccion: tipo, // Asegurarnos de que tipoTransaccion esté definido
           monto: Math.abs(monto),
           esIngreso,
           fechaFormateada
@@ -231,10 +232,10 @@ const Finanzas = () => {
         <Text 
           strong 
           style={{ 
-            color: record.tipo === 'ingreso' ? '#52c41a' : '#f5222d' 
+            color: record.tipoTransaccion === 'INGRESO' ? '#52c41a' : '#f5222d' 
           }}
         >
-          {record.tipo === 'ingreso' ? '+' : '-'} ₡{monto.toLocaleString('es-CR', {
+          {record.tipoTransaccion === 'INGRESO' ? '+' : '-'} ₡{monto.toLocaleString('es-CR', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
           })}
