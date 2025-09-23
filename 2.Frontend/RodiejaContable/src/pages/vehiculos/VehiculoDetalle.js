@@ -12,14 +12,16 @@ import {
 } from '@ant-design/icons';
 import vehiculoService from '../../api/vehiculos';
 import finanzaService from '../../api/finanzas';
+import inventarioService from '../../api/inventario';
+import { getTiposTransacciones } from '../../api/transacciones';
 import { formatCurrency } from '../../utils/formatters';
 
 // Servicio para repuestos
 const repuestosService = {
   async getRepuestosPorVehiculo(vehiculoId) {
     try {
-      const response = await fetch(`http://localhost:8080/api/inventario-repuestos`);
-      const allRepuestos = await response.json();
+      // Use the inventarioService to get all repuestos
+      const allRepuestos = await inventarioService.getRepuestos();
       return allRepuestos.filter(repuesto => repuesto.vehiculoOrigenId === parseInt(vehiculoId));
     } catch (error) {
       console.error('Error fetching repuestos:', error);
@@ -34,27 +36,19 @@ const transaccionesService = {
     try {
       console.log('Fetching transactions for vehicle ID:', vehiculoId);
       
-      let transaccionesResponse, tiposResponse, allTransacciones, tiposTransaccion;
+      let allTransacciones, tiposTransaccion;
       
       try {
-        [transaccionesResponse, tiposResponse] = await Promise.all([
-          fetch(`http://localhost:8080/api/transacciones-financieras`),
-          fetch(`http://localhost:8080/api/tipos-transacciones`)
+        // Use Promise.all to fetch transactions and transaction types in parallel
+        [allTransacciones, tiposTransaccion] = await Promise.all([
+          finanzaService.getTransacciones(),
+          getTiposTransacciones()
         ]);
-        
-        if (!transaccionesResponse.ok) {
-          throw new Error(`HTTP error! status: ${transaccionesResponse.status}`);
-        }
-        if (!tiposResponse.ok) {
-          throw new Error(`HTTP error! status: ${tiposResponse.status}`);
-        }
-        
-        allTransacciones = await transaccionesResponse.json();
-        tiposTransaccion = await tiposResponse.json();
         
         console.log('All transactions from API:', allTransacciones);
         console.log('Transaction types from API:', tiposTransaccion);
         
+        // Ensure we have arrays to work with
         if (!Array.isArray(allTransacciones)) {
           console.error('Unexpected transactions format:', allTransacciones);
           allTransacciones = [];
@@ -66,8 +60,6 @@ const transaccionesService = {
         }
       } catch (fetchError) {
         console.error('Error fetching data:', {
-          transaccionesUrl: 'http://localhost:8080/api/transacciones-financieras',
-          tiposUrl: 'http://localhost:8080/api/tipos-transaccion',
           error: fetchError.message,
           stack: fetchError.stack
         });
@@ -85,14 +77,9 @@ const transaccionesService = {
       // First, get all repuestos for this vehicle to find their IDs
       let repuestos = [];
       try {
-        const repuestosResponse = await fetch(`http://localhost:8080/api/inventario-repuestos`);
-        if (repuestosResponse.ok) {
-          const allRepuestos = await repuestosResponse.json();
-          repuestos = allRepuestos.filter(repuesto => 
-            repuesto.vehiculoOrigenId === parseInt(vehiculoId)
-          );
-          console.log(`Found ${repuestos.length} repuestos for vehicle ${vehiculoId}:`, repuestos.map(r => r.id));
-        }
+        // Use the repuestosService to get repuestos for this vehicle
+        repuestos = await repuestosService.getRepuestosPorVehiculo(vehiculoId);
+        console.log(`Found ${repuestos.length} repuestos for vehicle ${vehiculoId}:`, repuestos.map(r => r.id));
       } catch (repuestoError) {
         console.error('Error fetching repuestos:', repuestoError);
       }
