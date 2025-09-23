@@ -887,16 +887,107 @@ const VehiculosJerarquicos = () => {
                         <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.precio_compra)}</div>
                       </div>
                     </Col>
-                    <Col xs={12} sm={6} md={4}>
+                    <Col xs={24} sm={12} md={8}>
                       <div>
-                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Monto recuperado</Text>
-                        <div style={{ marginTop: 2, color: '#52c41a' }}>{formatMonto(vehiculo.costo_recuperado)}</div>
+                        <Text type="secondary" style={{ fontSize: '0.85em', display: 'block', marginBottom: 2 }}>Monto recuperado</Text>
+                        <div style={{ color: '#52c41a', marginBottom: 4 }}>{formatMonto(vehiculo.costo_recuperado)}</div>
+                        {vehiculo.inversion_total > 0 && (() => {
+                          const porcentaje = ((vehiculo.costo_recuperado || 0) / vehiculo.inversion_total) * 100;
+                          const porcentajeBase = Math.min(100, porcentaje);
+                          const porcentajeExcedente = Math.max(0, porcentaje - 100);
+                          
+                          return (
+                            <div> 
+                              <div style={{ 
+                                width: '100%', 
+                                backgroundColor: '#f0f0f0', 
+                                borderRadius: 4,
+                                marginTop: 4,
+                                height: 6,
+                                position: 'relative',
+                                overflow: 'hidden'
+                              }}>
+                                {/* Barra base (hasta 100%) */}
+                                {porcentajeBase > 0 && (
+                                  <div 
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      backgroundColor: '#52c41a',
+                                      position: 'absolute',
+                                      left: 0,
+                                      top: 0,
+                                      transition: 'all 0.3s',
+                                      maxWidth: `${Math.min(100, porcentajeBase)}%`
+                                    }}
+                                  />
+                                )}
+                                
+                                {/* Barra de excedente (más del 100%) */}
+                                {porcentajeExcedente > 0 && (
+                                  <div 
+                                    style={{
+                                      width: `${porcentajeExcedente}%`,
+                                      height: '100%',
+                                      backgroundColor: '#faad14', // Dorado para el excedente
+                                      position: 'absolute',
+                                      right: 0,
+                                      top: 0,
+                                      transition: 'all 0.3s',
+                                      borderTopRightRadius: 4,
+                                      borderBottomRightRadius: 4
+                                    }}
+                                  />
+                                )}
+                              </div>
+                              
+                              <div style={{ 
+                                fontSize: 12, 
+                                color: '#666',
+                                marginTop: 4,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}>
+                                <span>
+                                  {porcentaje.toLocaleString('es-CR', { 
+                                    minimumFractionDigits: 2, 
+                                    maximumFractionDigits: 2 
+                                  })}% de la inversión
+                                </span>
+                                {porcentajeExcedente > 0 && (
+                                  <span style={{ 
+                                    color: '#d48806', // Color de texto para el excedente
+                                    fontWeight: 500,
+                                    marginLeft: 8,
+                                    display: 'inline-flex',
+                                    alignItems: 'center'
+                                  }}>
+                                    <span style={{ 
+                                      display: 'inline-block',
+                                      width: 8, 
+                                      height: 8, 
+                                      borderRadius: '50%',
+                                      backgroundColor: '#faad14',
+                                      marginRight: 4
+                                    }} />
+                                    +{porcentajeExcedente.toFixed(2)}% de ganancia
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </Col>
                     <Col xs={12} sm={6} md={4}>
                       <div>
                         <Text type="secondary" style={{ fontSize: '0.85em' }}>Monto pendiente</Text>
-                        <div style={{ marginTop: 2, color: vehiculo.costo_pendiente < 0 ? '#52c41a' : '#f5222d' }}>
+                        <div style={{ marginTop: 2, color: 
+                          vehiculo.costo_pendiente > 0 ? '#f5222d' : // Rojo para deuda
+                          vehiculo.costo_pendiente < 0 ? '#d48806' : // Dorado para ganancia (mismo que el texto de ganancia)
+                          '#52c41a' // Verde para saldo cero
+                        }}>
                           {vehiculo.costo_pendiente < 0 ? '+' : ''}{formatMonto(Math.abs(vehiculo.costo_pendiente))}
                         </div>
                       </div>
