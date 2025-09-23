@@ -491,15 +491,49 @@ const VehiculoDetalle = () => {
                 <Descriptions.Item label="Inversión Total">
                   <strong>{formatCurrency(vehiculo.inversionTotal || 0)}</strong>
                 </Descriptions.Item>
-                <Descriptions.Item label="Costo Recuperado">
-                  {formatCurrency(vehiculo.costoRecuperado || 0)}
+                <Descriptions.Item label="Monto Recuperado">
+                  <div>
+                    <div style={{ 
+                      color: '#52c41a', 
+                      fontWeight: 500,
+                      marginBottom: 4
+                    }}>
+                      {formatCurrency(vehiculo.costoRecuperado || 0)}
+                    </div>
+                    {vehiculo.inversionTotal > 0 && (
+                      <div style={{ 
+                        width: '100%', 
+                        backgroundColor: '#f0f0f0', 
+                        borderRadius: 4,
+                        marginTop: 4
+                      }}>
+                        <div 
+                          style={{
+                            width: `${Math.min(100, ((vehiculo.costoRecuperado || 0) / vehiculo.inversionTotal) * 100)}%`,
+                            height: 6,
+                            backgroundColor: '#52c41a',
+                            borderRadius: 4,
+                            transition: 'width 0.3s'
+                          }}
+                        />
+                        <div style={{ 
+                          fontSize: 12, 
+                          color: '#666',
+                          marginTop: 4
+                        }}>
+                          {Math.round(((vehiculo.costoRecuperado || 0) / vehiculo.inversionTotal) * 100)}% de la inversión
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </Descriptions.Item>
-                <Descriptions.Item label="Costo Pendiente">
-                  <strong style={{
-                    color: (vehiculo.costoPendiente || 0) <= 0 ? '#52c41a' : '#f5222d'
+                <Descriptions.Item label="Monto Pendiente">
+                  <div style={{
+                    color: (vehiculo.costoPendiente || 0) < 0 ? '#52c41a' : '#f5222d',
+                    fontWeight: 500
                   }}>
-                    {formatCurrency(vehiculo.costoPendiente || 0)}
-                  </strong>
+                    {vehiculo.costoPendiente < 0 ? '+' : ''}{formatCurrency(Math.abs(vehiculo.costoPendiente || 0))}
+                  </div>
                 </Descriptions.Item>
                 {vehiculo.precioVenta && (
                   <Descriptions.Item label="Precio de Venta">
