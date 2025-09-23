@@ -82,27 +82,52 @@ const transaccionesService = {
       
       console.log('Tipos map:', tiposMap);
       
-      // Filter transactions for the specific vehicle with detailed logging
-      console.log('All transaction vehicle IDs:', allTransacciones.map(t => ({
+      // First, get all repuestos for this vehicle to find their IDs
+      let repuestos = [];
+      try {
+        const repuestosResponse = await fetch(`http://localhost:8080/api/inventario-repuestos`);
+        if (repuestosResponse.ok) {
+          const allRepuestos = await repuestosResponse.json();
+          repuestos = allRepuestos.filter(repuesto => 
+            repuesto.vehiculoOrigenId === parseInt(vehiculoId)
+          );
+          console.log(`Found ${repuestos.length} repuestos for vehicle ${vehiculoId}:`, repuestos.map(r => r.id));
+        }
+      } catch (repuestoError) {
+        console.error('Error fetching repuestos:', repuestoError);
+      }
+      
+      const repuestoIds = repuestos.map(r => r.id);
+      
+      // Filter transactions for the specific vehicle or its repuestos
+      console.log('All transaction vehicle/repuesto IDs:', allTransacciones.map(t => ({
         id: t.id,
         vehiculoId: t.vehiculoId,
-        tipo: typeof t.vehiculoId,
-        match: t.vehiculoId == vehiculoId // loose equality check
+        repuestoId: t.repuestoId,
+        isRepuestoTransaction: repuestoIds.includes(t.repuestoId),
+        matchesVehicle: t.vehiculoId == vehiculoId || t.vehiculoId === parseInt(vehiculoId)
       })));
       
       const filteredTransacciones = allTransacciones.filter(transaccion => {
-        // Handle both string and number comparisons
-        const matches = transaccion.vehiculoId != null && 
-                       (transaccion.vehiculoId == vehiculoId || 
-                        transaccion.vehiculoId === parseInt(vehiculoId));
+        // Check if transaction is directly for this vehicle
+        const matchesVehicle = transaccion.vehiculoId != null && 
+                             (transaccion.vehiculoId == vehiculoId || 
+                              transaccion.vehiculoId === parseInt(vehiculoId));
+        
+        // Check if transaction is for a repuesto that belongs to this vehicle
+        const matchesRepuesto = transaccion.repuestoId != null && 
+                               repuestoIds.includes(transaccion.repuestoId);
         
         console.log(`Transaction ${transaccion.id}:`, {
           transVehiculoId: transaccion.vehiculoId,
+          transRepuestoId: transaccion.repuestoId,
           targetVehiculoId: vehiculoId,
-          matches
+          matchesVehicle,
+          matchesRepuesto,
+          matches: matchesVehicle || matchesRepuesto
         });
         
-        return matches;
+        return matchesVehicle || matchesRepuesto;
       });
       
       console.log('Filtered transactions:', filteredTransacciones);
