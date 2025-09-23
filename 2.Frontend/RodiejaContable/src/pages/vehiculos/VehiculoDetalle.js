@@ -323,22 +323,8 @@ const VehiculoDetalle = () => {
     return <Tag color={color}>{nombre}</Tag>;
   };
 
-  const getEstadoTag = (estado) => {
-    const estados = {
-      DISPONIBLE: { color: 'success', text: 'Disponible' },
-      VENDIDO: { color: 'error', text: 'Vendido' },
-      DESARMADO: { color: 'warning', text: 'Desarmado' },
-      REPARACION: { color: 'processing', text: 'En Reparación' },
-      EN_REPARACION: { color: 'processing', text: 'En reparación' },
-      RESERVADO: { color: 'warning', text: 'Reservado' }
-    };
-    
-    const estadoInfo = estados[estado] || { color: 'default', text: 'Desconocido' };
-    return <Tag color={estadoInfo.color}>{estadoInfo.text}</Tag>;
-  };
-
   // Format currency with color based on context (transaction type or vehicle info)
-  const formatCurrency = (amount, tipo) => {
+  const formatCurrencyWithColor = (amount, tipo) => {
     const formattedAmount = new Intl.NumberFormat('es-CR', {
       style: 'currency',
       currency: 'CRC',
@@ -357,6 +343,20 @@ const VehiculoDetalle = () => {
     
     // Default formatting for vehicle info (no sign, default color)
     return formattedAmount;
+  };
+
+  const getEstadoTag = (estado) => {
+    const estados = {
+      DISPONIBLE: { color: 'success', text: 'Disponible' },
+      VENDIDO: { color: 'error', text: 'Vendido' },
+      DESARMADO: { color: 'warning', text: 'Desarmado' },
+      REPARACION: { color: 'processing', text: 'En Reparación' },
+      EN_REPARACION: { color: 'processing', text: 'En reparación' },
+      RESERVADO: { color: 'warning', text: 'Reservado' }
+    };
+    
+    const estadoInfo = estados[estado] || { color: 'default', text: 'Desconocido' };
+    return <Tag color={estadoInfo.color}>{estadoInfo.text}</Tag>;
   };
 
   // Format dates safely
@@ -491,22 +491,14 @@ const VehiculoDetalle = () => {
                 <Descriptions.Item label="Inversión Total">
                   <strong>{formatCurrency(vehiculo.inversionTotal || 0)}</strong>
                 </Descriptions.Item>
-                <Descriptions.Item label="Ingresos">
-                  <span style={{ color: '#52c41a', fontWeight: 500 }}>
-                    {formatCurrency(vehiculo.ingresos || 0)}
-                  </span>
+                <Descriptions.Item label="Costo Recuperado">
+                  {formatCurrency(vehiculo.costoRecuperado || 0)}
                 </Descriptions.Item>
-                <Descriptions.Item label="Egresos">
-                  <span style={{ color: '#f5222d', fontWeight: 500 }}>
-                    {formatCurrency(vehiculo.egresos || 0)}
-                  </span>
-                </Descriptions.Item>
-                <Descriptions.Item label="Balance Neto">
+                <Descriptions.Item label="Costo Pendiente">
                   <strong style={{
-                    color: (vehiculo.balanceNeto || 0) > 0 ? '#52c41a' : 
-                          (vehiculo.balanceNeto || 0) < 0 ? '#f5222d' : 'inherit'
+                    color: (vehiculo.costoPendiente || 0) <= 0 ? '#52c41a' : '#f5222d'
                   }}>
-                    {formatCurrency(vehiculo.balanceNeto || 0)}
+                    {formatCurrency(vehiculo.costoPendiente || 0)}
                   </strong>
                 </Descriptions.Item>
                 {vehiculo.precioVenta && (
@@ -664,7 +656,7 @@ const VehiculoDetalle = () => {
                               <td style={{ padding: '8px' }}>{formatDate(transaccion.fecha)}</td>
                               <td style={{ padding: '8px' }}>{renderTipoTransaccion(transaccion.tipo_transaccion)}</td>
                               <td style={{ padding: '8px', textAlign: 'right' }}>
-                                {formatCurrency(transaccion.monto, transaccion.tipo_transaccion?.categoria)}
+                                {formatCurrencyWithColor(transaccion.monto, transaccion.tipo_transaccion?.categoria)}
                               </td>
                               <td style={{ padding: '8px' }}>{transaccion.descripcion || 'Sin descripción'}</td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>
