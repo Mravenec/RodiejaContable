@@ -18,7 +18,7 @@ import Vehiculos from './pages/vehiculos/Vehiculos';
 import VehiculosJerarquicos from './components/vehiculos/VehiculosJerarquicos';
 import NuevoVehiculo from './pages/vehiculos/NuevoVehiculo';
 import EditarVehiculo from './pages/vehiculos/EditarVehiculo';
-import DetalleVehiculo from './pages/vehiculos/DetalleVehiculo';
+import VehiculoDetalle from './pages/vehiculos/VehiculoDetalle';
 
 // Componentes de inventario
 import Inventario from './pages/inventario/Inventario';
@@ -323,7 +323,7 @@ function App() {
         element={
           <PrivateRoute>
             <MainLayout>
-              <DetalleVehiculo />
+              <VehiculoDetalle />
             </MainLayout>
           </PrivateRoute>
         }
