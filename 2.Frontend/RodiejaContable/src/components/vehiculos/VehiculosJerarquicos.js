@@ -25,13 +25,146 @@ import {
 } from '@ant-design/icons';
 
 import vehiculoService from '../../api/vehiculos';
-import finanzaService from '../../api/finanzas'; // Importar el servicio de finanzas
-import { getTiposTransacciones } from '../../api/transacciones'; // Importar el servicio de tipos de transacciones
-import generacionesAPI from '../../api/generaciones'; // ✅ NUEVO: import del API de generaciones
+import finanzaService from '../../api/finanzas';
+import inventarioService from '../../api/inventario';
+import { getTiposTransacciones } from '../../api/transacciones';
+import generacionesAPI from '../../api/generaciones';
 import { renderEstado } from '../../utils/vehicleUtils';
 
 const { Panel } = Collapse;
 const { Text } = Typography;
+
+/* ========================= Servicios para transacciones ========================= */
+// Servicio para repuestos (copiado de VehiculoDetalle)
+const repuestosService = {
+  async getRepuestosPorVehiculo(vehiculoId) {
+    try {
+      // Use the inventarioService to get all repuestos
+      const allRepuestos = await inventarioService.getRepuestos();
+      return allRepuestos.filter(repuesto => repuesto.vehiculoOrigenId === parseInt(vehiculoId));
+    } catch (error) {
+      console.error('Error fetching repuestos:', error);
+      return [];
+    }
+  }
+};
+
+// Servicio para transacciones (copiado de VehiculoDetalle)
+const transaccionesService = {
+  async getTransaccionesPorVehiculo(vehiculoId) {
+    try {
+      console.log('Fetching transactions for vehicle ID:', vehiculoId);
+      
+      let allTransacciones, tiposTransaccion;
+      
+      try {
+        // Use Promise.all to fetch transactions and transaction types in parallel
+        [allTransacciones, tiposTransaccion] = await Promise.all([
+          finanzaService.getTransacciones(),
+          getTiposTransacciones()
+        ]);
+        
+        console.log('All transactions from API:', allTransacciones);
+        console.log('Transaction types from API:', tiposTransaccion);
+        
+        // Ensure we have arrays to work with
+        if (!Array.isArray(allTransacciones)) {
+          console.error('Unexpected transactions format:', allTransacciones);
+          allTransacciones = [];
+        }
+        
+        if (!Array.isArray(tiposTransaccion)) {
+          console.error('Unexpected transaction types format:', tiposTransaccion);
+          tiposTransaccion = [];
+        }
+      } catch (fetchError) {
+        console.error('Error fetching data:', {
+          error: fetchError.message,
+          stack: fetchError.stack
+        });
+        throw fetchError;
+      }
+      
+      // Create a map of tipos for quick lookup
+      const tiposMap = tiposTransaccion.reduce((acc, tipo) => {
+        acc[tipo.id] = tipo;
+        return acc;
+      }, {});
+      
+      console.log('Tipos map:', tiposMap);
+      
+      // First, get all repuestos for this vehicle to find their IDs
+      let repuestos = [];
+      try {
+        // Use the repuestosService to get repuestos for this vehicle
+        repuestos = await repuestosService.getRepuestosPorVehiculo(vehiculoId);
+        console.log(`Found ${repuestos.length} repuestos for vehicle ${vehiculoId}:`, repuestos.map(r => r.id));
+      } catch (repuestoError) {
+        console.error('Error fetching repuestos:', repuestoError);
+      }
+      
+      const repuestoIds = repuestos.map(r => r.id);
+      
+      // Filter transactions for the specific vehicle or its repuestos
+      console.log('All transaction vehicle/repuesto IDs:', allTransacciones.map(t => ({
+        id: t.id,
+        vehiculoId: t.vehiculoId,
+        repuestoId: t.repuestoId,
+        isRepuestoTransaction: repuestoIds.includes(t.repuestoId),
+        matchesVehicle: t.vehiculoId == vehiculoId || t.vehiculoId === parseInt(vehiculoId)
+      })));
+      
+      const filteredTransacciones = allTransacciones.filter(transaccion => {
+        // Check if transaction is directly for this vehicle
+        const matchesVehicle = transaccion.vehiculoId != null && 
+                             (transaccion.vehiculoId == vehiculoId || 
+                              transaccion.vehiculoId === parseInt(vehiculoId));
+        
+        // Check if transaction is for a repuesto that belongs to this vehicle
+        const matchesRepuesto = transaccion.repuestoId != null && 
+                               repuestoIds.includes(transaccion.repuestoId);
+        
+        console.log(`Transaction ${transaccion.id}:`, {
+          transVehiculoId: transaccion.vehiculoId,
+          transRepuestoId: transaccion.repuestoId,
+          targetVehiculoId: vehiculoId,
+          matchesVehicle,
+          matchesRepuesto,
+          matches: matchesVehicle || matchesRepuesto
+        });
+        
+        return matchesVehicle || matchesRepuesto;
+      });
+      
+      console.log('Filtered transactions:', filteredTransacciones);
+      
+      // Map transactions with their type information
+      const vehiculoTransacciones = filteredTransacciones
+        .map(transaccion => {
+          const tipo = tiposMap[transaccion.tipoTransaccionId] || {
+            nombre: 'Tipo desconocido',
+            categoria: transaccion.monto > 0 ? 'INGRESO' : 'EGRESO'
+          };
+          
+          return {
+            ...transaccion,
+            tipo_transaccion: tipo,
+            // Ensure we have a proper date string for sorting
+            fecha: Array.isArray(transaccion.fecha) 
+              ? new Date(transaccion.fecha[0], transaccion.fecha[1] - 1, transaccion.fecha[2])
+              : new Date(transaccion.fecha)
+          };
+        })
+        .sort((a, b) => b.fecha - a.fecha); // Sort by date descending
+      
+      console.log('Processed transactions:', vehiculoTransacciones);
+      return vehiculoTransacciones;
+    } catch (error) {
+      console.error('Error fetching transacciones:', error);
+      return [];
+    }
+  }
+};
 
 /* ========================= Helpers ========================= */
 const isNullish = (v) => v === null || v === undefined || v === '{null}';
@@ -319,7 +452,7 @@ const VehiculosJerarquicos = () => {
           byModelYears.set(`${modeloId}|${anioInicio}|${anioFin}`, obj);
         }
 
-        // buckets para match “único” global
+        // buckets para match "único" global
         if (nombre) {
           const arr = nameBuckets.get(nombre) ?? [];
           arr.push(obj);
@@ -547,7 +680,7 @@ const VehiculosJerarquicos = () => {
     }
   }, [tiposTransaccionesCargados, cargarDatos]);
 
-  // Función personalizada para manejar la expansión y carga de transacciones
+  // Función personalizada para manejar la expansión y carga de transacciones (CORREGIDA)
   const handleExpand = useCallback(async (vehiculoId, expanded) => {
     if (!expanded || transacciones[vehiculoId]) {
       return; // Si no se está expandiendo o ya tenemos las transacciones, no hacer nada
@@ -556,11 +689,11 @@ const VehiculosJerarquicos = () => {
     try {
       setLoadingTransacciones(prev => ({ ...prev, [vehiculoId]: true }));
       
-      // Usar el servicio de finanzas para obtener transacciones específicas del vehículo
-      const response = await finanzaService.getTransaccionesPorVehiculo(vehiculoId);
+      // ✅ CORREGIDO: Usar el servicio correcto (copiado de VehiculoDetalle)
+      const transaccionesData = await transaccionesService.getTransaccionesPorVehiculo(vehiculoId);
       
       // Asegurarse de que tenemos un array, incluso si la respuesta es null/undefined
-      const transaccionesNormalizadas = Array.isArray(response) ? response : [];
+      const transaccionesNormalizadas = Array.isArray(transaccionesData) ? transaccionesData : [];
 
       // Ordenar por fecha (más reciente primero)
       const transaccionesOrdenadas = [...transaccionesNormalizadas].sort((a, b) => {
