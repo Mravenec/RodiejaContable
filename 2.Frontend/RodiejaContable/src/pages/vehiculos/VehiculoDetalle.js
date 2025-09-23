@@ -521,7 +521,13 @@ const VehiculoDetalle = () => {
                           color: '#666',
                           marginTop: 4
                         }}>
-                          {Math.round(((vehiculo.costoRecuperado || 0) / vehiculo.inversionTotal) * 100)}% de la inversión
+                          {vehiculo.inversionTotal > 0 ? 
+                            `${((vehiculo.costoRecuperado || 0) / vehiculo.inversionTotal * 100).toLocaleString('es-CR', { 
+                              minimumFractionDigits: 2, 
+                              maximumFractionDigits: 2 
+                            })}% de la inversión` : 
+                            '0.00% de la inversión'
+                          }
                         </div>
                       </div>
                     )}
