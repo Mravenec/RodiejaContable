@@ -905,7 +905,16 @@ const VehiculosJerarquicos = () => {
                   {!isNullish(vehiculo.notas) && (
                     <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #f0f0f0' }}>
                       <Text type="secondary" style={{ fontSize: '0.85em' }}>Notas</Text>
-                      <div style={{ marginTop: 4 }}>{vehiculo.notas}</div>
+                      <div 
+                        style={{ 
+                          marginTop: 4, 
+                          whiteSpace: 'pre-line',
+                          lineHeight: 1.6,
+                          padding: '4px 0'
+                        }}
+                      >
+                        {vehiculo.notas}
+                      </div>
                     </div>
                   )}
                 </div>
