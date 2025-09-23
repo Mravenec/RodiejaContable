@@ -14,6 +14,127 @@ import vehiculoService from '../../api/vehiculos';
 import finanzaService from '../../api/finanzas';
 import { formatCurrency } from '../../utils/formatters';
 
+// Servicio para repuestos
+const repuestosService = {
+  async getRepuestosPorVehiculo(vehiculoId) {
+    try {
+      const response = await fetch(`http://localhost:8080/api/inventario-repuestos`);
+      const allRepuestos = await response.json();
+      return allRepuestos.filter(repuesto => repuesto.vehiculoOrigenId === parseInt(vehiculoId));
+    } catch (error) {
+      console.error('Error fetching repuestos:', error);
+      return [];
+    }
+  }
+};
+
+// Servicio para transacciones
+const transaccionesService = {
+  async getTransaccionesPorVehiculo(vehiculoId) {
+    try {
+      console.log('Fetching transactions for vehicle ID:', vehiculoId);
+      
+      let transaccionesResponse, tiposResponse, allTransacciones, tiposTransaccion;
+      
+      try {
+        [transaccionesResponse, tiposResponse] = await Promise.all([
+          fetch(`http://localhost:8080/api/transacciones-financieras`),
+          fetch(`http://localhost:8080/api/tipos-transacciones`)
+        ]);
+        
+        if (!transaccionesResponse.ok) {
+          throw new Error(`HTTP error! status: ${transaccionesResponse.status}`);
+        }
+        if (!tiposResponse.ok) {
+          throw new Error(`HTTP error! status: ${tiposResponse.status}`);
+        }
+        
+        allTransacciones = await transaccionesResponse.json();
+        tiposTransaccion = await tiposResponse.json();
+        
+        console.log('All transactions from API:', allTransacciones);
+        console.log('Transaction types from API:', tiposTransaccion);
+        
+        if (!Array.isArray(allTransacciones)) {
+          console.error('Unexpected transactions format:', allTransacciones);
+          allTransacciones = [];
+        }
+        
+        if (!Array.isArray(tiposTransaccion)) {
+          console.error('Unexpected transaction types format:', tiposTransaccion);
+          tiposTransaccion = [];
+        }
+      } catch (fetchError) {
+        console.error('Error fetching data:', {
+          transaccionesUrl: 'http://localhost:8080/api/transacciones-financieras',
+          tiposUrl: 'http://localhost:8080/api/tipos-transaccion',
+          error: fetchError.message,
+          stack: fetchError.stack
+        });
+        throw fetchError;
+      }
+      
+      // Create a map of tipos for quick lookup
+      const tiposMap = tiposTransaccion.reduce((acc, tipo) => {
+        acc[tipo.id] = tipo;
+        return acc;
+      }, {});
+      
+      console.log('Tipos map:', tiposMap);
+      
+      // Filter transactions for the specific vehicle with detailed logging
+      console.log('All transaction vehicle IDs:', allTransacciones.map(t => ({
+        id: t.id,
+        vehiculoId: t.vehiculoId,
+        tipo: typeof t.vehiculoId,
+        match: t.vehiculoId == vehiculoId // loose equality check
+      })));
+      
+      const filteredTransacciones = allTransacciones.filter(transaccion => {
+        // Handle both string and number comparisons
+        const matches = transaccion.vehiculoId != null && 
+                       (transaccion.vehiculoId == vehiculoId || 
+                        transaccion.vehiculoId === parseInt(vehiculoId));
+        
+        console.log(`Transaction ${transaccion.id}:`, {
+          transVehiculoId: transaccion.vehiculoId,
+          targetVehiculoId: vehiculoId,
+          matches
+        });
+        
+        return matches;
+      });
+      
+      console.log('Filtered transactions:', filteredTransacciones);
+      
+      // Map transactions with their type information
+      const vehiculoTransacciones = filteredTransacciones
+        .map(transaccion => {
+          const tipo = tiposMap[transaccion.tipoTransaccionId] || {
+            nombre: 'Tipo desconocido',
+            categoria: transaccion.monto > 0 ? 'INGRESO' : 'EGRESO'
+          };
+          
+          return {
+            ...transaccion,
+            tipo_transaccion: tipo,
+            // Ensure we have a proper date string for sorting
+            fecha: Array.isArray(transaccion.fecha) 
+              ? new Date(transaccion.fecha[0], transaccion.fecha[1] - 1, transaccion.fecha[2])
+              : new Date(transaccion.fecha)
+          };
+        })
+        .sort((a, b) => b.fecha - a.fecha); // Sort by date descending
+      
+      console.log('Processed transactions:', vehiculoTransacciones);
+      return vehiculoTransacciones;
+    } catch (error) {
+      console.error('Error fetching transacciones:', error);
+      return [];
+    }
+  }
+};
+
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
@@ -24,9 +145,11 @@ const VehiculoDetalle = () => {
   // State management
   const [vehiculo, setVehiculo] = useState(null);
   const [transacciones, setTransacciones] = useState([]);
+  const [repuestos, setRepuestos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [loadingTransacciones, setLoadingTransacciones] = useState(false);
+  const [loadingRepuestos, setLoadingRepuestos] = useState(false);
 
   // Load vehicle data
   const loadVehicleData = async () => {
@@ -56,17 +179,66 @@ const VehiculoDetalle = () => {
 
   // Load transactions for the vehicle
   const loadTransactions = async (vehiculoId) => {
+    console.log('Starting to load transactions for vehicle ID:', vehiculoId);
+    
+    if (!vehiculoId) {
+      console.error('No vehicle ID provided to loadTransactions');
+      setTransacciones([]);
+      return;
+    }
+    
     try {
       setLoadingTransacciones(true);
-      const transaccionesData = await finanzaService.getTransaccionesPorVehiculo(vehiculoId);
-      console.log('Transacciones cargadas:', transaccionesData);
-      setTransacciones(Array.isArray(transaccionesData) ? transaccionesData : []);
+      console.log('Calling transaccionesService.getTransaccionesPorVehiculo...');
+      
+      try {
+        const transaccionesData = await transaccionesService.getTransaccionesPorVehiculo(vehiculoId);
+        console.log('Raw transactions data from service:', transaccionesData);
+        
+        const transactionsToSet = Array.isArray(transaccionesData) ? transaccionesData : [];
+        console.log('Setting transactions:', transactionsToSet);
+        
+        setTransacciones(transactionsToSet);
+        
+        if (transactionsToSet.length === 0) {
+          console.log('No transactions found for vehicle ID:', vehiculoId);
+          message.info('No se encontraron transacciones para este vehículo');
+        }
+      } catch (serviceError) {
+        console.error('Service error in loadTransactions:', {
+          error: serviceError,
+          message: serviceError.message,
+          stack: serviceError.stack
+        });
+        setTransacciones([]);
+        message.error(`Error al cargar transacciones: ${serviceError.message || 'Error desconocido'}`);
+      }
     } catch (error) {
-      console.error('Error loading transactions:', error);
+      console.error('Unexpected error in loadTransactions:', {
+        error,
+        message: error.message,
+        stack: error.stack
+      });
       setTransacciones([]);
-      message.warning('No se pudieron cargar las transacciones del vehículo');
+      message.error('Error inesperado al cargar las transacciones');
     } finally {
       setLoadingTransacciones(false);
+    }
+  };
+
+  // Load repuestos for the vehicle
+  const loadRepuestos = async (vehiculoId) => {
+    try {
+      setLoadingRepuestos(true);
+      const repuestosData = await repuestosService.getRepuestosPorVehiculo(vehiculoId);
+      console.log('Repuestos cargados:', repuestosData);
+      setRepuestos(Array.isArray(repuestosData) ? repuestosData : []);
+    } catch (error) {
+      console.error('Error loading repuestos:', error);
+      setRepuestos([]);
+      message.warning('No se pudieron cargar los repuestos del vehículo');
+    } finally {
+      setLoadingRepuestos(false);
     }
   };
 
@@ -77,10 +249,14 @@ const VehiculoDetalle = () => {
     }
   }, [id]);
 
-  // Load transactions when vehicle is loaded
+  // Load transactions and repuestos when vehicle is loaded
   useEffect(() => {
     if (vehiculo?.id) {
+      console.log('Vehicle loaded, loading transactions for ID:', vehiculo.id);
       loadTransactions(vehiculo.id);
+      loadRepuestos(vehiculo.id);
+    } else {
+      console.log('No vehicle ID available yet');
     }
   }, [vehiculo?.id]);
 
@@ -121,6 +297,32 @@ const VehiculoDetalle = () => {
     );
   }
   
+  // Helper function to get estado tag for repuestos
+  const getEstadoRepuestoTag = (estado) => {
+    const estados = {
+      STOCK: { color: 'success', text: 'Disponible' },
+      VENDIDO: { color: 'error', text: 'Vendido' },
+      RESERVADO: { color: 'warning', text: 'Reservado' },
+      DAÑADO: { color: 'error', text: 'Dañado' }
+    };
+    
+    const estadoInfo = estados[estado] || { color: 'default', text: estado || 'Desconocido' };
+    return <Tag color={estadoInfo.color}>{estadoInfo.text}</Tag>;
+  };
+
+  // Render transaction type tag
+  const renderTipoTransaccion = (tipo) => {
+    if (!tipo) {
+      return <Tag color="default">No especificado</Tag>;
+    }
+    
+    const isIngreso = tipo.categoria === 'INGRESO';
+    const color = isIngreso ? 'green' : 'red';
+    const nombre = tipo.nombre || 'Desconocido';
+    
+    return <Tag color={color}>{nombre}</Tag>;
+  };
+
   const getEstadoTag = (estado) => {
     const estados = {
       DISPONIBLE: { color: 'success', text: 'Disponible' },
@@ -133,6 +335,28 @@ const VehiculoDetalle = () => {
     
     const estadoInfo = estados[estado] || { color: 'default', text: 'Desconocido' };
     return <Tag color={estadoInfo.color}>{estadoInfo.text}</Tag>;
+  };
+
+  // Format currency with color based on context (transaction type or vehicle info)
+  const formatCurrency = (amount, tipo) => {
+    const formattedAmount = new Intl.NumberFormat('es-CR', {
+      style: 'currency',
+      currency: 'CRC',
+      minimumFractionDigits: 0
+    }).format(amount);
+    
+    // If tipo is provided, format as transaction (with + or -)
+    if (tipo !== undefined) {
+      const isIngreso = tipo === 'INGRESO';
+      return (
+        <span style={{ color: isIngreso ? '#52c41a' : '#f5222d' }}>
+          {isIngreso ? '+' : '-'} {formattedAmount}
+        </span>
+      );
+    }
+    
+    // Default formatting for vehicle info (no sign, default color)
+    return formattedAmount;
   };
 
   // Format dates safely
@@ -267,14 +491,22 @@ const VehiculoDetalle = () => {
                 <Descriptions.Item label="Inversión Total">
                   <strong>{formatCurrency(vehiculo.inversionTotal || 0)}</strong>
                 </Descriptions.Item>
-                <Descriptions.Item label="Costo Recuperado">
-                  {formatCurrency(vehiculo.costoRecuperado || 0)}
+                <Descriptions.Item label="Ingresos">
+                  <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                    {formatCurrency(vehiculo.ingresos || 0)}
+                  </span>
                 </Descriptions.Item>
-                <Descriptions.Item label="Costo Pendiente">
+                <Descriptions.Item label="Egresos">
+                  <span style={{ color: '#f5222d', fontWeight: 500 }}>
+                    {formatCurrency(vehiculo.egresos || 0)}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Balance Neto">
                   <strong style={{
-                    color: (vehiculo.costoPendiente || 0) <= 0 ? '#52c41a' : '#f5222d'
+                    color: (vehiculo.balanceNeto || 0) > 0 ? '#52c41a' : 
+                          (vehiculo.balanceNeto || 0) < 0 ? '#f5222d' : 'inherit'
                   }}>
-                    {formatCurrency(vehiculo.costoPendiente || 0)}
+                    {formatCurrency(vehiculo.balanceNeto || 0)}
                   </strong>
                 </Descriptions.Item>
                 {vehiculo.precioVenta && (
@@ -299,17 +531,87 @@ const VehiculoDetalle = () => {
               <span><ToolOutlined /> Repuestos</span>
             } key="2">
               <div style={{ marginTop: '16px' }}>
-                <div style={{ textAlign: 'center', padding: '24px' }}>
-                  <ToolOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '16px' }} />
-                  <p>Los repuestos se gestionan desde el módulo de Inventario.</p>
+                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text strong>Repuestos extraídos de este vehículo</Text>
                   <Button 
                     type="primary" 
-                    style={{ marginTop: '16px' }}
+                    size="small"
                     onClick={() => navigate(`/inventario/nuevo?vehiculoId=${vehiculo.id}`)}
                   >
                     Agregar Repuesto
                   </Button>
                 </div>
+
+                {loadingRepuestos ? (
+                  <div style={{ textAlign: 'center', padding: '24px' }}>
+                    <Spin />
+                  </div>
+                ) : repuestos && repuestos.length > 0 ? (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="ant-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>Código</th>
+                          <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>Parte</th>
+                          <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>Descripción</th>
+                          <th style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>Precio Venta</th>
+                          <th style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>Estado</th>
+                          <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>Ubicación</th>
+                          <th style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {repuestos.map((repuesto) => (
+                          <tr key={repuesto.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                            <td style={{ padding: '8px' }}>
+                              <Button
+                                type="link"
+                                style={{ padding: 0, height: 'auto' }}
+                                onClick={() => navigate(`/inventario/${repuesto.id}`)}
+                              >
+                                {repuesto.codigoRepuesto || 'Sin código'}
+                              </Button>
+                            </td>
+                            <td style={{ padding: '8px' }}>
+                              <Tag color="blue">{repuesto.parteVehiculo || 'N/A'}</Tag>
+                            </td>
+                            <td style={{ padding: '8px' }}>{repuesto.descripcion || 'Sin descripción'}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>
+                              {formatCurrency(repuesto.precioVenta || 0)}
+                            </td>
+                            <td style={{ padding: '8px', textAlign: 'center' }}>
+                              {getEstadoRepuestoTag(repuesto.estado)}
+                            </td>
+                            <td style={{ padding: '8px', fontSize: '0.85em' }}>
+                              {repuesto.codigoUbicacion || 'Sin ubicación'}
+                            </td>
+                            <td style={{ padding: '8px', textAlign: 'center' }}>
+                              <Button 
+                                type="link" 
+                                size="small"
+                                onClick={() => navigate(`/inventario/${repuesto.id}`)}
+                              >
+                                Ver
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '24px' }}>
+                    <ToolOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '16px' }} />
+                    <p>No hay repuestos registrados para este vehículo.</p>
+                    <Button 
+                      type="primary" 
+                      style={{ marginTop: '16px' }}
+                      onClick={() => navigate(`/inventario/nuevo?vehiculoId=${vehiculo.id}`)}
+                    >
+                      Agregar Repuesto
+                    </Button>
+                  </div>
+                )}
               </div>
             </TabPane>
             
@@ -346,31 +648,30 @@ const VehiculoDetalle = () => {
                       </thead>
                       <tbody>
                         {transacciones.map((transaccion) => {
-                          const esIngreso = transaccion.tipo_transaccion?.categoria === 'INGRESO' || 
-                                           transaccion.categoria === 'INGRESO' ||
-                                           transaccion.monto > 0;
+                          // Determine if it's an income or expense
+                          const tipo = transaccion.tipo_transaccion || {};
+                          const esIngreso = tipo.categoria === 'INGRESO' || 
+                                         (tipo.nombre && tipo.nombre.toLowerCase().includes('venta')) ||
+                                         transaccion.monto > 0;
+                          
+                          // Format the date
+                          const fecha = Array.isArray(transaccion.fecha) 
+                            ? new Date(transaccion.fecha[0], transaccion.fecha[1] - 1, transaccion.fecha[2])
+                            : new Date(transaccion.fecha);
                           
                           return (
                             <tr key={transaccion.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                               <td style={{ padding: '8px' }}>{formatDate(transaccion.fecha)}</td>
-                              <td style={{ padding: '8px' }}>
-                                <Tag color={esIngreso ? 'green' : 'red'}>
-                                  {transaccion.tipo_transaccion?.nombre || transaccion.tipo || 'Transacción'}
-                                </Tag>
-                              </td>
-                              <td style={{ 
-                                padding: '8px', 
-                                textAlign: 'right',
-                                color: esIngreso ? '#52c41a' : '#f5222d'
-                              }}>
-                                {esIngreso ? '+' : '-'}{formatCurrency(Math.abs(transaccion.monto || 0))}
+                              <td style={{ padding: '8px' }}>{renderTipoTransaccion(transaccion.tipo_transaccion)}</td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>
+                                {formatCurrency(transaccion.monto, transaccion.tipo_transaccion?.categoria)}
                               </td>
                               <td style={{ padding: '8px' }}>{transaccion.descripcion || 'Sin descripción'}</td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>
                                 <Button 
                                   type="link" 
                                   size="small"
-                                  onClick={() => navigate(`/finanzas/${transaccion.id}`)}
+                                  onClick={() => navigate(`/finanzas/transacciones/${transaccion.id}`)}
                                 >
                                   Ver
                                 </Button>
