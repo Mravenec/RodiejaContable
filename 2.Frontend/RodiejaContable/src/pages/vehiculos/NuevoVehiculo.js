@@ -264,8 +264,13 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const createVehiculo = useCreateVehiculo({
     onSuccess: () => {
       message.success('Vehículo guardado exitosamente');
-      // Usar window.location para asegurar la recarga completa de la página
-      window.location.href = '/vehiculos';
+      // Use a slightly longer timeout and ensure navigation happens after state updates
+      setTimeout(() => {
+        navigate('/vehiculos', { 
+          replace: true,
+          state: { from: 'create' }  // Optional: for tracking navigation source
+        });
+      }, 1000);  // Increased from 500ms to 1000ms
     },
     onError: (error) => {
       const errorMessage = error.response?.data?.message || 'Error al guardar el vehículo';
@@ -274,7 +279,10 @@ const NuevoVehiculo = ({ editMode = false }) => {
       setError(errorMessage);
     },
     onSettled: () => {
-      setIsSubmitting(false);
+      // Ensure this runs after navigation
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 1500);
     }
   });
   
