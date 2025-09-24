@@ -515,7 +515,7 @@ Content-Type: application/json
   "comisiones": 2000.00,
   "imagenUrl": "https://mi-servidor/vehiculos/TOCO-001.jpg",
   "fechaIngreso": "2025-09-18",
-  "estado": "DISPONIBLE",
+  "estado": "DESARMADO",
   "precioVenta": null,
   "fechaVenta": null,
   "notas": "Vehículo en buen estado, recuperado de aseguradora, llantas al 80%."

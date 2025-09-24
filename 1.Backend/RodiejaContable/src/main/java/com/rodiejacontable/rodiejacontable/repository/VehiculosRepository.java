@@ -3,6 +3,7 @@ package com.rodiejacontable.rodiejacontable.repository;
 import static com.rodiejacontable.database.jooq.Tables.VEHICULOS;
 
 import com.rodiejacontable.database.jooq.enums.VehiculosEstado;
+import java.time.LocalDateTime;
 import com.rodiejacontable.database.jooq.tables.pojos.Vehiculos;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,26 +79,33 @@ public class VehiculosRepository {
     }
     
     public Vehiculos save(Vehiculos vehiculo) {
-        return dsl.insertInto(VEHICULOS)
-                 .set(VEHICULOS.CODIGO_VEHICULO, vehiculo.getCodigoVehiculo())
-                 .set(VEHICULOS.GENERACION_ID, vehiculo.getGeneracionId())
-                 .set(VEHICULOS.IMAGEN_URL, vehiculo.getImagenUrl())
-                 .set(VEHICULOS.ANIO, vehiculo.getAnio())
-                 .set(VEHICULOS.PRECIO_COMPRA, vehiculo.getPrecioCompra())
-                 .set(VEHICULOS.COSTO_GRUA, vehiculo.getCostoGrua())
-                 .set(VEHICULOS.COMISIONES, vehiculo.getComisiones())
-                 .set(VEHICULOS.INVERSION_TOTAL, vehiculo.getInversionTotal())
-                 .set(VEHICULOS.FECHA_INGRESO, vehiculo.getFechaIngreso())
-                 .set(VEHICULOS.ESTADO, VehiculosEstado.DISPONIBLE)
-                 .set(VEHICULOS.PRECIO_VENTA, vehiculo.getPrecioVenta())
-                 .set(VEHICULOS.FECHA_VENTA, vehiculo.getFechaVenta())
-                 .set(VEHICULOS.ACTIVO, vehiculo.getActivo())
-                 .set(VEHICULOS.NOTAS, vehiculo.getNotas())
-                 .set(VEHICULOS.FECHA_CREACION, vehiculo.getFechaCreacion())
-                 .set(VEHICULOS.FECHA_ACTUALIZACION, vehiculo.getFechaActualizacion())
-                 .returning()
-                 .fetchOne()
-                 .into(Vehiculos.class);
+        // Insertar el vehículo y obtener el ID generado
+        Integer id = dsl.insertInto(VEHICULOS)
+          .set(VEHICULOS.CODIGO_VEHICULO, vehiculo.getCodigoVehiculo())
+          .set(VEHICULOS.GENERACION_ID, vehiculo.getGeneracionId())
+          .set(VEHICULOS.IMAGEN_URL, vehiculo.getImagenUrl())
+          .set(VEHICULOS.ANIO, vehiculo.getAnio())
+          .set(VEHICULOS.PRECIO_COMPRA, vehiculo.getPrecioCompra())
+          .set(VEHICULOS.COSTO_GRUA, vehiculo.getCostoGrua() != null ? vehiculo.getCostoGrua() : BigDecimal.ZERO)
+          .set(VEHICULOS.COMISIONES, vehiculo.getComisiones() != null ? vehiculo.getComisiones() : BigDecimal.ZERO)
+          .set(VEHICULOS.INVERSION_TOTAL, vehiculo.getInversionTotal())
+          .set(VEHICULOS.FECHA_INGRESO, vehiculo.getFechaIngreso() != null ? vehiculo.getFechaIngreso() : LocalDate.now())
+          .set(VEHICULOS.ESTADO, vehiculo.getEstado() != null ? vehiculo.getEstado() : VehiculosEstado.DISPONIBLE)
+          .set(VEHICULOS.PRECIO_VENTA, vehiculo.getPrecioVenta())
+          .set(VEHICULOS.FECHA_VENTA, vehiculo.getFechaVenta())
+          .set(VEHICULOS.ACTIVO, vehiculo.getActivo() != null ? vehiculo.getActivo() : (byte)1)
+          .set(VEHICULOS.NOTAS, vehiculo.getNotas())
+          .set(VEHICULOS.FECHA_CREACION, vehiculo.getFechaCreacion() != null ? vehiculo.getFechaCreacion() : LocalDateTime.now())
+          .set(VEHICULOS.FECHA_ACTUALIZACION, LocalDateTime.now())
+          .returning(VEHICULOS.ID)
+          .fetchOne()
+          .getValue(VEHICULOS.ID);
+        
+        // Establecer el ID generado en el objeto vehículo
+        vehiculo.setId(id);
+        
+        // Retornar el vehículo con el ID asignado
+        return vehiculo;
     }
     
     public Vehiculos update(Vehiculos vehiculo) {

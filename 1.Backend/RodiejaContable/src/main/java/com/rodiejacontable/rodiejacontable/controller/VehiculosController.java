@@ -71,32 +71,83 @@ public class VehiculosController {
     }
     
     @PostMapping
-    public ResponseEntity<Vehiculos> create(@RequestBody Vehiculos vehiculo) {
+    public ResponseEntity<Vehiculos> create(@RequestBody Map<String, Object> vehiculoData) {
         // Validar que se proporcione un vehículo
-        if (vehiculo == null) {
+        if (vehiculoData == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         
+        // Log para depuración
+        System.out.println("Datos recibidos en la solicitud: " + vehiculoData);
+        
         // Validar campos obligatorios
-        if (vehiculo.getGeneracionId() == null || vehiculo.getAnio() == null || 
-            vehiculo.getPrecioCompra() == null) {
+        if (vehiculoData.get("generacionId") == null || vehiculoData.get("anio") == null || 
+            vehiculoData.get("precioCompra") == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        // Crear un nuevo objeto Vehiculos
+        Vehiculos vehiculo = new Vehiculos();
+        
+        // Mapear los campos del JSON al objeto Vehiculos
+        vehiculo.setGeneracionId(Integer.valueOf(vehiculoData.get("generacionId").toString()));
+        vehiculo.setAnio(Integer.valueOf(vehiculoData.get("anio").toString()));
+        vehiculo.setPrecioCompra(new BigDecimal(vehiculoData.get("precioCompra").toString()));
+        
+        // Manejar el estado
+        if (vehiculoData.containsKey("estado") && vehiculoData.get("estado") != null) {
+            try {
+                String estadoStr = vehiculoData.get("estado").toString();
+                System.out.println("Estado recibido: " + estadoStr);
+                VehiculosEstado estado = VehiculosEstado.valueOf(estadoStr);
+                System.out.println("Estado convertido a enum: " + estado);
+                vehiculo.setEstado(estado);
+                System.out.println("Estado asignado al vehículo: " + vehiculo.getEstado());
+            } catch (IllegalArgumentException e) {
+                // Si el valor no coincide con ningún enum, se deja el valor por defecto
+                System.out.println("Error al convertir el estado: " + e.getMessage());
+                vehiculo.setEstado(VehiculosEstado.DISPONIBLE);
+            }
         }
         
         // Establecer valores por defecto para campos opcionales
-        if (vehiculo.getCostoGrua() == null) {
+        if (vehiculoData.containsKey("costoGrua") && vehiculoData.get("costoGrua") != null) {
+            vehiculo.setCostoGrua(new BigDecimal(vehiculoData.get("costoGrua").toString()));
+        } else {
             vehiculo.setCostoGrua(BigDecimal.ZERO);
         }
         
-        if (vehiculo.getComisiones() == null) {
+        if (vehiculoData.containsKey("comisiones") && vehiculoData.get("comisiones") != null) {
+            vehiculo.setComisiones(new BigDecimal(vehiculoData.get("comisiones").toString()));
+        } else {
             vehiculo.setComisiones(BigDecimal.ZERO);
         }
         
-        if (vehiculo.getFechaIngreso() == null) {
+        if (vehiculoData.containsKey("fechaIngreso") && vehiculoData.get("fechaIngreso") != null) {
+            vehiculo.setFechaIngreso(LocalDate.parse(vehiculoData.get("fechaIngreso").toString()));
+        } else {
             vehiculo.setFechaIngreso(LocalDate.now());
         }
         
+        if (vehiculoData.containsKey("imagenUrl") && vehiculoData.get("imagenUrl") != null) {
+            vehiculo.setImagenUrl(vehiculoData.get("imagenUrl").toString());
+        }
+        
+        if (vehiculoData.containsKey("precioVenta") && vehiculoData.get("precioVenta") != null) {
+            vehiculo.setPrecioVenta(new BigDecimal(vehiculoData.get("precioVenta").toString()));
+        }
+        
+        if (vehiculoData.containsKey("fechaVenta") && vehiculoData.get("fechaVenta") != null) {
+            vehiculo.setFechaVenta(LocalDate.parse(vehiculoData.get("fechaVenta").toString()));
+        }
+        
+        if (vehiculoData.containsKey("notas") && vehiculoData.get("notas") != null) {
+            vehiculo.setNotas(vehiculoData.get("notas").toString());
+        }
+        
+        System.out.println("Vehículo antes de guardar: " + vehiculo);
         Vehiculos nuevoVehiculo = vehiculosService.create(vehiculo);
+        System.out.println("Vehículo después de guardar: " + nuevoVehiculo);
         return new ResponseEntity<>(nuevoVehiculo, HttpStatus.CREATED);
     }
     

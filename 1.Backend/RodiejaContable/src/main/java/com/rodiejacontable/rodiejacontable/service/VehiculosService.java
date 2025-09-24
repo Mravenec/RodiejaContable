@@ -67,6 +67,7 @@ public class VehiculosService {
             vehiculo.setFechaIngreso(LocalDate.now());
         }
         
+        // No sobrescribir el estado si ya viene definido
         if (vehiculo.getEstado() == null) {
             vehiculo.setEstado(VehiculosEstado.DISPONIBLE);
         }
