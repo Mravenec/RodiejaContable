@@ -15,6 +15,7 @@ import finanzaService from '../../api/finanzas';
 import inventarioService from '../../api/inventario';
 import { getTiposTransacciones } from '../../api/transacciones';
 import { formatCurrency } from '../../utils/formatters';
+import api from '../../api/axios'; // Asegúrate de que esta importación apunte correctamente a tu instancia de axios
 
 // Servicio para repuestos
 const repuestosService = {
@@ -177,8 +178,52 @@ const VehiculoDetalle = () => {
         throw new Error('Vehículo no encontrado');
       }
 
-      console.log('Vehículo encontrado:', vehiculoEncontrado);
-      setVehiculo(vehiculoEncontrado);
+      // The vehiculosResponse already includes generacion attached from vehiculoService
+      let vehiculoConGeneracion = vehiculoEncontrado;
+
+      // If generacion is present but lacks nested modelo/marca, fetch them
+      if (vehiculoConGeneracion.generacion && !vehiculoConGeneracion.generacion.modelo) {
+        try {
+          const generacion = vehiculoConGeneracion.generacion;
+
+          // Fetch modelo
+          const modeloResponse = await api.get(`/modelos/${generacion.modeloId}`);
+          const modelo = modeloResponse.data || { id: generacion.modeloId };
+
+          // Fetch marca
+          const marcaResponse = await api.get(`/marcas/${modelo.marcaId}`);
+          const marca = marcaResponse.data || { id: modelo.marcaId, nombre: 'Marca no disponible' };
+
+          // Attach nested structure
+          vehiculoConGeneracion = {
+            ...vehiculoEncontrado,
+            generacion: {
+              ...generacion,
+              modelo: {
+                ...modelo,
+                marca: marca
+              }
+            }
+          };
+
+          console.log('Vehículo completo con jerarquía:', vehiculoConGeneracion);
+        } catch (nestedError) {
+          console.error('Error fetching nested data (modelo/marca):', nestedError);
+          // Fallback: attach empty objects to avoid crashes
+          vehiculoConGeneracion = {
+            ...vehiculoEncontrado,
+            generacion: {
+              ...vehiculoEncontrado.generacion,
+              modelo: {
+                nombre: 'Modelo no disponible',
+                marca: { nombre: 'Marca no disponible' }
+              }
+            }
+          };
+        }
+      }
+
+      setVehiculo(vehiculoConGeneracion);
 
     } catch (error) {
       console.error('Error loading vehicle:', error);
