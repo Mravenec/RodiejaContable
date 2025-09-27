@@ -13,7 +13,8 @@ import {
   Col,
   Space,
   message,
-  Input
+  Input,
+  Tabs
 } from 'antd';
 import {
   CarOutlined,
@@ -21,7 +22,9 @@ import {
   UpOutlined,
   RightOutlined,
   InfoCircleOutlined,
-  SearchOutlined
+  SearchOutlined,
+  ToolOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 
 import vehiculoService from '../../api/vehiculos';
@@ -33,6 +36,7 @@ import { renderEstado } from '../../utils/vehicleUtils';
 
 const { Panel } = Collapse;
 const { Text } = Typography;
+const { TabPane } = Tabs;
 
 /* ========================= Servicios para transacciones ========================= */
 // Servicio para repuestos (copiado de VehiculoDetalle)
@@ -385,7 +389,9 @@ const VehiculosJerarquicos = () => {
   const [filteredMarcas, setFilteredMarcas] = useState([]);
   const [expandedKeys, setExpandedKeys] = useState({});
   const [transacciones, setTransacciones] = useState({});
+  const [repuestos, setRepuestos] = useState({});
   const [loadingTransacciones, setLoadingTransacciones] = useState({});
+  const [loadingRepuestos, setLoadingRepuestos] = useState({});
   const [showRawData, setShowRawData] = useState(false);
   const [rawData, setRawData] = useState(null);
   
@@ -724,6 +730,34 @@ const VehiculosJerarquicos = () => {
     }
   }, [transacciones]);
 
+  // Función para cargar repuestos del vehículo
+  const loadRepuestos = useCallback(async (vehiculoId) => {
+    if (repuestos[vehiculoId]) {
+      return; // Si ya tenemos los repuestos, no hacer nada
+    }
+
+    try {
+      setLoadingRepuestos(prev => ({ ...prev, [vehiculoId]: true }));
+      const repuestosData = await repuestosService.getRepuestosPorVehiculo(vehiculoId);
+      
+      setRepuestos(prev => ({
+        ...prev,
+        [vehiculoId]: Array.isArray(repuestosData) ? repuestosData : []
+      }));
+    } catch (error) {
+      console.error(`Error al cargar repuestos del vehículo ${vehiculoId}:`, error);
+      message.warning(`No se pudieron cargar los repuestos: ${error.message || 'Error desconocido'}`);
+      
+      // Establecer array vacío en caso de error
+      setRepuestos(prev => ({
+        ...prev,
+        [vehiculoId]: []
+      }));
+    } finally {
+      setLoadingRepuestos(prev => ({ ...prev, [vehiculoId]: false }));
+    }
+  }, [repuestos]);
+
   const columnasTransacciones = useMemo(() => ([
     {
       title: 'Fecha',
@@ -779,9 +813,24 @@ const VehiculosJerarquicos = () => {
     }
   ]), []);
 
+  // Helper function to get estado tag for repuestos (copiado de VehiculoDetalle)
+  const getEstadoRepuestoTag = (estado) => {
+    const estados = {
+      STOCK: { color: 'success', text: 'Disponible' },
+      VENDIDO: { color: 'error', text: 'Vendido' },
+      RESERVADO: { color: 'warning', text: 'Reservado' },
+      DAÑADO: { color: 'error', text: 'Dañado' }
+    };
+    
+    const estadoInfo = estados[estado] || { color: 'default', text: estado || 'Desconocido' };
+    return <Tag color={estadoInfo.color}>{estadoInfo.text}</Tag>;
+  };
+
   const renderVehiculo = (vehiculo) => {
     const tieneTransacciones = transacciones[vehiculo.id]?.length > 0;
-    const cargando = loadingTransacciones[vehiculo.id];
+    const tieneRepuestos = repuestos[vehiculo.id]?.length > 0;
+    const cargandoTransacciones = loadingTransacciones[vehiculo.id];
+    const cargandoRepuestos = loadingRepuestos[vehiculo.id];
     const estaExpandido = expandedKeys[vehiculo.id];
 
     return (
@@ -799,9 +848,10 @@ const VehiculosJerarquicos = () => {
               // Actualizar estado de expansión
               setExpandedKeys(prev => ({ ...prev, [vehiculo.id]: nuevoEstado }));
               
-              // Cargar transacciones si se está expandiendo
+              // Cargar transacciones y repuestos si se está expandiendo
               if (nuevoEstado) {
                 handleExpand(vehiculo.id, true);
+                loadRepuestos(vehiculo.id);
               }
             }}
           />
@@ -844,213 +894,274 @@ const VehiculosJerarquicos = () => {
             </div>
           }
         >
-          {cargando ? (
-            <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <Spin size="small" />
-              <div style={{ marginTop: 8 }}>Cargando transacciones...</div>
-            </div>
-          ) : (
-            <div className="vehiculo-detalle" style={{ padding: '8px 0' }}>
-              <Card size="small" style={{ marginBottom: 16 }}>
-                <div style={{ marginBottom: 12 }}>
-                  <Text strong style={{ display: 'block', marginBottom: 8 }}>Detalles del vehículo</Text>
-                  <Row gutter={[16, 8]}>
+          <div className="vehiculo-detalle" style={{ padding: '8px 0' }}>
+            <Card size="small" style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 12 }}>
+                <Text strong style={{ display: 'block', marginBottom: 8 }}>Detalles del vehículo</Text>
+                <Row gutter={[16, 8]}>
+                  <Col xs={24} sm={12} md={8}>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: '0.85em' }}>Fecha de ingreso</Text>
+                      <div style={{ marginTop: 2 }}>{toDateStr(vehiculo.fecha_ingreso)}</div>
+                    </div>
+                  </Col>
+                  {!isNullish(vehiculo.fecha_venta) && (
                     <Col xs={24} sm={12} md={8}>
                       <div>
-                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Fecha de ingreso</Text>
-                        <div style={{ marginTop: 2 }}>{toDateStr(vehiculo.fecha_ingreso)}</div>
+                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Fecha de venta</Text>
+                        <div style={{ marginTop: 2 }}>{toDateStr(vehiculo.fecha_venta)}</div>
                       </div>
                     </Col>
-                    {!isNullish(vehiculo.fecha_venta) && (
-                      <Col xs={24} sm={12} md={8}>
-                        <div>
-                          <Text type="secondary" style={{ fontSize: '0.85em' }}>Fecha de venta</Text>
-                          <div style={{ marginTop: 2 }}>{toDateStr(vehiculo.fecha_venta)}</div>
-                        </div>
-                      </Col>
-                    )}
-                    <Col xs={12} sm={6} md={4}>
-                      <div>
-                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Costo grúa</Text>
-                        <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.costo_grua)}</div>
-                      </div>
-                    </Col>
-                    <Col xs={12} sm={6} md={4}>
-                      <div>
-                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Comisiones</Text>
-                        <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.comisiones)}</div>
-                      </div>
-                    </Col>
-                    <Col xs={12} sm={6} md={4}>
-                      <div>
-                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Precio de compra</Text>
-                        <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.precio_compra)}</div>
-                      </div>
-                    </Col>
-                    <Col xs={24} sm={12} md={8}>
-                      <div>
-                        <Text type="secondary" style={{ fontSize: '0.85em', display: 'block', marginBottom: 2 }}>Monto recuperado</Text>
-                        <div style={{ color: '#52c41a', marginBottom: 4 }}>{formatMonto(vehiculo.costo_recuperado)}</div>
-                        {vehiculo.inversion_total > 0 && (() => {
-                          const porcentaje = ((vehiculo.costo_recuperado || 0) / vehiculo.inversion_total) * 100;
-                          const porcentajeBase = Math.min(100, porcentaje);
-                          const porcentajeExcedente = Math.max(0, porcentaje - 100);
-                          
-                          return (
-                            <div> 
-                              <div style={{ 
-                                width: '100%', 
-                                backgroundColor: '#f0f0f0', 
-                                borderRadius: 4,
-                                marginTop: 4,
-                                height: 6,
-                                position: 'relative',
-                                overflow: 'hidden'
-                              }}>
-                                {/* Barra base (hasta 100%) */}
-                                {porcentajeBase > 0 && (
-                                  <div 
-                                    style={{
-                                      width: '100%',
-                                      height: '100%',
-                                      backgroundColor: '#52c41a',
-                                      position: 'absolute',
-                                      left: 0,
-                                      top: 0,
-                                      transition: 'all 0.3s',
-                                      maxWidth: `${Math.min(100, porcentajeBase)}%`
-                                    }}
-                                  />
-                                )}
-                                
-                                {/* Barra de excedente (más del 100%) */}
-                                {porcentajeExcedente > 0 && (
-                                  <div 
-                                    style={{
-                                      width: `${porcentajeExcedente}%`,
-                                      height: '100%',
-                                      backgroundColor: '#faad14', // Dorado para el excedente
-                                      position: 'absolute',
-                                      right: 0,
-                                      top: 0,
-                                      transition: 'all 0.3s',
-                                      borderTopRightRadius: 4,
-                                      borderBottomRightRadius: 4
-                                    }}
-                                  />
-                                )}
-                              </div>
+                  )}
+                  <Col xs={12} sm={6} md={4}>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: '0.85em' }}>Costo grúa</Text>
+                      <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.costo_grua)}</div>
+                    </div>
+                  </Col>
+                  <Col xs={12} sm={6} md={4}>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: '0.85em' }}>Comisiones</Text>
+                      <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.comisiones)}</div>
+                    </div>
+                  </Col>
+                  <Col xs={12} sm={6} md={4}>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: '0.85em' }}>Precio de compra</Text>
+                      <div style={{ marginTop: 2 }}>{formatMonto(vehiculo.precio_compra)}</div>
+                    </div>
+                  </Col>
+                  <Col xs={24} sm={12} md={8}>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: '0.85em', display: 'block', marginBottom: 2 }}>Monto recuperado</Text>
+                      <div style={{ color: '#52c41a', marginBottom: 4 }}>{formatMonto(vehiculo.costo_recuperado)}</div>
+                      {vehiculo.inversion_total > 0 && (() => {
+                        const porcentaje = ((vehiculo.costo_recuperado || 0) / vehiculo.inversion_total) * 100;
+                        const porcentajeBase = Math.min(100, porcentaje);
+                        const porcentajeExcedente = Math.max(0, porcentaje - 100);
+                        
+                        return (
+                          <div> 
+                            <div style={{ 
+                              width: '100%', 
+                              backgroundColor: '#f0f0f0', 
+                              borderRadius: 4,
+                              marginTop: 4,
+                              height: 6,
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}>
+                              {/* Barra base (hasta 100%) */}
+                              {porcentajeBase > 0 && (
+                                <div 
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    backgroundColor: '#52c41a',
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: 0,
+                                    transition: 'all 0.3s',
+                                    maxWidth: `${Math.min(100, porcentajeBase)}%`
+                                  }}
+                                />
+                              )}
                               
-                              <div style={{ 
-                                fontSize: 12, 
-                                color: '#666',
-                                marginTop: 4,
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}>
-                                <span>
-                                  {porcentaje.toLocaleString('es-CR', { 
-                                    minimumFractionDigits: 2, 
-                                    maximumFractionDigits: 2 
-                                  })}% de la inversión
-                                </span>
-                                {porcentajeExcedente > 0 && (
-                                  <span style={{ 
-                                    color: '#d48806', // Color de texto para el excedente
-                                    fontWeight: 500,
-                                    marginLeft: 8,
-                                    display: 'inline-flex',
-                                    alignItems: 'center'
-                                  }}>
-                                    <span style={{ 
-                                      display: 'inline-block',
-                                      width: 8, 
-                                      height: 8, 
-                                      borderRadius: '50%',
-                                      backgroundColor: '#faad14',
-                                      marginRight: 4
-                                    }} />
-                                    +{porcentajeExcedente.toFixed(2)}% de ganancia
-                                  </span>
-                                )}
-                              </div>
+                              {/* Barra de excedente (más del 100%) */}
+                              {porcentajeExcedente > 0 && (
+                                <div 
+                                  style={{
+                                    width: `${porcentajeExcedente}%`,
+                                    height: '100%',
+                                    backgroundColor: '#faad14', // Dorado para el excedente
+                                    position: 'absolute',
+                                    right: 0,
+                                    top: 0,
+                                    transition: 'all 0.3s',
+                                    borderTopRightRadius: 4,
+                                    borderBottomRightRadius: 4
+                                  }}
+                                />
+                              )}
                             </div>
-                          );
-                        })()}
-                      </div>
-                    </Col>
-                    <Col xs={12} sm={6} md={4}>
-                      <div>
-                        <Text type="secondary" style={{ fontSize: '0.85em' }}>Monto pendiente</Text>
-                        <div style={{ marginTop: 2, color: 
-                          vehiculo.costo_pendiente > 0 ? '#f5222d' : // Rojo para deuda
-                          vehiculo.costo_pendiente < 0 ? '#d48806' : // Dorado para ganancia (mismo que el texto de ganancia)
-                          '#52c41a' // Verde para saldo cero
-                        }}>
-                          {vehiculo.costo_pendiente < 0 ? '+' : ''}{formatMonto(Math.abs(vehiculo.costo_pendiente))}
-                        </div>
-                      </div>
-                    </Col>
-                  </Row>
-                  {!isNullish(vehiculo.notas) && (
-                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #f0f0f0' }}>
-                      <Text type="secondary" style={{ fontSize: '0.85em' }}>Notas</Text>
-                      <div 
-                        style={{ 
-                          marginTop: 4, 
-                          whiteSpace: 'pre-line',
-                          lineHeight: 1.6,
-                          padding: '4px 0'
-                        }}
-                      >
-                        {vehiculo.notas}
+                            
+                            <div style={{ 
+                              fontSize: 12, 
+                              color: '#666',
+                              marginTop: 4,
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <span>
+                                {porcentaje.toLocaleString('es-CR', { 
+                                  minimumFractionDigits: 2, 
+                                  maximumFractionDigits: 2 
+                                })}% de la inversión
+                              </span>
+                              {porcentajeExcedente > 0 && (
+                                <span style={{ 
+                                  color: '#d48806', // Color de texto para el excedente
+                                  fontWeight: 500,
+                                  marginLeft: 8,
+                                  display: 'inline-flex',
+                                  alignItems: 'center'
+                                }}>
+                                  <span style={{ 
+                                    display: 'inline-block',
+                                    width: 8, 
+                                    height: 8, 
+                                    borderRadius: '50%',
+                                    backgroundColor: '#faad14',
+                                    marginRight: 4
+                                  }} />
+                                  +{porcentajeExcedente.toFixed(2)}% de ganancia
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </Col>
+                  <Col xs={12} sm={6} md={4}>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: '0.85em' }}>Monto pendiente</Text>
+                      <div style={{ marginTop: 2, color: 
+                        vehiculo.costo_pendiente > 0 ? '#f5222d' : // Rojo para deuda
+                        vehiculo.costo_pendiente < 0 ? '#d48806' : // Dorado para ganancia (mismo que el texto de ganancia)
+                        '#52c41a' // Verde para saldo cero
+                      }}>
+                        {vehiculo.costo_pendiente < 0 ? '+' : ''}{formatMonto(Math.abs(vehiculo.costo_pendiente))}
                       </div>
                     </div>
+                  </Col>
+                </Row>
+                {!isNullish(vehiculo.notas) && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #f0f0f0' }}>
+                    <Text type="secondary" style={{ fontSize: '0.85em' }}>Notas</Text>
+                    <div 
+                      style={{ 
+                        marginTop: 4, 
+                        whiteSpace: 'pre-line',
+                        lineHeight: 1.6,
+                        padding: '4px 0'
+                      }}
+                    >
+                      {vehiculo.notas}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card size="small">
+              <Tabs defaultActiveKey="1">
+                <TabPane tab={<span><DollarOutlined /> Transacciones</span>} key="1">
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                    <Text strong>Historial de transacciones</Text>
+                    <Tag style={{ marginLeft: 8, borderRadius: 10 }}>
+                      {tieneTransacciones ? transacciones[vehiculo.id].length : '0'}
+                    </Tag>
+                  </div>
+
+                  {cargandoTransacciones ? (
+                    <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                      <Spin size="small" />
+                      <div style={{ marginTop: 8 }}>Cargando transacciones...</div>
+                    </div>
+                  ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                      <Table
+                        size="small"
+                        columns={columnasTransacciones}
+                        dataSource={tieneTransacciones ? transacciones[vehiculo.id] : []}
+                        rowKey={(record) => record.id || `${record.fecha}-${record.monto}`}
+                        pagination={tieneTransacciones && transacciones[vehiculo.id].length > 10 ? {
+                          pageSize: 10,
+                          size: 'small',
+                          showSizeChanger: false
+                        } : false}
+                        bordered
+                        style={{ minWidth: '600px' }}
+                        locale={{
+                          emptyText: (
+                            <Empty
+                              image={Empty.PRESENTED_IMAGE_SIMPLE}
+                              description={
+                                <span>
+                                  <InfoCircleOutlined style={{ marginRight: 4 }} />
+                                  No hay transacciones registradas
+                                </span>
+                              }
+                            />
+                          )
+                        }}
+                      />
+                    </div>
                   )}
-                </div>
-              </Card>
+                </TabPane>
 
-              <Card size="small">
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-                  <CarOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                  <Text strong>Transacciones</Text>
-                  <Tag style={{ marginLeft: 8, borderRadius: 10 }}>
-                    {tieneTransacciones ? transacciones[vehiculo.id].length : '0'}
-                  </Tag>
-                </div>
+                <TabPane tab={<span><ToolOutlined /> Repuestos</span>} key="2">
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                    <Text strong>Repuestos extraídos de este vehículo</Text>
+                    <Tag style={{ marginLeft: 8, borderRadius: 10 }}>
+                      {tieneRepuestos ? repuestos[vehiculo.id].length : '0'}
+                    </Tag>
+                  </div>
 
-                <div style={{ overflowX: 'auto' }}>
-                  <Table
-                    size="small"
-                    columns={columnasTransacciones}
-                    dataSource={tieneTransacciones ? transacciones[vehiculo.id] : []}
-                    rowKey={(record) => record.id || `${record.fecha}-${record.monto}`}
-                    pagination={tieneTransacciones && transacciones[vehiculo.id].length > 10 ? {
-                      pageSize: 10,
-                      size: 'small',
-                      showSizeChanger: false
-                    } : false}
-                    bordered
-                    style={{ minWidth: '600px' }}
-                    locale={{
-                      emptyText: (
-                        <Empty
-                          image={Empty.PRESENTED_IMAGE_SIMPLE}
-                          description={
-                            <span>
-                              <InfoCircleOutlined style={{ marginRight: 4 }} />
-                              No hay transacciones registradas
-                            </span>
-                          }
-                        />
-                      )
-                    }}
-                  />
-                </div>
-              </Card>
-            </div>
-          )}
+                  {cargandoRepuestos ? (
+                    <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                      <Spin size="small" />
+                      <div style={{ marginTop: 8 }}>Cargando repuestos...</div>
+                    </div>
+                  ) : tieneRepuestos ? (
+                    <div style={{ overflowX: 'auto' }}>
+                      <table className="ant-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>Código</th>
+                            <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>Parte</th>
+                            <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>Descripción</th>
+                            <th style={{ padding: '8px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>Precio Venta</th>
+                            <th style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>Estado</th>
+                            <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0' }}>Ubicación</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {repuestos[vehiculo.id].map((repuesto) => (
+                            <tr key={repuesto.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                              <td style={{ padding: '8px' }}>
+                                <Text strong>{repuesto.codigoRepuesto || 'Sin código'}</Text>
+                              </td>
+                              <td style={{ padding: '8px' }}>
+                                <Tag color="blue">{repuesto.parteVehiculo || 'N/A'}</Tag>
+                              </td>
+                              <td style={{ padding: '8px' }}>{repuesto.descripcion || 'Sin descripción'}</td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>
+                                {formatMonto(repuesto.precioVenta || 0)}
+                              </td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>
+                                {getEstadoRepuestoTag(repuesto.estado)}
+                              </td>
+                              <td style={{ padding: '8px', fontSize: '0.85em' }}>
+                                {repuesto.codigoUbicacion || 'Sin ubicación'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '24px' }}>
+                      <ToolOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '16px' }} />
+                      <p>No hay repuestos registrados para este vehículo.</p>
+                    </div>
+                  )}
+                </TabPane>
+              </Tabs>
+            </Card>
+          </div>
         </Panel>
       </Collapse>
     );
