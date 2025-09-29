@@ -60,6 +60,29 @@ const NuevoRepuesto = () => {
   console.log('Debug - Todos los vehículos:', todosVehiculos);
   console.log('Debug - Vehículos desarmados filtrados:', vehiculosDesarmados);
 
+  // Función para obtener texto completo del vehículo
+  const getVehiculoDisplayText = (vehiculo) => {
+    const codigo = vehiculo.codigo_vehiculo || 'Sin código';
+    const anio = vehiculo.anio || '';
+    
+    // Intentar obtener marca y modelo de diferentes estructuras posibles
+    let marca = '';
+    let modelo = '';
+    let generacion = '';
+    
+    if (vehiculo.generacion) {
+      if (typeof vehiculo.generacion === 'object') {
+        marca = vehiculo.generacion.marca || '';
+        modelo = vehiculo.generacion.modelo || '';
+        generacion = vehiculo.generacion.nombre || '';
+      }
+    }
+    
+    // Construir el texto de búsqueda
+    const partes = [codigo, anio, marca, modelo, generacion].filter(p => p);
+    return partes.join(' ');
+  };
+
   // Handlers para los dropdowns (solo para repuestos sin vehículo)
   const onMarcaChange = (marcaId) => {
     setMarcaSeleccionada(marcaId);
@@ -243,8 +266,8 @@ const NuevoRepuesto = () => {
           {/* Selector del tipo de repuesto */}
           <Form.Item label="Tipo de Repuesto">
             <Radio.Group value={tipoRepuesto} onChange={onTipoRepuestoChange}>
-              <Radio.Button value="con_vehiculo">🚗 Repuesto de Vehículo Específico</Radio.Button>
-              <Radio.Button value="sin_vehiculo">📦 Repuesto Genérico/Comprado</Radio.Button>
+              <Radio.Button value="con_vehiculo">Repuesto de Vehículo Específico</Radio.Button>
+              <Radio.Button value="sin_vehiculo">Repuesto Genérico/Comprado</Radio.Button>
             </Radio.Group>
           </Form.Item>
 
@@ -301,7 +324,7 @@ const NuevoRepuesto = () => {
               {tipoRepuesto === 'con_vehiculo' ? (
                 // OPCIÓN A: Repuesto de vehículo específico - Solo seleccionar vehículo
                 <div style={{ backgroundColor: '#f0f8ff', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <h4 style={{ color: '#1890ff', marginBottom: '12px' }}>🚗 Seleccionar Vehículo de Origen</h4>
+                  <h4 style={{ color: '#1890ff', marginBottom: '12px' }}>Seleccionar Vehículo de Origen</h4>
                   
                   {loadingVehiculos ? (
                     <p>Cargando vehículos...</p>
@@ -314,19 +337,47 @@ const NuevoRepuesto = () => {
                       rules={[{ required: true, message: 'Seleccione el vehículo de origen' }]}
                     >
                       <Select 
-                        placeholder="Seleccione el vehículo origen"
+                        placeholder="Buscar por código, marca, modelo o generación"
                         showSearch
-                        optionFilterProp="children"
-                        filterOption={(input, option) =>
-                          option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                        }
+                        filterOption={(input, option) => {
+                          const searchText = getVehiculoDisplayText(option.vehiculo);
+                          return searchText.toLowerCase().includes(input.toLowerCase());
+                        }}
+                        optionLabelProp="label"
                       >
-                        {vehiculosDesarmados.map(vehiculo => (
-                          <Option key={vehiculo.id} value={vehiculo.id}>
-                            {vehiculo.codigo_vehiculo} - {vehiculo.anio} 
-                            {vehiculo.generacion && ` (${vehiculo.generacion.marca || ''} ${vehiculo.generacion.modelo || ''})`}
-                          </Option>
-                        ))}
+                        {vehiculosDesarmados.map(vehiculo => {
+                          const codigo = vehiculo.codigo_vehiculo || 'Sin código';
+                          const anio = vehiculo.anio || '';
+                          let marca = '';
+                          let modelo = '';
+                          let generacion = '';
+                          
+                          if (vehiculo.generacion) {
+                            if (typeof vehiculo.generacion === 'object') {
+                              marca = vehiculo.generacion.marca || '';
+                              modelo = vehiculo.generacion.modelo || '';
+                              generacion = vehiculo.generacion.nombre || '';
+                            }
+                          }
+                          
+                          const label = `${codigo} - ${anio}${marca ? ` ${marca}` : ''}${modelo ? ` ${modelo}` : ''}${generacion ? ` ${generacion}` : ''}`;
+                          
+                          return (
+                            <Option 
+                              key={vehiculo.id} 
+                              value={vehiculo.id}
+                              label={label}
+                              vehiculo={vehiculo}
+                            >
+                              <div>
+                                <div style={{ fontWeight: 'bold' }}>{codigo}</div>
+                                <div style={{ fontSize: '0.9em', color: '#666' }}>
+                                  {anio}{marca ? ` | ${marca}` : ''}{modelo ? ` ${modelo}` : ''}{generacion ? ` (${generacion})` : ''}
+                                </div>
+                              </div>
+                            </Option>
+                          );
+                        })}
                       </Select>
                     </Form.Item>
                   )}
@@ -334,7 +385,7 @@ const NuevoRepuesto = () => {
               ) : (
                 // OPCIÓN B: Repuesto genérico - Seleccionar marca → modelo → generación
                 <div style={{ backgroundColor: '#f6ffed', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <h4 style={{ color: '#52c41a', marginBottom: '12px' }}>📦 Clasificar Repuesto Genérico</h4>
+                  <h4 style={{ color: '#52c41a', marginBottom: '12px' }}>Clasificar Repuesto Genérico</h4>
                   
                   <Form.Item
                     label="Marca"
