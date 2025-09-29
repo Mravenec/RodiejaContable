@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Form, 
@@ -346,7 +346,7 @@ const NuevoRepuesto = () => {
                         optionLabelProp="label"
                       >
                         {vehiculosDesarmados.map(vehiculo => {
-                          const codigo = vehiculo.codigo_vehiculo || 'Sin código';
+                          const codigo = vehiculo.codigoVehiculo|| 'Sin código';
                           const anio = vehiculo.anio || '';
                           let marca = '';
                           let modelo = '';
