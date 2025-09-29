@@ -45,10 +45,20 @@ const NuevoRepuesto = () => {
   const { data: generaciones = [], isLoading: loadingGeneraciones } = useGeneraciones(modeloSeleccionado, !!modeloSeleccionado && tipoRepuesto === 'sin_vehiculo');
   
   // Para repuestos CON vehículo: cargar todos los vehículos DESARMADOS
-  const { data: vehiculos = [], isLoading: loadingVehiculos } = useVehiculos(
-    { estado: 'DESARMADO' },
-    { enabled: tipoRepuesto === 'con_vehiculo' }
+  const { data: todosVehiculos = [], isLoading: loadingVehiculos } = useVehiculos(
+    {},
+    tipoRepuesto === 'con_vehiculo'
   );
+
+  // Filtrar solo vehículos DESARMADOS en el frontend
+  const vehiculosDesarmados = React.useMemo(() => {
+    return todosVehiculos.filter(v => 
+      v.estado && v.estado.toUpperCase() === 'DESARMADO'
+    );
+  }, [todosVehiculos]);
+
+  console.log('Debug - Todos los vehículos:', todosVehiculos);
+  console.log('Debug - Vehículos desarmados filtrados:', vehiculosDesarmados);
 
   // Handlers para los dropdowns (solo para repuestos sin vehículo)
   const onMarcaChange = (marcaId) => {
@@ -144,7 +154,8 @@ const NuevoRepuesto = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Error al crear el repuesto');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al crear el repuesto');
         }
 
       } else {
@@ -169,8 +180,6 @@ const NuevoRepuesto = () => {
           condicion: values.condicion || '100%-'
         };
 
-        // Aquí necesitarías un endpoint específico que llame al stored procedure
-        // Por ahora, simulo con el endpoint regular pero sin vehiculo_origen_id
         const response = await fetch('http://localhost:8080/api/inventario-repuestos/sin-vehiculo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -178,7 +187,8 @@ const NuevoRepuesto = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Error al crear el repuesto sin vehículo origen');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al crear el repuesto sin vehículo origen');
         }
       }
 
@@ -292,28 +302,34 @@ const NuevoRepuesto = () => {
                 // OPCIÓN A: Repuesto de vehículo específico - Solo seleccionar vehículo
                 <div style={{ backgroundColor: '#f0f8ff', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
                   <h4 style={{ color: '#1890ff', marginBottom: '12px' }}>🚗 Seleccionar Vehículo de Origen</h4>
-                  <Form.Item
-                    name="vehiculo_origen_id"
-                    label="Vehículo Origen (Solo vehículos desarmados)"
-                    rules={[{ required: true, message: 'Seleccione el vehículo de origen' }]}
-                  >
-                    <Select 
-                      placeholder="Seleccione el vehículo origen"
-                      loading={loadingVehiculos}
-                      showSearch
-                      optionFilterProp="children"
-                      filterOption={(input, option) =>
-                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                      }
+                  
+                  {loadingVehiculos ? (
+                    <p>Cargando vehículos...</p>
+                  ) : vehiculosDesarmados.length === 0 ? (
+                    <p style={{ color: '#ff4d4f' }}>No hay vehículos desarmados disponibles</p>
+                  ) : (
+                    <Form.Item
+                      name="vehiculo_origen_id"
+                      label="Vehículo Origen (Solo vehículos desarmados)"
+                      rules={[{ required: true, message: 'Seleccione el vehículo de origen' }]}
                     >
-                      {vehiculos.map(vehiculo => (
-                        <Option key={vehiculo.id} value={vehiculo.id}>
-                          {vehiculo.codigo_vehiculo} - {vehiculo.anio} 
-                          {vehiculo.generacion && ` (${vehiculo.generacion.marca} ${vehiculo.generacion.modelo})`}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
+                      <Select 
+                        placeholder="Seleccione el vehículo origen"
+                        showSearch
+                        optionFilterProp="children"
+                        filterOption={(input, option) =>
+                          option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }
+                      >
+                        {vehiculosDesarmados.map(vehiculo => (
+                          <Option key={vehiculo.id} value={vehiculo.id}>
+                            {vehiculo.codigo_vehiculo} - {vehiculo.anio} 
+                            {vehiculo.generacion && ` (${vehiculo.generacion.marca || ''} ${vehiculo.generacion.modelo || ''})`}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  )}
                 </div>
               ) : (
                 // OPCIÓN B: Repuesto genérico - Seleccionar marca → modelo → generación
