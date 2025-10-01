@@ -2130,7 +2130,7 @@ CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
     'Batería nueva 12V 45Ah',
     35000.00, 55000.00, 45000.00,
     'C-', 'Z4-', 'PE-', 'V35', 'E6', 'P9-',
-    'STOCK', '100%-'
+    'STOCK', '100%-', null
 );
 
 CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
@@ -2139,7 +2139,7 @@ CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
     'Alternador Bosch universal',
     55000.00, 80000.00, 67000.00,
     'C-', 'Z4-', 'PE-', 'V36', 'E6', 'P10-',
-    'STOCK', '100%-'
+    'STOCK', '100%-', null
 );
 
 CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
@@ -2148,7 +2148,7 @@ CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
     'Set de fusibles (10 unidades)',
     8000.00, 15000.00, 12000.00,
     'C-', 'Z4-', 'PE-', 'V37', 'E6', 'P11-',
-    'STOCK', '100%-'
+    'STOCK', '100%-', null
 );
 
 -- ========================================
