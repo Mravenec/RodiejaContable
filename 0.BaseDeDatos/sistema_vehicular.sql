@@ -582,7 +582,8 @@ CREATE PROCEDURE sp_insertar_repuesto_con_generacion_sin_vehiculo(
     IN p_estante         VARCHAR(10),
     IN p_piso            VARCHAR(10),
     IN p_estado          VARCHAR(20),
-    IN p_condicion       VARCHAR(10)
+    IN p_condicion       VARCHAR(10),
+    IN p_imagen_url      TEXT     -- ✅ NUEVO
 )
 BEGIN
     DECLARE gen_inicio INT;
@@ -622,12 +623,12 @@ BEGIN
         codigo_repuesto, parte_vehiculo, descripcion,
         precio_costo,   precio_venta,   precio_mayoreo,
         bodega, zona, pared, malla, estante, piso,
-        estado, condicion, fecha_creacion
+        estado, condicion, imagen_url, fecha_creacion   -- ✅ se añadió imagen_url
     ) VALUES (
         codigo_generado, p_parte_vehiculo, p_descripcion,
         p_precio_costo,  p_precio_venta,  p_precio_mayoreo,
         p_bodega, p_zona, p_pared, p_malla, p_estante, p_piso,
-        p_estado, p_condicion, NOW()
+        p_estado, p_condicion, p_imagen_url, NOW()
     );
 
     SET v_repuesto_id = LAST_INSERT_ID();

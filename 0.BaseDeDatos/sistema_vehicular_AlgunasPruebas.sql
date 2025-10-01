@@ -96,7 +96,7 @@ INSERT INTO inventario_repuestos (
     vehiculo_origen_id, parte_vehiculo, descripcion,
     precio_costo, precio_venta, precio_mayoreo,
     bodega, zona, pared, malla, estante, piso,
-    estado, condicion, fecha_creacion
+    estado, condicion, fecha_creacion, imagen_url
 ) VALUES (
     2,                               -- vehiculo_origen_id (Honda Civic 2018)
     'MOTOR',                         -- parte_vehiculo
@@ -112,7 +112,8 @@ INSERT INTO inventario_repuestos (
     'P2-',                           -- piso
     'STOCK',                         -- estado
     '50%-',                          -- condicion (usado en buen estado)
-    CURRENT_DATE()                   -- fecha_creacion (triggers calculan año/mes)
+    CURRENT_DATE(),                  -- fecha_creacion (triggers calculan año/mes)
+    'https://tu-cdn.com/repuestos/motor_civic_15t.jpg'  -- ✅ imagen_url
 );
 
 SELECT * FROM inventario_repuestos; -- Ver códigos generados automáticos
@@ -310,12 +311,13 @@ SELECT * FROM transacciones_financieras;
 
 -- A-1. Compra automática + alta en inventario
 CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
-    1, 'Toyota',                            -- generación_id = 1 (Corolla)
-    'BOMBA DE AGUA',
-    'Bomba de agua OEM Toyota Corolla',
-    70000.00, 110000.00, 95000.00,          -- costo / precios
-    'R-', 'Z2-', 'PN-', 'V10', 'E2', 'P3-', -- ubicación
-    'STOCK', '100%-'
+    1, 'Toyota',                        -- p_generacion_id, p_marca_nombre
+    'BOMBA DE AGUA',                    -- p_parte_vehiculo
+    'Bomba de agua OEM Toyota Corolla', -- p_descripcion
+    70000.00, 110000.00, 95000.00,      -- p_precio_costo, p_precio_venta, p_precio_mayoreo
+    'R-', 'Z2-', 'PN-', 'V10', 'E2', 'P3-', -- p_bodega, p_zona, p_pared, p_malla, p_estante, p_piso
+    'STOCK', '100%-',                   -- p_estado, p_condicion
+    'https://tu-cdn.com/repuestos/bomba_corolla.jpg' -- p_imagen_url  ✅
 );
 -- Crea:
 --   • inventario_repuestos (ej. id = 2)
@@ -362,7 +364,8 @@ CALL sp_insertar_repuesto_con_generacion_sin_vehiculo(
     'E3',             -- estante
     'P3-',            -- piso
     'STOCK',          -- estado inicial del repuesto
-    '100%-'           -- condición del repuesto
+    '100%-',          -- condición del repuesto
+    'https://tu-cdn.com/repuestos/embrague_civic.jpg' -- p_imagen_url  ✅
 );
 
 -- Crea repuesto id = 3
