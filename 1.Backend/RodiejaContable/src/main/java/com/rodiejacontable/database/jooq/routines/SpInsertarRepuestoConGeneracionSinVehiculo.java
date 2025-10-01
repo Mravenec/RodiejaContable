@@ -113,6 +113,12 @@ public class SpInsertarRepuestoConGeneracionSinVehiculo extends AbstractRoutine<
     public static final Parameter<String> P_CONDICION = Internal.createParameter("p_condicion", SQLDataType.VARCHAR(10), false, false);
 
     /**
+     * The parameter
+     * <code>sistema_vehicular.sp_insertar_repuesto_con_generacion_sin_vehiculo.p_imagen_url</code>.
+     */
+    public static final Parameter<String> P_IMAGEN_URL = Internal.createParameter("p_imagen_url", SQLDataType.CLOB, false, false);
+
+    /**
      * Create a new routine call instance
      */
     public SpInsertarRepuestoConGeneracionSinVehiculo() {
@@ -133,6 +139,7 @@ public class SpInsertarRepuestoConGeneracionSinVehiculo extends AbstractRoutine<
         addInParameter(P_PISO);
         addInParameter(P_ESTADO);
         addInParameter(P_CONDICION);
+        addInParameter(P_IMAGEN_URL);
     }
 
     /**
@@ -238,5 +245,12 @@ public class SpInsertarRepuestoConGeneracionSinVehiculo extends AbstractRoutine<
      */
     public void setPCondicion(String value) {
         setValue(P_CONDICION, value);
+    }
+
+    /**
+     * Set the <code>p_imagen_url</code> parameter IN value to the routine
+     */
+    public void setPImagenUrl(String value) {
+        setValue(P_IMAGEN_URL, value);
     }
 }

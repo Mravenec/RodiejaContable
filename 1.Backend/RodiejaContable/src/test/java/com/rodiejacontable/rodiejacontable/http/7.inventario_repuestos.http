@@ -1,253 +1,130 @@
-### Obtener todos los repuestos
+### ========================================
+### MÓDULO: INVENTARIO DE REPUESTOS
+### ========================================
+
+### 1. Obtener todos los repuestos
 GET http://localhost:8080/api/inventario-repuestos
 
-### Obtener repuesto por ID
+### 2. Obtener repuesto por ID
 GET http://localhost:8080/api/inventario-repuestos/1
 
-### Buscar repuestos por código
+### 3. Buscar repuestos por código
 GET http://localhost:8080/api/inventario-repuestos/buscar?codigo=REP-2023-02
 
-### Obtener repuestos por vehículo de origen
+### 4. Obtener repuestos por vehículo de origen
 GET http://localhost:8080/api/inventario-repuestos/vehiculo/1
 
-### Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Motor
+### ========================================
+### CREAR REPUESTOS CON VEHÍCULO ORIGEN
+### ========================================
+
+### 5. Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Motor
 POST http://localhost:8080/api/inventario-repuestos
 Content-Type: application/json
 
 {
   "vehiculoOrigenId": 1,
-  "anioRegistro": 2023,
-  "mesRegistro": 2,
   "parteVehiculo": "MOTOR",
   "descripcion": "Motor completo 1.8L 2ZR-FE",
   "precioCosto": 580000.00,
   "precioVenta": 750000.00,
   "precioMayoreo": 650000.00,
   "bodega": "D_",
-  "ubicadoEnVehiculo_1": "_0_",
   "zona": "Z1_",
   "pared": "PE_",
   "malla": "V15",
   "estante": "E1",
   "piso": "P1_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
+  "estado": "STOCK",
+  "condicion": "_100_25_",
+  "imagenUrl": "https://tu-cdn.com/repuestos/motor_corolla.jpg"
 }
 
-### Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Caja de Cambio
+### 6. Crear repuesto - Caja de Cambio
 POST http://localhost:8080/api/inventario-repuestos
 Content-Type: application/json
 
 {
   "vehiculoOrigenId": 1,
-  "anioRegistro": 2023,
-  "mesRegistro": 2,
   "parteVehiculo": "CAJA_DE_CAMBIO",
   "descripcion": "Transmisión automática CVT",
   "precioCosto": 420000.00,
   "precioVenta": 580000.00,
   "precioMayoreo": 500000.00,
   "bodega": "D_",
-  "ubicadoEnVehiculo_1": "_0_",
   "zona": "Z1_",
   "pared": "PE_",
   "malla": "V16",
   "estante": "E1",
   "piso": "P1_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
+  "estado": "STOCK",
+  "condicion": "_100_25_",
+  "imagenUrl": "https://tu-cdn.com/repuestos/caja_corolla.jpg"
 }
 
-### Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Computadora
-POST http://localhost:8080/api/inventario-repuestos
+### ========================================
+### CREAR REPUESTOS SIN VEHÍCULO ORIGEN (STORED PROCEDURE)
+### ========================================
+
+### 7. ✅ Crear repuesto SIN vehículo origen - Bomba de Agua (Corolla gen12)
+POST http://localhost:8080/api/inventario-repuestos/sin-vehiculo
 Content-Type: application/json
 
 {
-  "vehiculoOrigenId": 1,
-  "anioRegistro": 2023,
-  "mesRegistro": 2,
-  "parteVehiculo": "COMPUTADORA",
-  "descripcion": "ECU módulo motor",
-  "precioCosto": 150000.00,
-  "precioVenta": 220000.00,
-  "precioMayoreo": 180000.00,
-  "bodega": "D_",
-  "ubicadoEnVehiculo_1": "_0_",
-  "zona": "Z2_",
-  "pared": "PN_",
-  "malla": "V5",
+  "generacionId": 1,
+  "marcaNombre": "Toyota",
+  "parteVehiculo": "BOMBA DE AGUA",
+  "descripcion": "Bomba de agua OEM Toyota Corolla",
+  "precioCosto": 70000.00,
+  "precioVenta": 110000.00,
+  "precioMayoreo": 95000.00,
+  "bodega": "R-",
+  "zona": "Z2-",
+  "pared": "PN-",
+  "malla": "V10",
   "estante": "E2",
-  "piso": "P2_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
+  "piso": "P3-",
+  "estado": "STOCK",
+  "condicion": "100%-",
+  "imagenUrl": "https://tu-cdn.com/repuestos/bomba_corolla.jpg"
 }
 
-### Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Sistema de Frenos
-POST http://localhost:8080/api/inventario-repuestos
+### 8. ✅ Crear repuesto SIN vehículo origen - Kit Embrague (Civic gen10)
+POST http://localhost:8080/api/inventario-repuestos/sin-vehiculo
 Content-Type: application/json
 
 {
-  "vehiculoOrigenId": 1,
-  "anioRegistro": 2023,
-  "mesRegistro": 2,
-  "parteVehiculo": "SISTEMA_DE_FRENOS",
-  "descripcion": "Discos de freno delanteros",
-  "precioCosto": 45000.00,
-  "precioVenta": 75000.00,
-  "precioMayoreo": 60000.00,
-  "bodega": "D_",
-  "ubicadoEnVehiculo_1": "_0_",
-  "zona": "Z2_",
-  "pared": "PN_",
-  "malla": "V6",
-  "estante": "E2",
-  "piso": "P2_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
-}
-
-### Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Suspensión
-POST http://localhost:8080/api/inventario-repuestos
-Content-Type: application/json
-
-{
-  "vehiculoOrigenId": 1,
-  "anioRegistro": 2023,
-  "mesRegistro": 2,
-  "parteVehiculo": "SUSPENSION_Y_AMORTIGUAMIENTO",
-  "descripcion": "Amortiguadores delanteros (par)",
+  "generacionId": 2,
+  "marcaNombre": "Honda",
+  "parteVehiculo": "EMBRAGUE",
+  "descripcion": "Kit embrague original Honda Civic",
   "precioCosto": 85000.00,
-  "precioVenta": 125000.00,
-  "precioMayoreo": 105000.00,
-  "bodega": "D_",
-  "ubicadoEnVehiculo_1": "_0_",
-  "zona": "Z2_",
-  "pared": "PN_",
-  "malla": "V7",
-  "estante": "E2",
-  "piso": "P3_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
-}
-
-### Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Carrocería
-POST http://localhost:8080/api/inventario-repuestos
-Content-Type: application/json
-
-{
-  "vehiculoOrigenId": 1,
-  "anioRegistro": 2023,
-  "mesRegistro": 2,
-  "parteVehiculo": "CARROCERIA",
-  "descripcion": "Puerta delantera derecha",
-  "precioCosto": 120000.00,
-  "precioVenta": 180000.00,
-  "precioMayoreo": 150000.00,
-  "bodega": "C_",
-  "ubicadoEnVehiculo_1": "_0_",
-  "zona": "Z3_",
-  "pared": "PO_",
-  "malla": "V20",
-  "estante": "E3",
-  "piso": "P5_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
-}
-
-### Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Sistema Eléctrico
-POST http://localhost:8080/api/inventario-repuestos
-Content-Type: application/json
-
-{
-  "vehiculoOrigenId": 1,
-  "anioRegistro": 2023,
-  "mesRegistro": 2,
-  "parteVehiculo": "SISTEMA_ELECTRICO",
-  "descripcion": "Faros LED principales",
-  "precioCosto": 95000.00,
-  "precioVenta": 145000.00,
+  "precioVenta": 140000.00,
   "precioMayoreo": 120000.00,
-  "bodega": "D_",
-  "ubicadoEnVehiculo_1": "_0_",
-  "zona": "Z3_",
-  "pared": "PS_",
-  "malla": "V25",
-  "estante": "E3",
-  "piso": "P6_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
-}
-
-### Crear repuesto para Toyota Corolla 2015 (vehiculo_id = 1) - Aros y Llantas
-POST http://localhost:8080/api/inventario-repuestos
-Content-Type: application/json
-
-{
-  "vehiculoOrigenId": 1,
-  "anioRegistro": 2023,
-  "mesRegistro": 2,
-  "parteVehiculo": "AROS_Y_LLANTAS",
-  "descripcion": "Llantas 205/55R16 (juego)",
-  "precioCosto": 160000.00,
-  "precioVenta": 240000.00,
-  "precioMayoreo": 200000.00,
-  "bodega": "C_",
-  "ubicadoEnVehiculo_1": "_0_",
-  "zona": "Z4_",
-  "pared": "PE_",
-  "malla": "V30",
-  "estante": "E4",
-  "piso": "P8_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
-}
-
-{
-  "vehiculoOrigenId": 10,
-  "anioRegistro": 2023,
-  "mesRegistro": 3,
-  "parteVehiculo": "MOTOR",
-  "descripcion": "Motor turbo 1.5L L15B7",
-  "precioCosto": 650000.00,
-  "precioVenta": 850000.00,
-  "precioMayoreo": 750000.00,
-  "bodega": "D_",
-  "ubicadoEnVehiculo_1": "_0_",
-  "zona": "Z1_",
-  "pared": "PE_",
+  "bodega": "R-",
+  "zona": "Z3-",
+  "pared": "PS-",
   "malla": "V12",
-  "estante": "E1",
-  "piso": "P1_",
-  "plastica": null,
-  "carton": null,
-  "posicion": null,
-  "estado": "STOCK"
+  "estante": "E3",
+  "piso": "P3-",
+  "estado": "STOCK",
+  "condicion": "100%-",
+  "imagenUrl": "https://tu-cdn.com/repuestos/embrague_civic.jpg"
 }
 
-### Actualizar repuesto
+### ========================================
+### ACTUALIZAR Y ELIMINAR REPUESTOS
+### ========================================
+
+### 9. Actualizar repuesto
 PUT http://localhost:8080/api/inventario-repuestos/1
 Content-Type: application/json
 
 {
   "precioVenta": 780000.00,
-  "estado": "VENDIDO"
+  "estado": "VENDIDO",
+  "imagenUrl": "https://tu-cdn.com/repuestos/motor_corolla_actualizado.jpg"
 }
 
-### Eliminar repuesto
+### 10. Eliminar repuesto
 DELETE http://localhost:8080/api/inventario-repuestos/1

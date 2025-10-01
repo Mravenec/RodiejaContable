@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -22,12 +23,10 @@ public class InventarioRepuestosService {
 
     @Transactional
     public InventarioRepuestos crearRepuesto(InventarioRepuestos repuesto) {
-        // Validate required fields
         if (repuesto.getVehiculoOrigenId() == null) {
             throw new IllegalStateException("El ID del vehículo de origen es requerido");
         }
         
-        // Set default values for required enums if not provided
         if (repuesto.getEstado() == null) {
             repuesto.setEstado(com.rodiejacontable.database.jooq.enums.InventarioRepuestosEstado.STOCK);
         }
@@ -35,17 +34,45 @@ public class InventarioRepuestosService {
             repuesto.setCondicion(com.rodiejacontable.database.jooq.enums.InventarioRepuestosCondicion._100_25_);
         }
         
-        // Set timestamps
         LocalDateTime now = LocalDateTime.now();
         if (repuesto.getFechaCreacion() == null) {
             repuesto.setFechaCreacion(now);
         }
         repuesto.setFechaActualizacion(now);
         
-        // Let the database handle the codigo_repuesto generation
         repuesto.setCodigoRepuesto(null);
         
         return inventarioRepuestosRepository.save(repuesto);
+    }
+
+    /**
+     * ✅ Método para insertar repuesto sin vehículo origen usando el SP
+     */
+    @Transactional
+    public void crearRepuestoSinVehiculoOrigen(
+            Integer generacionId,
+            String marcaNombre,
+            String parteVehiculo,
+            String descripcion,
+            BigDecimal precioCosto,
+            BigDecimal precioVenta,
+            BigDecimal precioMayoreo,
+            String bodega,
+            String zona,
+            String pared,
+            String malla,
+            String estante,
+            String piso,
+            String estado,
+            String condicion,
+            String imagenUrl) {
+        
+        inventarioRepuestosRepository.insertarRepuestoConGeneracionSinVehiculo(
+                generacionId, marcaNombre, parteVehiculo, descripcion,
+                precioCosto, precioVenta, precioMayoreo,
+                bodega, zona, pared, malla, estante, piso,
+                estado, condicion, imagenUrl
+        );
     }
     
     @Transactional
@@ -53,7 +80,6 @@ public class InventarioRepuestosService {
         InventarioRepuestos repuestoExistente = obtenerPorId(id)
                 .orElseThrow(() -> new IllegalStateException("No se encontró el repuesto con ID: " + id));
 
-        // Actualizar campos permitidos
         if (repuestoActualizado.getCodigoRepuesto() != null) {
             repuestoExistente.setCodigoRepuesto(repuestoActualizado.getCodigoRepuesto());
         }
@@ -96,8 +122,6 @@ public class InventarioRepuestosService {
         if (repuestoActualizado.getBodega() != null) {
             repuestoExistente.setBodega(repuestoActualizado.getBodega());
         }
-        // Los campos ubicadoEnVehiculo_1 y ubicadoEnVehiculo_2 no existen en la tabla inventario_repuestos
-        // Si son necesarios, deben ser agregados a la tabla y regeneradas las clases JOOQ
         if (repuestoActualizado.getZona() != null) {
             repuestoExistente.setZona(repuestoActualizado.getZona());
         }
@@ -124,6 +148,9 @@ public class InventarioRepuestosService {
         }
         if (repuestoActualizado.getEstado() != null) {
             repuestoExistente.setEstado(repuestoActualizado.getEstado());
+        }
+        if (repuestoActualizado.getCondicion() != null) {
+            repuestoExistente.setCondicion(repuestoActualizado.getCondicion());
         }
         
         repuestoExistente.setFechaActualizacion(LocalDateTime.now());

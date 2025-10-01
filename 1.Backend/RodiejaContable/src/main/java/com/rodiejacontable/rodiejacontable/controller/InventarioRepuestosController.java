@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/inventario-repuestos")
@@ -29,6 +31,36 @@ public class InventarioRepuestosController {
             return new ResponseEntity<>(null, HttpStatus.CONFLICT);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * ✅ Endpoint para insertar repuesto SIN vehículo origen usando el SP
+     */
+    @PostMapping("/sin-vehiculo")
+    public ResponseEntity<String> crearRepuestoSinVehiculoOrigen(@RequestBody Map<String, Object> payload) {
+        try {
+            inventarioRepuestosService.crearRepuestoSinVehiculoOrigen(
+                    (Integer) payload.get("generacionId"),
+                    (String) payload.get("marcaNombre"),
+                    (String) payload.get("parteVehiculo"),
+                    (String) payload.get("descripcion"),
+                    new BigDecimal(payload.get("precioCosto").toString()),
+                    new BigDecimal(payload.get("precioVenta").toString()),
+                    new BigDecimal(payload.get("precioMayoreo").toString()),
+                    (String) payload.get("bodega"),
+                    (String) payload.get("zona"),
+                    (String) payload.get("pared"),
+                    (String) payload.get("malla"),
+                    (String) payload.get("estante"),
+                    (String) payload.get("piso"),
+                    (String) payload.get("estado"),
+                    (String) payload.get("condicion"),
+                    (String) payload.get("imagenUrl") // ✅ Nuevo campo
+            );
+            return new ResponseEntity<>("Repuesto creado exitosamente", HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

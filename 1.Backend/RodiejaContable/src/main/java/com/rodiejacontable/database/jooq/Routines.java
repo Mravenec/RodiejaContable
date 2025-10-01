@@ -70,6 +70,7 @@ public class Routines {
         , String pPiso
         , String pEstado
         , String pCondicion
+        , String pImagenUrl
     ) {
         SpInsertarRepuestoConGeneracionSinVehiculo p = new SpInsertarRepuestoConGeneracionSinVehiculo();
         p.setPGeneracionId(pGeneracionId);
@@ -87,6 +88,7 @@ public class Routines {
         p.setPPiso(pPiso);
         p.setPEstado(pEstado);
         p.setPCondicion(pCondicion);
+        p.setPImagenUrl(pImagenUrl);
 
         p.execute(configuration);
     }
