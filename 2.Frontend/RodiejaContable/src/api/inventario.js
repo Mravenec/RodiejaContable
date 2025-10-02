@@ -47,13 +47,24 @@ class InventarioService {
     }
   }
 
-  // Create new spare part
+  // Create new spare part (CON vehículo origen)
   async crearRepuesto(repuestoData) {
     try {
       const response = await api.post('/inventario-repuestos', repuestoData);
       return this._mapRepuesto(response.data);
     } catch (error) {
       console.error('Error creating spare part:', error);
+      throw error;
+    }
+  }
+
+  // ✅ NUEVO: Create spare part WITHOUT vehicle origin (usando stored procedure)
+  async crearRepuestoSinVehiculo(repuestoData) {
+    try {
+      const response = await api.post('/inventario-repuestos/sin-vehiculo', repuestoData);
+      return response.data; // El SP devuelve un mensaje de texto, no un objeto mapeado
+    } catch (error) {
+      console.error('Error creating spare part without vehicle:', error);
       throw error;
     }
   }
@@ -84,14 +95,12 @@ class InventarioService {
   _mapRepuesto(item) {
     if (!item) return null;
     
-    // Format the creation and update dates
     const formatDate = (dateArray) => {
       if (!dateArray || !Array.isArray(dateArray)) return null;
       const [year, month, day, hours = 0, minutes = 0, seconds = 0] = dateArray;
       return new Date(year, month - 1, day, hours, minutes, seconds).toISOString();
     };
 
-    // Build the location string
     const ubicacion = [
       item.bodega,
       item.zona,
@@ -103,7 +112,6 @@ class InventarioService {
       item.piso
     ].filter(Boolean).join(' ');
 
-    // Get the status display text based on estado
     const getEstadoDisplay = (estado) => {
       const estados = {
         'STOCK': 'En Stock',
@@ -149,20 +157,16 @@ class InventarioService {
       fechaCreacion: formatDate(item.fechaCreacion) || item.fecha_creacion,
       fechaActualizacion: formatDate(item.fechaActualizacion) || item.fecha_actualizacion,
       ubicacion: ubicacion,
-      // Add additional fields that might be useful for display
       esVendido: (item.estado === 'VENDIDO' || item.estado === 'AGOTADO'),
       tieneStock: (item.cantidad > 0),
-      // Add a formatted price for display in Costa Rican Colones (₡)
       precioVentaFormatted: `₡${(item.precioVenta || item.precio_venta || 0).toLocaleString('es-CR', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       })}`,
-      // Add formatted price for costo
       precioCostoFormatted: `₡${(item.precioCosto || item.precio_costo || 0).toLocaleString('es-CR', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       })}`,
-      // Add formatted price for mayoreo
       precioMayoreoFormatted: `₡${(item.precioMayoreo || item.precio_mayoreo || 0).toLocaleString('es-CR', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0

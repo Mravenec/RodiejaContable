@@ -18,7 +18,7 @@ export function useRepuestos(params = {}) {
 export function useRepuesto(id) {
   return useQuery(
     ['repuesto', id],
-    () => inventarioService.getRepuestoById(id),
+    () => inventarioService.getRepuestoPorId(id),
     {
       enabled: !!id,
       onError: (error) => {
@@ -33,7 +33,7 @@ export function useCreateRepuesto() {
   const queryClient = useQueryClient();
   
   return useMutation(
-    (repuestoData) => inventarioService.createRepuesto(repuestoData),
+    (repuestoData) => inventarioService.crearRepuesto(repuestoData),
     {
       onSuccess: () => {
         message.success('Repuesto creado correctamente');
@@ -47,11 +47,30 @@ export function useCreateRepuesto() {
   );
 }
 
+// ✅ NUEVO: Hook para crear repuestos SIN vehículo origen
+export function useCreateRepuestoSinVehiculo() {
+  const queryClient = useQueryClient();
+  
+  return useMutation(
+    (repuestoData) => inventarioService.crearRepuestoSinVehiculo(repuestoData),
+    {
+      onSuccess: () => {
+        message.success('Repuesto creado correctamente sin vehículo origen');
+        queryClient.invalidateQueries('repuestos');
+      },
+      onError: (error) => {
+        message.error('Error al crear el repuesto sin vehículo');
+        console.error('Error en useCreateRepuestoSinVehiculo:', error);
+      },
+    }
+  );
+}
+
 export function useUpdateRepuesto() {
   const queryClient = useQueryClient();
   
   return useMutation(
-    ({ id, ...repuestoData }) => inventarioService.updateRepuesto(id, repuestoData),
+    ({ id, ...repuestoData }) => inventarioService.actualizarRepuesto(id, repuestoData),
     {
       onSuccess: (_, variables) => {
         message.success('Repuesto actualizado correctamente');
@@ -70,7 +89,7 @@ export function useDeleteRepuesto() {
   const queryClient = useQueryClient();
   
   return useMutation(
-    (id) => inventarioService.deleteRepuesto(id),
+    (id) => inventarioService.eliminarRepuesto(id),
     {
       onSuccess: () => {
         message.success('Repuesto eliminado correctamente');

@@ -41,31 +41,34 @@ const NuevoRepuesto = () => {
 
   // Hooks para cargar datos
   const { data: marcas = [], isLoading: loadingMarcas } = useMarcas();
-  const { data: modelos = [], isLoading: loadingModelos } = useModelos(marcaSeleccionada, !!marcaSeleccionada && tipoRepuesto === 'sin_vehiculo');
-  const { data: generaciones = [], isLoading: loadingGeneraciones } = useGeneraciones(modeloSeleccionado, !!modeloSeleccionado && tipoRepuesto === 'sin_vehiculo');
+  const { data: modelos = [], isLoading: loadingModelos } = useModelos(
+    marcaSeleccionada, 
+    tipoRepuesto === 'sin_vehiculo' && !!marcaSeleccionada
+  );
+  const { data: generaciones = [], isLoading: loadingGeneraciones } = useGeneraciones(
+    modeloSeleccionado, 
+    tipoRepuesto === 'sin_vehiculo' && !!modeloSeleccionado
+  );
   
-  // Para repuestos CON vehículo: cargar todos los vehículos DESARMADOS
+  // Para repuestos CON vehículo: cargar vehículos solo cuando sea necesario
   const { data: todosVehiculos = [], isLoading: loadingVehiculos } = useVehiculos(
     {},
     tipoRepuesto === 'con_vehiculo'
   );
 
-  // Filtrar solo vehículos DESARMADOS en el frontend
+  // Filtrar solo vehículos DESARMADOS
   const vehiculosDesarmados = React.useMemo(() => {
+    if (tipoRepuesto !== 'con_vehiculo') return [];
     return todosVehiculos.filter(v => 
       v.estado && v.estado.toUpperCase() === 'DESARMADO'
     );
-  }, [todosVehiculos]);
-
-  console.log('Debug - Todos los vehículos:', todosVehiculos);
-  console.log('Debug - Vehículos desarmados filtrados:', vehiculosDesarmados);
+  }, [todosVehiculos, tipoRepuesto]);
 
   // Función para obtener texto completo del vehículo
   const getVehiculoDisplayText = (vehiculo) => {
-    const codigo = vehiculo.codigo_vehiculo || 'Sin código';
+    const codigo = vehiculo.codigoVehiculo || vehiculo.codigo_vehiculo || 'Sin código';
     const anio = vehiculo.anio || '';
     
-    // Intentar obtener marca y modelo de diferentes estructuras posibles
     let marca = '';
     let modelo = '';
     let generacion = '';
@@ -78,7 +81,6 @@ const NuevoRepuesto = () => {
       }
     }
     
-    // Construir el texto de búsqueda
     const partes = [codigo, anio, marca, modelo, generacion].filter(p => p);
     return partes.join(' ');
   };
@@ -110,89 +112,90 @@ const NuevoRepuesto = () => {
     const nuevoTipo = e.target.value;
     setTipoRepuesto(nuevoTipo);
     
-    if (nuevoTipo === 'con_vehiculo') {
-      // Limpiar campos de marca/modelo/generación
-      setMarcaSeleccionada(null);
-      setModeloSeleccionado(null);
-      setGeneracionSeleccionada(null);
-      form.setFieldsValue({
-        marca_id: undefined,
-        modelo_id: undefined,
-        generacion_id: undefined,
-        vehiculo_origen_id: undefined
-      });
-    } else {
-      // Limpiar campo de vehículo
-      form.setFieldsValue({
-        vehiculo_origen_id: undefined
-      });
-    }
+    // Resetear todos los campos relevantes
+    setMarcaSeleccionada(null);
+    setModeloSeleccionado(null);
+    setGeneracionSeleccionada(null);
+    
+    form.setFieldsValue({
+      marca_id: undefined,
+      modelo_id: undefined,
+      generacion_id: undefined,
+      vehiculo_origen_id: undefined
+    });
   };
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const repuestoData = {
-        // Campos obligatorios
-        parte_vehiculo: values.parte_vehiculo,
-        descripcion: values.descripcion,
-        
-        // Precios
-        precio_costo: values.precio_costo || 0,
-        precio_venta: values.precio_venta || 0,
-        precio_mayoreo: values.precio_mayoreo || 0,
-        
-        // Ubicación física
-        bodega: values.bodega || '0-',
-        zona: values.zona || '0-',
-        pared: values.pared || '0-',
-        malla: values.malla || '0-',
-        horizontal: values.horizontal || '0-',
-        estante: values.estante || 'E1',
-        nivel: values.nivel || '0-',
-        piso: values.piso || 'P1-',
-        plastica: values.plastica || null,
-        carton: values.carton || null,
-        posicion: values.posicion || null,
-        
-        // Estado y condición
-        cantidad: values.cantidad || 1,
-        estado: values.estado || 'STOCK',
-        condicion: values.condicion || '100%-',
-        
-        // URL de imagen opcional
-        imagen_url: values.imagen_url || null
-      };
-
-      console.log('Enviando datos:', repuestoData);
+      console.log('Valores del formulario:', values);
+      console.log('Tipo de repuesto:', tipoRepuesto);
 
       if (tipoRepuesto === 'con_vehiculo') {
-        // ✅ REPUESTO CON VEHÍCULO: solo necesita vehiculo_origen_id
-        repuestoData.vehiculo_origen_id = values.vehiculo_origen_id;
-        
+        // ✅ REPUESTO CON VEHÍCULO ORIGEN
+        if (!values.vehiculo_origen_id) {
+          throw new Error('Debe seleccionar un vehículo de origen');
+        }
+
+        const repuestoData = {
+          vehiculoOrigenId: values.vehiculo_origen_id,
+          parteVehiculo: values.parte_vehiculo,
+          descripcion: values.descripcion,
+          precioCosto: values.precio_costo || 0,
+          precioVenta: values.precio_venta || 0,
+          precioMayoreo: values.precio_mayoreo || 0,
+          bodega: values.bodega || '0-',
+          zona: values.zona || '0-',
+          pared: values.pared || '0-',
+          malla: values.malla || '0-',
+          horizontal: values.horizontal || '0-',
+          estante: values.estante || 'E1',
+          nivel: values.nivel || '0-',
+          piso: values.piso || 'P1-',
+          plastica: values.plastica || null,
+          carton: values.carton || null,
+          posicion: values.posicion || null,
+          cantidad: values.cantidad || 1,
+          estado: values.estado || 'STOCK',
+          condicion: values.condicion || '100%-',
+          imagenUrl: values.imagen_url || null
+        };
+
+        console.log('Datos a enviar (con vehículo):', repuestoData);
+
         const response = await fetch('http://localhost:8080/api/inventario-repuestos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(repuestoData)
         });
 
+        const responseData = await response.json();
+        console.log('Respuesta del servidor:', responseData);
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al crear el repuesto');
+          throw new Error(responseData.message || 'Error al crear el repuesto');
         }
 
+        message.success('Repuesto creado correctamente');
+        navigate('/inventario');
+
       } else {
-        // ✅ REPUESTO SIN VEHÍCULO: usar stored procedure con datos de generación
+        // ✅ REPUESTO SIN VEHÍCULO ORIGEN
+        if (!generacionSeleccionada) {
+          throw new Error('Debe seleccionar una generación para el repuesto genérico');
+        }
+
         const marcaNombre = marcas.find(m => m.id === marcaSeleccionada)?.nombre || 'Generic';
         
+        // ✅ CRÍTICO: usar los nombres exactos que el Controller espera
         const procedureData = {
-          generacion_id: generacionSeleccionada,
-          marca_nombre: marcaNombre,
-          parte_vehiculo: values.parte_vehiculo,
+          generacionId: generacionSeleccionada,
+          marcaNombre: marcaNombre,
+          parteVehiculo: values.parte_vehiculo,
           descripcion: values.descripcion || '',
-          precio_costo: values.precio_costo || 0,
-          precio_venta: values.precio_venta || 0,
-          precio_mayoreo: values.precio_mayoreo || 0,
+          precioCosto: parseFloat(values.precio_costo) || 0,
+          precioVenta: parseFloat(values.precio_venta) || 0,
+          precioMayoreo: parseFloat(values.precio_mayoreo) || 0,
           bodega: values.bodega || '0-',
           zona: values.zona || '0-',
           pared: values.pared || '0-',
@@ -200,26 +203,38 @@ const NuevoRepuesto = () => {
           estante: values.estante || 'E1',
           piso: values.piso || 'P1-',
           estado: values.estado || 'STOCK',
-          condicion: values.condicion || '100%-'
+          condicion: values.condicion || '100%-',
+          imagenUrl: values.imagen_url || null
         };
+
+        console.log('Datos a enviar (sin vehículo):', procedureData);
 
         const response = await fetch('http://localhost:8080/api/inventario-repuestos/sin-vehiculo', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify(procedureData)
         });
 
+        console.log('Status de respuesta:', response.status);
+        
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al crear el repuesto sin vehículo origen');
+          const errorText = await response.text();
+          console.error('Error del servidor:', errorText);
+          throw new Error(errorText || 'Error al crear el repuesto sin vehículo origen');
         }
-      }
 
-      message.success('Repuesto guardado correctamente');
-      navigate('/inventario');
+        const responseText = await response.text();
+        console.log('Respuesta del servidor:', responseText);
+
+        message.success('Repuesto genérico creado correctamente');
+        navigate('/inventario');
+      }
       
     } catch (error) {
-      console.error('Error al guardar el repuesto:', error);
+      console.error('Error completo:', error);
       message.error('Error al guardar el repuesto: ' + error.message);
     } finally {
       setLoading(false);
@@ -275,7 +290,6 @@ const NuevoRepuesto = () => {
             <Col xs={24} md={12}>
               <Divider orientation="left">Información del Repuesto</Divider>
               
-              {/* Parte del vehículo - Campo obligatorio */}
               <Form.Item
                 name="parte_vehiculo"
                 label="Parte del Vehículo"
@@ -320,9 +334,8 @@ const NuevoRepuesto = () => {
                 <Input placeholder="https://ejemplo.com/imagen.jpg" />
               </Form.Item>
 
-              {/* ✅ CONDICIONAL: Mostrar selección según el tipo */}
+              {/* Selección según el tipo de repuesto */}
               {tipoRepuesto === 'con_vehiculo' ? (
-                // OPCIÓN A: Repuesto de vehículo específico - Solo seleccionar vehículo
                 <div style={{ backgroundColor: '#f0f8ff', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
                   <h4 style={{ color: '#1890ff', marginBottom: '12px' }}>Seleccionar Vehículo de Origen</h4>
                   
@@ -346,7 +359,7 @@ const NuevoRepuesto = () => {
                         optionLabelProp="label"
                       >
                         {vehiculosDesarmados.map(vehiculo => {
-                          const codigo = vehiculo.codigoVehiculo|| 'Sin código';
+                          const codigo = vehiculo.codigoVehiculo || vehiculo.codigo_vehiculo || 'Sin código';
                           const anio = vehiculo.anio || '';
                           let marca = '';
                           let modelo = '';
@@ -383,19 +396,19 @@ const NuevoRepuesto = () => {
                   )}
                 </div>
               ) : (
-                // OPCIÓN B: Repuesto genérico - Seleccionar marca → modelo → generación
                 <div style={{ backgroundColor: '#f6ffed', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
                   <h4 style={{ color: '#52c41a', marginBottom: '12px' }}>Clasificar Repuesto Genérico</h4>
                   
                   <Form.Item
+                    name="marca_id"
                     label="Marca"
                     rules={[{ required: true, message: 'Seleccione una marca' }]}
                   >
                     <Select 
                       placeholder="Seleccione una marca"
                       loading={loadingMarcas}
-                      value={marcaSeleccionada}
                       onChange={onMarcaChange}
+                      value={marcaSeleccionada}
                     >
                       {marcas.map(marca => (
                         <Option key={marca.id} value={marca.id}>{marca.nombre}</Option>
@@ -404,6 +417,7 @@ const NuevoRepuesto = () => {
                   </Form.Item>
 
                   <Form.Item
+                    name="modelo_id"
                     label="Modelo"
                     rules={[{ required: true, message: 'Seleccione un modelo' }]}
                   >
@@ -411,8 +425,8 @@ const NuevoRepuesto = () => {
                       placeholder="Seleccione un modelo"
                       loading={loadingModelos}
                       disabled={!marcaSeleccionada}
-                      value={modeloSeleccionado}
                       onChange={onModeloChange}
+                      value={modeloSeleccionado}
                     >
                       {modelos.map(modelo => (
                         <Option key={modelo.id} value={modelo.id}>{modelo.nombre}</Option>
@@ -429,12 +443,12 @@ const NuevoRepuesto = () => {
                       placeholder="Seleccione una generación"
                       loading={loadingGeneraciones}
                       disabled={!modeloSeleccionado}
-                      value={generacionSeleccionada}
                       onChange={onGeneracionChange}
+                      value={generacionSeleccionada}
                     >
                       {generaciones.map(generacion => (
                         <Option key={generacion.id} value={generacion.id}>
-                          {generacion.nombre} ({generacion.anio_inicio}-{generacion.anio_fin})
+                          {generacion.nombre} ({generacion.anioInicio || generacion.anio_inicio}-{generacion.anioFin || generacion.anio_fin})
                         </Option>
                       ))}
                     </Select>
