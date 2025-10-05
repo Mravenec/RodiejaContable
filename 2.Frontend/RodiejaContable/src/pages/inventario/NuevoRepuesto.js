@@ -173,7 +173,9 @@ const NuevoRepuesto = () => {
         console.log('Respuesta del servidor:', responseData);
 
         if (!response.ok) {
-          throw new Error(responseData.message || 'Error al crear el repuesto');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Detalles del error 400:', errorData);
+          throw new Error(errorData.message || errorData.error || 'Error al crear el repuesto (ver consola)');
         }
 
         message.success('Repuesto creado correctamente');
@@ -187,7 +189,7 @@ const NuevoRepuesto = () => {
 
         const marcaNombre = marcas.find(m => m.id === marcaSeleccionada)?.nombre || 'Generic';
         
-        // ✅ CRÍTICO: usar los nombres exactos que el Controller espera
+                // ✅ CRÍTICO: usar los nombres exactos que el Controller espera
         const procedureData = {
           generacionId: generacionSeleccionada,
           marcaNombre: marcaNombre,
@@ -240,7 +242,6 @@ const NuevoRepuesto = () => {
       setLoading(false);
     }
   };
-
   return (
     <div>
       <Button 
@@ -263,7 +264,7 @@ const NuevoRepuesto = () => {
           onFinish={onFinish}
           initialValues={{
             estado: 'STOCK',
-            condicion: '100%-',
+            condicion: '_100_25_',
             precio_costo: 0,
             precio_venta: 0,
             precio_mayoreo: 0,
@@ -275,7 +276,9 @@ const NuevoRepuesto = () => {
             horizontal: '0-',
             estante: 'E1',
             nivel: '0-',
-            piso: 'P1-'
+            piso: 'P1-',
+            plastica: null,
+            carton: null
           }}
         >
           {/* Selector del tipo de repuesto */}
@@ -300,24 +303,24 @@ const NuevoRepuesto = () => {
                   <Option value="CHASIS">Chasis</Option>
                   <Option value="CARROCERIA">Carrocería</Option>
                   <Option value="COMPUTADORA">Computadora</Option>
-                  <Option value="CAJA DE CAMBIO">Caja de Cambio</Option>
-                  <Option value="AIRBAGS O BOLSAS DE AIRE">Airbags o Bolsas de Aire</Option>
-                  <Option value="EJES Y DIFERENCIA">Ejes y Diferencia</Option>
-                  <Option value="SUSPENSION Y AMORTIGUAMIENTO">Suspensión y Amortiguamiento</Option>
+                  <Option value="CAJA_DE_CAMBIO">Caja de Cambio</Option>
+                  <Option value="AIRBAGS_O_BOLSAS_DE_AIRE">Airbags o Bolsas de Aire</Option>
+                  <Option value="EJES_Y_DIFERENCIA">Ejes y Diferencia</Option>
+                  <Option value="SUSPENSION_Y_AMORTIGUAMIENTO">Suspensión y Amortiguamiento</Option>
                   <Option value="EMBRAGUE">Embrague</Option>
-                  <Option value="SISTEMA DE FRENOS">Sistema de Frenos</Option>
-                  <Option value="TANQUE DE GASOLINA">Tanque de Gasolina</Option>
+                  <Option value="SISTEMA_DE_FRENOS">Sistema de Frenos</Option>
+                  <Option value="TANQUE_DE_GASOLINA">Tanque de Gasolina</Option>
                   <Option value="DISTRIBUIDOR">Distribuidor</Option>
                   <Option value="RADIADOR">Radiador</Option>
                   <Option value="VENTILADOR">Ventilador</Option>
-                  <Option value="BOMBA DE AGUA">Bomba de Agua</Option>
+                  <Option value="BOMBA_DE_AGUA">Bomba de Agua</Option>
                   <Option value="BATERIA">Batería</Option>
-                  <Option value="AROS Y LLANTAS">Aros y Llantas</Option>
-                  <Option value="SISTEMA DE DIRECCION">Sistema de Dirección</Option>
-                  <Option value="SISTEMA ELECTRICO">Sistema Eléctrico</Option>
+                  <Option value="AROS_Y_LLANTAS">Aros y Llantas</Option>
+                  <Option value="SISTEMA_DE_DIRECCION">Sistema de Dirección</Option>
+                  <Option value="SISTEMA_ELECTRICO">Sistema Eléctrico</Option>
                   <Option value="FUSIBLES">Fusibles</Option>
                   <Option value="ALTERNADOR">Alternador</Option>
-                  <Option value="VÁLVULAS DE ESCAPE">Válvulas de Escape</Option>
+                  <Option value="VALVULAS_DE_ESCAPE">Válvulas de Escape</Option>
                   <Option value="TURBO">Turbo</Option>
                 </Select>
               </Form.Item>
@@ -531,9 +534,9 @@ const NuevoRepuesto = () => {
 
               <Form.Item name="condicion" label="Condición">
                 <Select>
-                  <Option value="100%-">100% - Excelente</Option>
-                  <Option value="50%-">50% - Regular</Option>
-                  <Option value="0%-">0% - Malo</Option>
+                  <Option value="_100_25_">100% - Excelente</Option>
+                  <Option value="_50_25_">50% - Regular</Option>
+                  <Option value="_0_25_">0% - Malo</Option>
                 </Select>
               </Form.Item>
 
@@ -543,19 +546,19 @@ const NuevoRepuesto = () => {
                 <Col span={12}>
                   <Form.Item name="bodega" label="Bodega">
                     <Select>
-                      <Option value="0-">Sin especificar</Option>
-                      <Option value="R-">Bodega R</Option>
-                      <Option value="D-">Bodega D</Option>
-                      <Option value="C-">Bodega C</Option>
+                      <Option value="0_">Sin especificar</Option>
+                      <Option value="R_">Bodega R</Option>
+                      <Option value="D_">Bodega D</Option>
+                      <Option value="C_">Bodega C</Option>
                     </Select>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="zona" label="Zona">
                     <Select>
-                      <Option value="0-">Sin especificar</Option>
+                      <Option value="0_">Sin especificar</Option>
                       {Array.from({length: 22}, (_, i) => (
-                        <Option key={`Z${i+1}-`} value={`Z${i+1}-`}>Zona {i+1}</Option>
+                        <Option key={`Z${i+1}_`} value={`Z${i+1}_`}>Zona {i+1}</Option>
                       ))}
                     </Select>
                   </Form.Item>
@@ -566,11 +569,11 @@ const NuevoRepuesto = () => {
                 <Col span={12}>
                   <Form.Item name="pared" label="Pared">
                     <Select>
-                      <Option value="0-">Sin especificar</Option>
-                      <Option value="PE-">Pared Este</Option>
-                      <Option value="PO-">Pared Oeste</Option>
-                      <Option value="PN-">Pared Norte</Option>
-                      <Option value="PS-">Pared Sur</Option>
+                      <Option value="0_">Sin especificar</Option>
+                      <Option value="PE_">Pared Este</Option>
+                      <Option value="PO_">Pared Oeste</Option>
+                      <Option value="PN_">Pared Norte</Option>
+                      <Option value="PS_">Pared Sur</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -579,6 +582,89 @@ const NuevoRepuesto = () => {
                     <Select>
                       {Array.from({length: 14}, (_, i) => (
                         <Option key={`E${i+1}`} value={`E${i+1}`}>Estante {i+1}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="malla" label="Malla">
+                    <Select>
+                      <Option value="0_">Sin especificar</Option>
+                      {Array.from({length: 200}, (_, i) => (
+                        <Option key={`V${i+1}`} value={`V${i+1}`}>Malla {i+1}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="horizontal" label="Horizontal">
+                    <Select>
+                      <Option value="0_">Sin especificar</Option>
+                      <Option value="HA_">HA</Option>
+                      <Option value="HB_">HB</Option>
+                      <Option value="HC_">HC</Option>
+                      <Option value="HD_">HD</Option>
+                      <Option value="HE_">HE</Option>
+                      <Option value="HF_">HF</Option>
+                      <Option value="HG_">HG</Option>
+                      <Option value="HH_">HH</Option>
+                      <Option value="HI_">HI</Option>
+                      <Option value="HJ_">HJ</Option>
+                      <Option value="HK_">HK</Option>
+                      <Option value="HL_">HL</Option>
+                      <Option value="HM_">HM</Option>
+                      <Option value="HN_">HN</Option>
+                      <Option value="HO_">HO</Option>
+                      <Option value="HP_">HP</Option>
+                      <Option value="HQ_">HQ</Option>
+                      <Option value="HR_">HR</Option>
+                      <Option value="HS_">HS</Option>
+                      <Option value="HT_">HT</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="nivel" label="Nivel">
+                    <Select>
+                      <Option value="0_">Sin especificar</Option>
+                      {Array.from({length: 22}, (_, i) => (
+                        <Option key={`N${i+1}_`} value={`N${i+1}_`}>Nivel {i+1}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="piso" label="Piso">
+                    <Select>
+                      {Array.from({length: 21}, (_, i) => (
+                        <Option key={`P${i+1}_`} value={`P${i+1}_`}>Piso {i+1}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="plastica" label="Plástica (Opcional)">
+                    <Select allowClear>
+                      {Array.from({length: 52}, (_, i) => (
+                        <Option key={`CP${i+1}_`} value={`CP${i+1}_`}>CP {i+1}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="carton" label="Cartón (Opcional)">
+                    <Select allowClear>
+                      {Array.from({length: 52}, (_, i) => (
+                        <Option key={`MM${i+1}_`} value={`MM${i+1}_`}>MM {i+1}</Option>
                       ))}
                     </Select>
                   </Form.Item>
