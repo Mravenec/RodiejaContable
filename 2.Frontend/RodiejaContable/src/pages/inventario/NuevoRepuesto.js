@@ -85,6 +85,83 @@ const NuevoRepuesto = () => {
     return partes.join(' ');
   };
 
+  // Opciones para parte_vehiculo según tipo
+  const getParteOptions = () => {
+    if (tipoRepuesto === 'con_vehiculo') {
+      return [
+        { value: 'MOTOR', label: 'Motor' },
+        { value: 'CHASIS', label: 'Chasis' },
+        { value: 'CARROCERIA', label: 'Carrocería' },
+        { value: 'COMPUTADORA', label: 'Computadora' },
+        { value: 'CAJA_DE_CAMBIO', label: 'Caja de Cambio' },
+        { value: 'AIRBAGS_O_BOLSAS_DE_AIRE', label: 'Airbags o Bolsas de Aire' },
+        { value: 'EJES_Y_DIFERENCIA', label: 'Ejes y Diferencia' },
+        { value: 'SUSPENSION_Y_AMORTIGUAMIENTO', label: 'Suspensión y Amortiguamiento' },
+        { value: 'EMBRAGUE', label: 'Embrague' },
+        { value: 'SISTEMA_DE_FRENOS', label: 'Sistema de Frenos' },
+        { value: 'TANQUE_DE_GASOLINA', label: 'Tanque de Gasolina' },
+        { value: 'DISTRIBUIDOR', label: 'Distribuidor' },
+        { value: 'RADIADOR', label: 'Radiador' },
+        { value: 'VENTILADOR', label: 'Ventilador' },
+        { value: 'BOMBA_DE_AGUA', label: 'Bomba de Agua' },
+        { value: 'BATERIA', label: 'Batería' },
+        { value: 'AROS_Y_LLANTAS', label: 'Aros y Llantas' },
+        { value: 'SISTEMA_DE_DIRECCION', label: 'Sistema de Dirección' },
+        { value: 'SISTEMA_ELECTRICO', label: 'Sistema Eléctrico' },
+        { value: 'FUSIBLES', label: 'Fusibles' },
+        { value: 'ALTERNADOR', label: 'Alternador' },
+        { value: 'VALVULAS_DE_ESCAPE', label: 'Válvulas de Escape' },
+        { value: 'TURBO', label: 'Turbo' }
+      ];
+    } else {
+      return [
+        { value: 'MOTOR', label: 'Motor' },
+        { value: 'CHASIS', label: 'Chasis' },
+        { value: 'CARROCERIA', label: 'Carrocería' },
+        { value: 'COMPUTADORA', label: 'Computadora' },
+        { value: 'CAJA DE CAMBIO', label: 'Caja de Cambio' },
+        { value: 'AIRBAGS O BOLSAS DE AIRE', label: 'Airbags o Bolsas de Aire' },
+        { value: 'EJES Y DIFERENCIA', label: 'Ejes y Diferencia' },
+        { value: 'SUSPENSION Y AMORTIGUAMIENTO', label: 'Suspensión y Amortiguamiento' },
+        { value: 'EMBRAGUE', label: 'Embrague' },
+        { value: 'SISTEMA DE FRENOS', label: 'Sistema de Frenos' },
+        { value: 'TANQUE DE GASOLINA', label: 'Tanque de Gasolina' },
+        { value: 'DISTRIBUIDOR', label: 'Distribuidor' },
+        { value: 'RADIADOR', label: 'Radiador' },
+        { value: 'VENTILADOR', label: 'Ventilador' },
+        { value: 'BOMBA DE AGUA', label: 'Bomba de Agua' },
+        { value: 'BATERIA', label: 'Batería' },
+        { value: 'AROS Y LLANTAS', label: 'Aros y Llantas' },
+        { value: 'SISTEMA DE DIRECCION', label: 'Sistema de Dirección' },
+        { value: 'SISTEMA ELECTRICO', label: 'Sistema Eléctrico' },
+        { value: 'FUSIBLES', label: 'Fusibles' },
+        { value: 'ALTERNADOR', label: 'Alternador' },
+        { value: 'VÁLVULAS DE ESCAPE', label: 'Válvulas de Escape' },
+        { value: 'TURBO', label: 'Turbo' }
+      ];
+    }
+  };
+
+  // Opciones para condicion según tipo
+  const getCondicionOptions = () => {
+    if (tipoRepuesto === 'con_vehiculo') {
+      return [
+        { value: '_100_25_', label: '100% - Excelente' },
+        { value: '_50_25_', label: '50% - Regular' },
+        { value: '_0_25_', label: '0% - Malo' }
+      ];
+    } else {
+      return [
+        { value: '100%-', label: '100% - Excelente' },
+        { value: '50%-', label: '50% - Regular' },
+        { value: '0%-', label: '0% - Malo' }
+      ];
+    }
+  };
+
+  // Separador para ubicaciones según tipo
+  const separator = tipoRepuesto === 'con_vehiculo' ? '_' : '-';
+
   // Handlers para los dropdowns (solo para repuestos sin vehículo)
   const onMarcaChange = (marcaId) => {
     setMarcaSeleccionada(marcaId);
@@ -121,7 +198,18 @@ const NuevoRepuesto = () => {
       marca_id: undefined,
       modelo_id: undefined,
       generacion_id: undefined,
-      vehiculo_origen_id: undefined
+      vehiculo_origen_id: undefined,
+      parte_vehiculo: undefined,
+      condicion: undefined,
+      bodega: undefined,
+      zona: undefined,
+      pared: undefined,
+      malla: undefined,
+      horizontal: undefined,
+      nivel: undefined,
+      piso: undefined,
+      plastica: undefined,
+      carton: undefined
     });
   };
 
@@ -144,20 +232,20 @@ const NuevoRepuesto = () => {
           precioCosto: values.precio_costo || 0,
           precioVenta: values.precio_venta || 0,
           precioMayoreo: values.precio_mayoreo || 0,
-          bodega: values.bodega || '0-',
-          zona: values.zona || '0-',
-          pared: values.pared || '0-',
-          malla: values.malla || '0-',
-          horizontal: values.horizontal || '0-',
+          bodega: values.bodega || '0_',
+          zona: values.zona || '0_',
+          pared: values.pared || '0_',
+          malla: values.malla || '0_',
+          horizontal: values.horizontal || '0_',
           estante: values.estante || 'E1',
-          nivel: values.nivel || '0-',
-          piso: values.piso || 'P1-',
+          nivel: values.nivel || '0_',
+          piso: values.piso || 'P1_',
           plastica: values.plastica || null,
           carton: values.carton || null,
           posicion: values.posicion || null,
           cantidad: values.cantidad || 1,
           estado: values.estado || 'STOCK',
-          condicion: values.condicion || '100%-',
+          condicion: values.condicion || '_100_25_',
           imagenUrl: values.imagen_url || null
         };
 
@@ -169,14 +257,20 @@ const NuevoRepuesto = () => {
           body: JSON.stringify(repuestoData)
         });
 
-        const responseData = await response.json();
-        console.log('Respuesta del servidor:', responseData);
-
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Detalles del error 400:', errorData);
+          const errorText = await response.text();
+          console.error('Error del servidor:', errorText);
+          let errorData = {};
+          try {
+            errorData = JSON.parse(errorText);
+          } catch (e) {
+            errorData = { message: errorText };
+          }
           throw new Error(errorData.message || errorData.error || 'Error al crear el repuesto (ver consola)');
         }
+
+        const responseData = await response.json();
+        console.log('Respuesta del servidor:', responseData);
 
         message.success('Repuesto creado correctamente');
         navigate('/inventario');
@@ -189,15 +283,15 @@ const NuevoRepuesto = () => {
 
         const marcaNombre = marcas.find(m => m.id === marcaSeleccionada)?.nombre || 'Generic';
         
-                // ✅ CRÍTICO: usar los nombres exactos que el Controller espera
+        // ✅ CRÍTICO: usar los nombres exactos que el Controller espera
         const procedureData = {
           generacionId: generacionSeleccionada,
           marcaNombre: marcaNombre,
           parteVehiculo: values.parte_vehiculo,
           descripcion: values.descripcion || '',
-          precioCosto: parseFloat(values.precio_costo) || 0,
-          precioVenta: parseFloat(values.precio_venta) || 0,
-          precioMayoreo: parseFloat(values.precio_mayoreo) || 0,
+          precioCosto: values.precio_costo || 0,
+          precioVenta: values.precio_venta || 0,
+          precioMayoreo: values.precio_mayoreo || 0,
           bodega: values.bodega || '0-',
           zona: values.zona || '0-',
           pared: values.pared || '0-',
@@ -242,6 +336,7 @@ const NuevoRepuesto = () => {
       setLoading(false);
     }
   };
+
   return (
     <div>
       <Button 
@@ -264,7 +359,7 @@ const NuevoRepuesto = () => {
           onFinish={onFinish}
           initialValues={{
             estado: 'STOCK',
-            condicion: '_100_25_',
+            condicion: '100%-',
             precio_costo: 0,
             precio_venta: 0,
             precio_mayoreo: 0,
@@ -299,29 +394,11 @@ const NuevoRepuesto = () => {
                 rules={[{ required: true, message: 'Seleccione la parte del vehículo' }]}
               >
                 <Select placeholder="Seleccione la parte del vehículo">
-                  <Option value="MOTOR">Motor</Option>
-                  <Option value="CHASIS">Chasis</Option>
-                  <Option value="CARROCERIA">Carrocería</Option>
-                  <Option value="COMPUTADORA">Computadora</Option>
-                  <Option value="CAJA_DE_CAMBIO">Caja de Cambio</Option>
-                  <Option value="AIRBAGS_O_BOLSAS_DE_AIRE">Airbags o Bolsas de Aire</Option>
-                  <Option value="EJES_Y_DIFERENCIA">Ejes y Diferencia</Option>
-                  <Option value="SUSPENSION_Y_AMORTIGUAMIENTO">Suspensión y Amortiguamiento</Option>
-                  <Option value="EMBRAGUE">Embrague</Option>
-                  <Option value="SISTEMA_DE_FRENOS">Sistema de Frenos</Option>
-                  <Option value="TANQUE_DE_GASOLINA">Tanque de Gasolina</Option>
-                  <Option value="DISTRIBUIDOR">Distribuidor</Option>
-                  <Option value="RADIADOR">Radiador</Option>
-                  <Option value="VENTILADOR">Ventilador</Option>
-                  <Option value="BOMBA_DE_AGUA">Bomba de Agua</Option>
-                  <Option value="BATERIA">Batería</Option>
-                  <Option value="AROS_Y_LLANTAS">Aros y Llantas</Option>
-                  <Option value="SISTEMA_DE_DIRECCION">Sistema de Dirección</Option>
-                  <Option value="SISTEMA_ELECTRICO">Sistema Eléctrico</Option>
-                  <Option value="FUSIBLES">Fusibles</Option>
-                  <Option value="ALTERNADOR">Alternador</Option>
-                  <Option value="VALVULAS_DE_ESCAPE">Válvulas de Escape</Option>
-                  <Option value="TURBO">Turbo</Option>
+                  {getParteOptions().map(option => (
+                    <Option key={option.value} value={option.value}>
+                      {option.label}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
               
@@ -534,9 +611,11 @@ const NuevoRepuesto = () => {
 
               <Form.Item name="condicion" label="Condición">
                 <Select>
-                  <Option value="_100_25_">100% - Excelente</Option>
-                  <Option value="_50_25_">50% - Regular</Option>
-                  <Option value="_0_25_">0% - Malo</Option>
+                  {getCondicionOptions().map(option => (
+                    <Option key={option.value} value={option.value}>
+                      {option.label}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
 
@@ -546,19 +625,19 @@ const NuevoRepuesto = () => {
                 <Col span={12}>
                   <Form.Item name="bodega" label="Bodega">
                     <Select>
-                      <Option value="0_">Sin especificar</Option>
-                      <Option value="R_">Bodega R</Option>
-                      <Option value="D_">Bodega D</Option>
-                      <Option value="C_">Bodega C</Option>
+                      <Option value={`0${separator}`}>Sin especificar</Option>
+                      <Option value={`R${separator}`}>Bodega R</Option>
+                      <Option value={`D${separator}`}>Bodega D</Option>
+                      <Option value={`C${separator}`}>Bodega C</Option>
                     </Select>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="zona" label="Zona">
                     <Select>
-                      <Option value="0_">Sin especificar</Option>
+                      <Option value={`0${separator}`}>Sin especificar</Option>
                       {Array.from({length: 22}, (_, i) => (
-                        <Option key={`Z${i+1}_`} value={`Z${i+1}_`}>Zona {i+1}</Option>
+                        <Option key={`Z${i+1}${separator}`} value={`Z${i+1}${separator}`}>Zona {i+1}</Option>
                       ))}
                     </Select>
                   </Form.Item>
@@ -569,11 +648,11 @@ const NuevoRepuesto = () => {
                 <Col span={12}>
                   <Form.Item name="pared" label="Pared">
                     <Select>
-                      <Option value="0_">Sin especificar</Option>
-                      <Option value="PE_">Pared Este</Option>
-                      <Option value="PO_">Pared Oeste</Option>
-                      <Option value="PN_">Pared Norte</Option>
-                      <Option value="PS_">Pared Sur</Option>
+                      <Option value={`0${separator}`}>Sin especificar</Option>
+                      <Option value={`PE${separator}`}>Pared Este</Option>
+                      <Option value={`PO${separator}`}>Pared Oeste</Option>
+                      <Option value={`PN${separator}`}>Pared Norte</Option>
+                      <Option value={`PS${separator}`}>Pared Sur</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -592,7 +671,7 @@ const NuevoRepuesto = () => {
                 <Col span={12}>
                   <Form.Item name="malla" label="Malla">
                     <Select>
-                      <Option value="0_">Sin especificar</Option>
+                      <Option value={`0${separator}`}>Sin especificar</Option>
                       {Array.from({length: 200}, (_, i) => (
                         <Option key={`V${i+1}`} value={`V${i+1}`}>Malla {i+1}</Option>
                       ))}
@@ -602,27 +681,27 @@ const NuevoRepuesto = () => {
                 <Col span={12}>
                   <Form.Item name="horizontal" label="Horizontal">
                     <Select>
-                      <Option value="0_">Sin especificar</Option>
-                      <Option value="HA_">HA</Option>
-                      <Option value="HB_">HB</Option>
-                      <Option value="HC_">HC</Option>
-                      <Option value="HD_">HD</Option>
-                      <Option value="HE_">HE</Option>
-                      <Option value="HF_">HF</Option>
-                      <Option value="HG_">HG</Option>
-                      <Option value="HH_">HH</Option>
-                      <Option value="HI_">HI</Option>
-                      <Option value="HJ_">HJ</Option>
-                      <Option value="HK_">HK</Option>
-                      <Option value="HL_">HL</Option>
-                      <Option value="HM_">HM</Option>
-                      <Option value="HN_">HN</Option>
-                      <Option value="HO_">HO</Option>
-                      <Option value="HP_">HP</Option>
-                      <Option value="HQ_">HQ</Option>
-                      <Option value="HR_">HR</Option>
-                      <Option value="HS_">HS</Option>
-                      <Option value="HT_">HT</Option>
+                      <Option value={`0${separator}`}>Sin especificar</Option>
+                      <Option value={`HA${separator}`}>HA</Option>
+                      <Option value={`HB${separator}`}>HB</Option>
+                      <Option value={`HC${separator}`}>HC</Option>
+                      <Option value={`HD${separator}`}>HD</Option>
+                      <Option value={`HE${separator}`}>HE</Option>
+                      <Option value={`HF${separator}`}>HF</Option>
+                      <Option value={`HG${separator}`}>HG</Option>
+                      <Option value={`HH${separator}`}>HH</Option>
+                      <Option value={`HI${separator}`}>HI</Option>
+                      <Option value={`HJ${separator}`}>HJ</Option>
+                      <Option value={`HK${separator}`}>HK</Option>
+                      <Option value={`HL${separator}`}>HL</Option>
+                      <Option value={`HM${separator}`}>HM</Option>
+                      <Option value={`HN${separator}`}>HN</Option>
+                      <Option value={`HO${separator}`}>HO</Option>
+                      <Option value={`HP${separator}`}>HP</Option>
+                      <Option value={`HQ${separator}`}>HQ</Option>
+                      <Option value={`HR${separator}`}>HR</Option>
+                      <Option value={`HS${separator}`}>HS</Option>
+                      <Option value={`HT${separator}`}>HT</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -632,9 +711,9 @@ const NuevoRepuesto = () => {
                 <Col span={12}>
                   <Form.Item name="nivel" label="Nivel">
                     <Select>
-                      <Option value="0_">Sin especificar</Option>
+                      <Option value={`0${separator}`}>Sin especificar</Option>
                       {Array.from({length: 22}, (_, i) => (
-                        <Option key={`N${i+1}_`} value={`N${i+1}_`}>Nivel {i+1}</Option>
+                        <Option key={`N${i+1}${separator}`} value={`N${i+1}${separator}`}>Nivel {i+1}</Option>
                       ))}
                     </Select>
                   </Form.Item>
@@ -643,7 +722,7 @@ const NuevoRepuesto = () => {
                   <Form.Item name="piso" label="Piso">
                     <Select>
                       {Array.from({length: 21}, (_, i) => (
-                        <Option key={`P${i+1}_`} value={`P${i+1}_`}>Piso {i+1}</Option>
+                        <Option key={`P${i+1}${separator}`} value={`P${i+1}${separator}`}>Piso {i+1}</Option>
                       ))}
                     </Select>
                   </Form.Item>
@@ -655,7 +734,7 @@ const NuevoRepuesto = () => {
                   <Form.Item name="plastica" label="Plástica (Opcional)">
                     <Select allowClear>
                       {Array.from({length: 52}, (_, i) => (
-                        <Option key={`CP${i+1}_`} value={`CP${i+1}_`}>CP {i+1}</Option>
+                        <Option key={`CP${i+1}${separator}`} value={`CP${i+1}${separator}`}>CP {i+1}</Option>
                       ))}
                     </Select>
                   </Form.Item>
@@ -664,7 +743,7 @@ const NuevoRepuesto = () => {
                   <Form.Item name="carton" label="Cartón (Opcional)">
                     <Select allowClear>
                       {Array.from({length: 52}, (_, i) => (
-                        <Option key={`MM${i+1}_`} value={`MM${i+1}_`}>MM {i+1}</Option>
+                        <Option key={`MM${i+1}${separator}`} value={`MM${i+1}${separator}`}>MM {i+1}</Option>
                       ))}
                     </Select>
                   </Form.Item>
