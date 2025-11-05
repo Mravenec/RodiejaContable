@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { 
@@ -14,8 +14,8 @@ import {
   Row,
   Col,
   Divider,
-  Switch,
-  Tabs
+  Tabs,
+  Alert
 } from 'antd';
 import { 
   SaveOutlined, 
@@ -24,6 +24,8 @@ import {
   ArrowUpOutlined,
   ArrowDownOutlined
 } from '@ant-design/icons';
+import { useCreateTransaccion } from '../../hooks/useFinanzas';
+import { useTiposByCategoria, useVehiculosParaTransacciones, useEmpleados } from '../../hooks';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -33,64 +35,82 @@ const { TabPane } = Tabs;
 const NuevaTransaccion = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [tipoTransaccion, setTipoTransaccion] = useState('INGRESO');
   const [monto, setMonto] = useState(0);
   const [comision, setComision] = useState(0);
-
-  const tiposTransacciones = [
-    { id: 1, nombre: 'Venta de Vehículo', categoria: 'INGRESO' },
-    { id: 2, nombre: 'Venta de Repuesto', categoria: 'INGRESO' },
-    { id: 3, nombre: 'Servicio', categoria: 'INGRESO' },
-    { id: 4, nombre: 'Otro Ingreso', categoria: 'INGRESO' },
-    { id: 5, nombre: 'Compra de Vehículo', categoria: 'EGRESO' },
-    { id: 6, nombre: 'Compra de Repuesto', categoria: 'EGRESO' },
-    { id: 7, nombre: 'Mantenimiento', categoria: 'EGRESO' },
-    { id: 8, nombre: 'Nómina', categoria: 'EGRESO' },
-    { id: 9, nombre: 'Servicios Públicos', categoria: 'EGRESO' },
-    { id: 10, nombre: 'Otro Egreso', categoria: 'EGRESO' },
-  ];
-
-  const empleados = [
-    { id: 1, nombre: 'Juan Pérez' },
-    { id: 2, nombre: 'María García' },
-    { id: 3, nombre: 'Carlos López' },
-  ];
-
-  const onFinish = async (values) => {
-    setLoading(true);
-    try {
-      // Aquí iría la lógica para guardar la transacción
-      console.log('Valores del formulario:', values);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación de llamada a la API
+  
+  // Hooks para cargar datos
+  const { data: tiposIngreso, isLoading: loadingTiposIngreso } = useTiposByCategoria('INGRESO');
+  const { data: tiposEgreso, isLoading: loadingTiposEgreso } = useTiposByCategoria('EGRESO');
+  const { data: empleados = [], isLoading: loadingEmpleados } = useEmpleados();
+  const { vehiculos = [], loadingVehiculos, errorVehiculos } = useVehiculosParaTransacciones();
+  
+  // Hook para crear transacción
+  const { mutate: crearTransaccion, isLoading: isCreating } = useCreateTransaccion({
+    onSuccess: () => {
       message.success('Transacción registrada correctamente');
       navigate('/finanzas');
+    },
+    onError: (error) => {
+      console.error('Error al crear transacción:', error);
+      message.error(error.message || 'Error al guardar la transacción');
+    }
+  });
+
+  // Función para calcular comisión
+  const calcularComision = useCallback((monto) => {
+    // 5% de comisión para transacciones de ingreso
+    return tipoTransaccion === 'INGRESO' ? monto * 0.05 : 0;
+  }, [tipoTransaccion]);
+
+  // Efecto para actualizar la comisión cuando cambia el monto o el tipo
+  useEffect(() => {
+    if (monto > 0 && tipoTransaccion === 'INGRESO') {
+      setComision(calcularComision(monto));
+    } else {
+      setComision(0);
+    }
+  }, [monto, tipoTransaccion, calcularComision]);
+
+  const onFinish = async (values) => {
+    try {
+      const payload = {
+        fecha: values.fecha.format('YYYY-MM-DD'),
+        tipoTransaccionId: values.tipo,
+        empleadoId: values.empleado_id || null,
+        vehiculoId: values.vehiculo_id || null,
+        repuestoId: values.repuesto_id || null,
+        monto: parseFloat(monto),
+        comisionEmpleado: tipoTransaccion === 'INGRESO' ? parseFloat(comision) : 0,
+        descripcion: values.descripcion || null,
+        referencia: values.referencia || null,
+        estado: 'COMPLETADA'
+      };
+      
+      crearTransaccion(payload);
     } catch (error) {
-      console.error('Error al guardar la transacción:', error);
-      message.error('Error al guardar la transacción');
-    } finally {
-      setLoading(false);
+      console.error('Error al preparar los datos:', error);
+      message.error('Error al procesar los datos del formulario');
     }
   };
 
   const handleTipoTransaccionChange = (value) => {
-    const tipo = tiposTransacciones.find(t => t.id === value);
-    if (tipo) {
-      setTipoTransaccion(tipo.categoria);
+    // Actualizar el tipo de transacción (INGRESO/EGRESO) basado en la selección
+    const tipoSeleccionado = [...(tiposIngreso || []), ...(tiposEgreso || [])]
+      .find(t => t.id === value);
+      
+    if (tipoSeleccionado) {
+      setTipoTransaccion(tipoSeleccionado.categoria);
     }
+    
+    // Resetear campos relacionados cuando cambia el tipo
+    form.setFieldsValue({ vehiculo_id: undefined, repuesto_id: undefined });
   };
 
-  const calcularComision = (monto) => {
-    // Ejemplo: 5% de comisión para ventas
-    if (tipoTransaccion === 'INGRESO') {
-      return monto * 0.05; // 5% de comisión
-    }
-    return 0;
-  };
 
   const handleMontoChange = (value) => {
-    setMonto(value || 0);
-    setComision(calcularComision(value || 0));
+    const montoNumerico = parseFloat(value) || 0;
+    setMonto(montoNumerico);
   };
 
   return (
@@ -149,16 +169,20 @@ const NuevaTransaccion = () => {
                     rules={[{ required: true, message: 'Seleccione el tipo de transacción' }]}
                   >
                     <Select 
-                      placeholder="Seleccione el tipo"
+                      placeholder={loadingTiposIngreso ? 'Cargando...' : 'Seleccione el tipo'}
                       onChange={handleTipoTransaccionChange}
+                      loading={loadingTiposIngreso}
+                      showSearch
+                      optionFilterProp="children"
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
                     >
-                      {tiposTransacciones
-                        .filter(t => t.categoria === 'INGRESO')
-                        .map(tipo => (
-                          <Option key={tipo.id} value={tipo.id}>
-                            {tipo.nombre}
-                          </Option>
-                        ))}
+                      {tiposIngreso?.map(tipo => (
+                        <Option key={tipo.id} value={tipo.id}>
+                          {tipo.nombre}
+                        </Option>
+                      ))}
                     </Select>
                   </Form.Item>
                   
@@ -180,15 +204,19 @@ const NuevaTransaccion = () => {
                   
                   <Form.Item
                     name="comision"
-                    label="Comisión"
+                    label={
+                      <span>
+                        Comisión <Text type="secondary">(5% para ingresos)</Text>
+                      </span>
+                    }
                   >
                     <InputNumber 
                       style={{ width: '100%' }} 
                       min={0} 
                       step={0.01} 
                       precision={2}
-                      formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                      formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      parser={value => value.replace(/₡\s?|(,*)/g, '')}
                       value={comision}
                       disabled
                     />
@@ -199,31 +227,80 @@ const NuevaTransaccion = () => {
                   <Form.Item
                     name="empleado_id"
                     label="Empleado"
-                  >
-                    <Select placeholder="Seleccione el empleado (opcional)">
-                      {empleados.map(empleado => (
-                        <Option key={empleado.id} value={empleado.id}>
-                          {empleado.nombre}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                  
-                  <Form.Item
-                    name="vehiculo_id"
-                    label="Vehículo (opcional)"
+                    rules={[{ required: true, message: 'Por favor seleccione un empleado' }]}
                   >
                     <Select 
-                      placeholder="Seleccione el vehículo"
+                      placeholder={loadingEmpleados ? 'Cargando empleados...' : 
+                                 empleados.length === 0 ? 'No hay empleados disponibles' : 
+                                 'Seleccione un empleado'}
+                      loading={loadingEmpleados}
                       showSearch
                       optionFilterProp="children"
                       filterOption={(input, option) =>
                         option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }
+                      notFoundContent={<div>No se encontraron empleados</div>}
+                      disabled={empleados.length === 0}
                     >
-                      <Option value={1}>Toyota Corolla 2020 - ABC123</Option>
-                      <Option value={2}>Honda Civic 2019 - XYZ789</Option>
+                      {empleados.map(empleado => (
+                        <Option key={empleado.id} value={empleado.id}>
+                          {empleado.nombres} {empleado.apellidos}
+                        </Option>
+                      ))}
                     </Select>
+                    {empleados.length === 0 && !loadingEmpleados && (
+                      <Text type="warning">No hay empleados disponibles. Por favor, agregue empleados primero.</Text>
+                    )}
+                  </Form.Item>
+                  
+                  <Form.Item
+                    name="vehiculo_id"
+                    label="Vehículo"
+                    rules={[{ required: true, message: 'Por favor seleccione un vehículo' }]}
+                  >
+                    <Select 
+                      placeholder={
+                        loadingVehiculos ? 'Cargando vehículos...' : 
+                        errorVehiculos ? 'Error al cargar vehículos' :
+                        vehiculos.length === 0 ? 'No hay vehículos disponibles' : 
+                        'Seleccione un vehículo'
+                      }
+                      loading={loadingVehiculos}
+                      showSearch
+                      optionFilterProp="children"
+                      filterOption={(input, option) =>
+                        option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                      notFoundContent={
+                        <div>
+                          {errorVehiculos ? 
+                            'Error al cargar los vehículos' : 
+                            'No se encontraron vehículos disponibles'}
+                        </div>
+                      }
+                      disabled={loadingVehiculos || errorVehiculos || vehiculos.length === 0}
+                    >
+                      {vehiculos.map(vehiculo => (
+                        <Option 
+                          key={vehiculo.id} 
+                          value={vehiculo.id}
+                        >
+                          {`${vehiculo.marca || 'Sin marca'} ${vehiculo.modelo || 'Sin modelo'} - ${vehiculo.placa || 'Sin placa'}`}
+                        </Option>
+                      ))}
+                    </Select>
+                    {errorVehiculos && (
+                      <Alert 
+                        message="Error" 
+                        description="No se pudieron cargar los vehículos. Por favor, intente nuevamente." 
+                        type="error" 
+                        showIcon 
+                        className="mt-2"
+                      />
+                    )}
+                    {vehiculos.length === 0 && !loadingVehiculos && !errorVehiculos && (
+                      <Text type="warning">No hay vehículos disponibles. Por favor, agregue vehículos primero.</Text>
+                    )}
                   </Form.Item>
                   
                   <Form.Item
@@ -259,9 +336,10 @@ const NuevaTransaccion = () => {
                   type="primary" 
                   htmlType="submit" 
                   icon={<SaveOutlined />}
-                  loading={loading}
+                  loading={isCreating}
+                  disabled={isCreating}
                 >
-                  Guardar Transacción
+                  {isCreating ? 'Guardando...' : 'Guardar Transacción'}
                 </Button>
                 
                 <Button 
@@ -309,16 +387,20 @@ const NuevaTransaccion = () => {
                     rules={[{ required: true, message: 'Seleccione el tipo de egreso' }]}
                   >
                     <Select 
-                      placeholder="Seleccione el tipo"
+                      placeholder={loadingTiposEgreso ? 'Cargando...' : 'Seleccione el tipo'}
                       onChange={handleTipoTransaccionChange}
+                      loading={loadingTiposEgreso}
+                      showSearch
+                      optionFilterProp="children"
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
                     >
-                      {tiposTransacciones
-                        .filter(t => t.categoria === 'EGRESO')
-                        .map(tipo => (
-                          <Option key={tipo.id} value={tipo.id}>
-                            {tipo.nombre}
-                          </Option>
-                        ))}
+                      {tiposEgreso?.map(tipo => (
+                        <Option key={tipo.id} value={tipo.id}>
+                          {tipo.nombre}
+                        </Option>
+                      ))}
                     </Select>
                   </Form.Item>
                   
@@ -383,7 +465,7 @@ const NuevaTransaccion = () => {
                   type="primary" 
                   htmlType="submit" 
                   icon={<SaveOutlined />}
-                  loading={loading}
+                  loading={isCreating}
                 >
                   Registrar Egreso
                 </Button>
