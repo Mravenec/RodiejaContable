@@ -13,6 +13,22 @@ class VehiculoService {
   error(...args) {
     console.error('[VehiculoService]', ...args);
   }
+
+  /**
+   * Obtiene la lista de vehículos activos
+   * @returns {Promise<Array>} Lista de vehículos activos
+   */
+  async getVehiculosActivos() {
+    try {
+      this.log('Fetching active vehicles...');
+      const response = await api.get('/vehiculos/activos');
+      this.log('Active vehicles response:', response.data);
+      return response.data;
+    } catch (error) {
+      this.error('Error fetching active vehicles:', error);
+      throw error;
+    }
+  }
   /**
    * Obtiene los vehículos agrupados jerárquicamente por marca, modelo y generación
    * @returns {Promise<Object>} Objeto con la estructura jerárquica de vehículos

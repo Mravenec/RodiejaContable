@@ -280,14 +280,26 @@ const NuevaTransaccion = () => {
                       }
                       disabled={loadingVehiculos || errorVehiculos || vehiculos.length === 0}
                     >
-                      {vehiculos.map(vehiculo => (
-                        <Option 
-                          key={vehiculo.id} 
-                          value={vehiculo.id}
-                        >
-                          {`${vehiculo.marca || 'Sin marca'} ${vehiculo.modelo || 'Sin modelo'} - ${vehiculo.placa || 'Sin placa'}`}
-                        </Option>
-                      ))}
+                      {vehiculos.map(vehiculo => {
+                        // Formatear la información del vehículo según la estructura del backend
+                        const codigo = vehiculo.codigoVehiculo || 'SIN_CODIGO';
+                        const anio = vehiculo.anio || 'Año N/A';
+                        const estado = vehiculo.estado || 'SIN_ESTADO';
+                        const placa = codigo; // Usamos el código del vehículo como placa
+                        
+                        // Crear el texto de visualización
+                        const displayText = `Vehículo ${codigo} (${anio}) - ${estado}`;
+                        
+                        return (
+                          <Option 
+                            key={vehiculo.id} 
+                            value={vehiculo.id}
+                            title={displayText}
+                          >
+                            {displayText}
+                          </Option>
+                        );
+                      })}
                     </Select>
                     {errorVehiculos && (
                       <Alert 

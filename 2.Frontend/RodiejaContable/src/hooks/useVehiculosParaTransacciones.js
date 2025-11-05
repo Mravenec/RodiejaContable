@@ -1,31 +1,18 @@
 import { useQuery } from 'react-query';
 import { message } from 'antd';
-import api from '../api/axios';
+import vehiculoService from '../api/vehiculos';
 
 const fetchVehiculosActivos = async () => {
   try {
-    console.log('🔍 [API] GET /api/vehiculos/activos');
+    console.log('🔍 [API] Obteniendo vehículos activos...');
+    const vehiculos = await vehiculoService.getVehiculosActivos();
     
-    const response = await api.get('vehiculos/activos', {
-      headers: {
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
-    
-    console.log('📥 [API] Respuesta de /api/vehiculos/activos:', {
-      status: response.status,
-      data: response.data,
-      headers: response.headers
-    });
-    
-    if (!response.data) {
-      console.error('❌ [ERROR] La respuesta no contiene datos');
+    if (!vehiculos) {
+      console.error('❌ [ERROR] La respuesta de vehículos está vacía');
       return [];
     }
     
-    const vehiculosData = Array.isArray(response.data) ? response.data : [response.data];
+    const vehiculosData = Array.isArray(vehiculos) ? vehiculos : [vehiculos];
     
     if (vehiculosData.length === 0) {
       console.warn('⚠️ [ADVERTENCIA] No se encontraron vehículos activos');
@@ -33,26 +20,19 @@ const fetchVehiculosActivos = async () => {
     }
     
     // Mapear los datos para asegurar que tengan la estructura esperada
-    const vehiculosMapeados = vehiculosData.map(vehiculo => {
-      if (!vehiculo.id) {
-        console.warn('⚠️ [ADVERTENCIA] Vehículo sin ID:', vehiculo);
-        return null;
-      }
-      
-      return {
-        id: vehiculo.id,
-        marca: vehiculo.marca || 'Sin marca',
-        modelo: vehiculo.modelo || 'Sin modelo',
-        placa: vehiculo.placa || 'Sin placa',
-        anio: vehiculo.anio || 'N/A',
-        color: vehiculo.color || 'No especificado',
-        activo: vehiculo.activo !== false,
-        ...vehiculo
-      };
-    }).filter(Boolean);
+    const vehiculosMapeados = vehiculosData.map(vehiculo => ({
+      id: vehiculo.id,
+      codigoVehiculo: vehiculo.codigoVehiculo || 'SIN_CODIGO',
+      generacionId: vehiculo.generacionId,
+      anio: vehiculo.anio || 'N/A',
+      placa: vehiculo.codigoVehiculo || 'SIN_PLACA', // Usar codigoVehiculo como placa
+      estado: vehiculo.estado || 'DESCONOCIDO',
+      activo: vehiculo.activo !== false,
+      ...vehiculo
+    }));
     
     console.log(`✅ [API] ${vehiculosMapeados.length} vehículos cargados:`, 
-      vehiculosMapeados.map(v => `${v.id}: ${v.marca} ${v.modelo} (${v.placa})`).join(', ')
+      vehiculosMapeados.map(v => `${v.id}: ${v.codigoVehiculo} (${v.anio}) - ${v.estado}`).join(', ')
     );
     
     return vehiculosMapeados;

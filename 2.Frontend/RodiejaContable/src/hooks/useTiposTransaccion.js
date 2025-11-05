@@ -1,32 +1,19 @@
 import { useQuery } from 'react-query';
 import { message } from 'antd';
-import api from '../api/axios';
+import { getTiposTransaccionesByCategoria } from '../api/transacciones';
 
 const fetchTiposByCategoria = async (categoria) => {
   try {
-    console.log(`🔍 [API] GET /api/tipos-transacciones/categoria/${categoria}`);
+    console.log(`🔍 [API] Obteniendo tipos de transacción para categoría: ${categoria}`);
     
-    // Hacer la petición sin el prefijo /api ya que ya está en la baseURL
-    const response = await api.get(`tipos-transacciones/categoria/${categoria}`, {
-      headers: {
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
+    const tipos = await getTiposTransaccionesByCategoria(categoria);
     
-    console.log(`📥 [API] Respuesta de /api/tipos-transacciones/categoria/${categoria}:`, {
-      status: response.status,
-      data: response.data,
-      headers: response.headers
-    });
-    
-    if (!response.data) {
-      console.error('❌ [ERROR] La respuesta no contiene datos');
+    if (!tipos) {
+      console.error('❌ [ERROR] La respuesta de tipos de transacción está vacía');
       return [];
     }
     
-    const tiposData = Array.isArray(response.data) ? response.data : [response.data];
+    const tiposData = Array.isArray(tipos) ? tipos : [tipos];
     
     if (tiposData.length === 0) {
       console.warn(`⚠️ [ADVERTENCIA] No se encontraron tipos de transacción para la categoría: ${categoria}`);
