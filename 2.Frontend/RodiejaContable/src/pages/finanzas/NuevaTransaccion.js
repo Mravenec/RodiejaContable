@@ -25,7 +25,7 @@ import {
   ArrowDownOutlined
 } from '@ant-design/icons';
 import { useCreateTransaccion } from '../../hooks/useFinanzas';
-import { useTiposByCategoria, useVehiculosParaTransacciones, useEmpleados } from '../../hooks';
+import { useTiposByCategoria, useVehiculosParaTransacciones, useEmpleados, useRepuestos } from '../../hooks';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -44,6 +44,7 @@ const NuevaTransaccion = () => {
   const { data: tiposEgreso, isLoading: loadingTiposEgreso } = useTiposByCategoria('EGRESO');
   const { data: empleados = [], isLoading: loadingEmpleados } = useEmpleados();
   const { vehiculos = [], loadingVehiculos, errorVehiculos } = useVehiculosParaTransacciones();
+  const { data: repuestos = [], isLoading: loadingRepuestos } = useRepuestos({ estado: 'STOCK' });
   
   // Hook para crear transacción
   const { mutate: crearTransaccion, isLoading: isCreating } = useCreateTransaccion({
@@ -323,12 +324,16 @@ const NuevaTransaccion = () => {
                       placeholder="Seleccione el repuesto"
                       showSearch
                       optionFilterProp="children"
+                      loading={loadingRepuestos}
                       filterOption={(input, option) =>
                         option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }
                     >
-                      <Option value={1}>Frenos delanteros - Toyota Corolla</Option>
-                      <Option value={2}>Batería - Honda Civic</Option>
+                      {repuestos.map(repuesto => (
+                        <Option key={repuesto.id} value={repuesto.id}>
+                          {repuesto.descripcion} - {repuesto.codigo} {repuesto.ubicacion ? `(${repuesto.ubicacion})` : ''}
+                        </Option>
+                      ))}
                     </Select>
                   </Form.Item>
                   
