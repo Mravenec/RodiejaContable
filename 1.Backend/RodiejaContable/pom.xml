@@ -21,7 +21,7 @@
 		<developer/>
 	</developers>
 	<scm>
-		<connection/>
+		<connection/>	
 		<developerConnection/>
 		<tag/>
 		<url/>
@@ -30,7 +30,7 @@
 		<java.version>17</java.version>
 		<jooq.version>3.18.7</jooq.version>
 		<mariadb-java-client.version>3.3.2</mariadb-java-client.version>
-		<spring.datasource.url>jdbc:mariadb://192.168.100.73:3306/sistema_vehicular</spring.datasource.url>
+		<spring.datasource.url>jdbc:mariadb://localhost:3306/sistema_vehicular</spring.datasource.url>
 		<spring.datasource.username>root</spring.datasource.username>
 		<spring.datasource.password>123456</spring.datasource.password>
 		<spring.datasource.driver-class-name>org.mariadb.jdbc.Driver</spring.datasource.driver-class-name>
