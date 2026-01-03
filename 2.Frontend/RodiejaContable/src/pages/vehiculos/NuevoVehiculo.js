@@ -26,7 +26,8 @@ import {
   SaveOutlined, 
   ArrowLeftOutlined, 
   PlusOutlined,
-  CloseOutlined
+  CloseOutlined,
+  CheckOutlined
 } from '@ant-design/icons';
 import { Loading } from '../../components/Loading';
 import { useMarcas } from '../../hooks/useMarcas';
@@ -652,7 +653,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
                             />
                             <Button
                               type="text"
-                              icon={<PlusOutlined />}
+                              icon={<CheckOutlined style={{ color: '#52c41a' }} />}
                               onClick={handleNuevaMarca}
                               loading={creandoMarca}
                               disabled={!nuevaMarcaNombre.trim()}
