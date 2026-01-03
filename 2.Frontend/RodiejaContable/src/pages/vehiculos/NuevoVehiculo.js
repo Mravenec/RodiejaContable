@@ -15,12 +15,18 @@ import {
   Row,
   Col,
   Upload,
-  Alert
+  Alert,
+  Divider,
+  Tooltip,
+  Spin,
+  Input as AntdInput,
+  Modal
 } from 'antd';
 import { 
   SaveOutlined, 
   ArrowLeftOutlined, 
-  PlusOutlined
+  PlusOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import { Loading } from '../../components/Loading';
 import { useMarcas } from '../../hooks/useMarcas';
@@ -60,14 +66,21 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [costoGruaValue, setCostoGruaValue] = useState(0);
   const [comisionesValue, setComisionesValue] = useState(0);
   
+  // Estado para el modal de nueva marca
+  const [nuevaMarcaModal, setNuevaMarcaModal] = useState(false);
+  const [nuevaMarcaNombre, setNuevaMarcaNombre] = useState('');
+  const [creandoMarca, setCreandoMarca] = useState(false);
+  
   // DEBUG: Estado para mostrar información
   const [debugInfo, setDebugInfo] = useState('');
   
   // Hooks para cargar datos
+  // Este es el hook que obtiene la lista de marcas, incluyendo 'Toyota'
   const { 
     data: marcas = [], 
     isLoading: isLoadingMarcas,
-    error: errorMarcas 
+    error: errorMarcas,
+    createMarcaMutation 
   } = useMarcas();
   
   const { 
@@ -239,13 +252,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
     setMarcaId(value);
     setModeloId(null);
     setSelectedGeneracionId(null);
-    
-    // Limpiar los campos de modelo y generación
-    form.setFieldsValue({ 
-      modeloId: undefined, 
-      generacionId: undefined 
-    });
-    
+    form.setFieldsValue({ modeloId: undefined, generacionId: undefined });
     console.log('🧹 Campos limpiados por cambio de marca');
   };
   
@@ -254,11 +261,35 @@ const NuevoVehiculo = ({ editMode = false }) => {
     console.log('🚗 Modelo seleccionado:', value);
     setModeloId(value);
     setSelectedGeneracionId(null);
-    
-    // Limpiar el campo de generación
     form.setFieldsValue({ generacionId: undefined });
-    
     console.log('🧹 Campo generación limpiado por cambio de modelo');
+  };
+  
+  // Función para manejar la creación de una nueva marca
+  const handleNuevaMarca = async () => {
+    if (!nuevaMarcaNombre.trim()) {
+      message.warning('Por favor ingresa el nombre de la marca');
+      return;
+    }
+    
+    try {
+      setCreandoMarca(true);
+      const response = await createMarcaMutation.mutateAsync({ nombre: nuevaMarcaNombre.trim() });
+      
+      // Actualizar el formulario con la nueva marca seleccionada
+      if (response?.data?.id) {
+        setMarcaId(response.data.id);
+        form.setFieldsValue({ marcaId: response.data.id });
+        message.success(`Marca "${nuevaMarcaNombre}" creada exitosamente`);
+        setNuevaMarcaModal(false);
+        setNuevaMarcaNombre('');
+      }
+    } catch (error) {
+      console.error('Error al crear la marca:', error);
+      message.error('Error al crear la marca. Por favor intenta nuevamente.');
+    } finally {
+      setCreandoMarca(false);
+    }
   };
   
   const createVehiculo = useCreateVehiculo({
@@ -593,14 +624,86 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   showSearch
                   optionFilterProp="children"
                   filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
+                    option && option.children 
+                      ? option.children.toLowerCase().includes(input.toLowerCase())
+                      : option.props.className === 'add-new-option' // Always show the add new option
                   }
+                  dropdownRender={(menu) => {
+                    return (
+                      <div>
+                        {menu}
+                        <Divider style={{ margin: '8px 0' }} />
+                        {nuevaMarcaModal ? (
+                          <div style={{ padding: '8px', display: 'flex', gap: '8px' }}>
+                            <Input
+                              autoFocus
+                              size="small"
+                              placeholder="Nombre de la marca"
+                              value={nuevaMarcaNombre}
+                              onChange={(e) => setNuevaMarcaNombre(e.target.value)}
+                              onPressEnter={handleNuevaMarca}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Escape') {
+                                  setNuevaMarcaModal(false);
+                                  setNuevaMarcaNombre('');
+                                }
+                              }}
+                              style={{ flex: 1 }}
+                            />
+                            <Button
+                              type="text"
+                              icon={<PlusOutlined />}
+                              onClick={handleNuevaMarca}
+                              loading={creandoMarca}
+                              disabled={!nuevaMarcaNombre.trim()}
+                              title="Agregar"
+                            />
+                            <Button
+                              type="text"
+                              danger
+                              icon={<CloseOutlined />}
+                              onClick={() => {
+                                setNuevaMarcaModal(false);
+                                setNuevaMarcaNombre('');
+                              }}
+                              disabled={creandoMarca}
+                              title="Cancelar"
+                            />
+                          </div>
+                        ) : (
+                          <div 
+                            style={{ 
+                              padding: '4px 8px', 
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              color: '#1890ff'
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setNuevaMarcaModal(true);
+                              setNuevaMarcaNombre('');
+                            }}
+                          >
+                            <PlusOutlined style={{ marginRight: 8 }} />
+                            Agregar nueva marca
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }}
                 >
                   {marcas.map((marca) => (
                     <Option key={marca.id} value={marca.id}>
                       {marca.nombre}
                     </Option>
                   ))}
+                  {nuevaMarcaModal && (
+                    <Option className="add-new-option" value="" style={{ display: 'none' }}>
+                      {nuevaMarcaNombre}
+                    </Option>
+                  )}
                 </Select>
               </Form.Item>
             </Col>
@@ -898,6 +1001,32 @@ const NuevoVehiculo = ({ editMode = false }) => {
   if (isLoading) {
     return <Loading />;
   }
+
+  // Modal para agregar nueva marca
+  const NuevaMarcaModal = () => (
+    <Modal
+      title="Agregar Nueva Marca"
+      open={nuevaMarcaModal}
+      onOk={handleNuevaMarca}
+      onCancel={() => {
+        setNuevaMarcaModal(false);
+        setNuevaMarcaNombre('');
+      }}
+      confirmLoading={creandoMarca}
+      okText="Crear"
+      cancelText="Cancelar"
+    >
+      <Form.Item label="Nombre de la marca" required>
+        <AntdInput
+          placeholder="Ej: Toyota, Honda, etc."
+          value={nuevaMarcaNombre}
+          onChange={(e) => setNuevaMarcaNombre(e.target.value)}
+          onPressEnter={handleNuevaMarca}
+          disabled={creandoMarca}
+        />
+      </Form.Item>
+    </Modal>
+  );
 
   return (
     <div>
