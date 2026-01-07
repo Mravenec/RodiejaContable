@@ -62,6 +62,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [estadoValue, setEstadoValue] = useState('DISPONIBLE');
   const [notasValue, setNotasValue] = useState('');
   const [precioCompraValue, setPrecioCompraValue] = useState(null);
+  const [generacionId, setGeneracionId] = useState(null);
   
   // NUEVOS ESTADOS para costoGrua y comisiones
   const [costoGruaValue, setCostoGruaValue] = useState(0);
@@ -71,6 +72,18 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [nuevaMarcaModal, setNuevaMarcaModal] = useState(false);
   const [nuevaMarcaNombre, setNuevaMarcaNombre] = useState('');
   const [creandoMarca, setCreandoMarca] = useState(false);
+  
+  // Estado para el modal de nuevo modelo
+  const [nuevoModeloModal, setNuevoModeloModal] = useState(false);
+  const [nuevoModeloNombre, setNuevoModeloNombre] = useState('');
+  const [creandoModelo, setCreandoModelo] = useState(false);
+
+  // Estado para el modal de nueva generación
+  const [nuevaGeneracionModal, setNuevaGeneracionModal] = useState(false);
+  const [nuevaGeneracionNombre, setNuevaGeneracionNombre] = useState('');
+  const [anioInicio, setAnioInicio] = useState(new Date().getFullYear());
+  const [anioFin, setAnioFin] = useState(new Date().getFullYear());
+  const [creandoGeneracion, setCreandoGeneracion] = useState(false);
   
   // DEBUG: Estado para mostrar información
   const [debugInfo, setDebugInfo] = useState('');
@@ -87,13 +100,16 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const { 
     data: modelos = [], 
     isLoading: isLoadingModelos,
-    error: errorModelos
+    error: errorModelos,
+    refetch: refetchModelos,
+    createModelo 
   } = useModelos(marcaId);
   
   const { 
     data: generaciones = [], 
     isLoading: isLoadingGeneraciones,
-    error: errorGeneraciones 
+    error: errorGeneraciones,
+    createGeneracion 
   } = useGeneraciones(modeloId);
   
   // Efecto para actualizar los años disponibles cuando cambia la generación seleccionada
@@ -290,6 +306,107 @@ const NuevoVehiculo = ({ editMode = false }) => {
       message.error('Error al crear la marca. Por favor intenta nuevamente.');
     } finally {
       setCreandoMarca(false);
+    }
+  };
+  
+  // Función para manejar el cambio de generación
+  const handleGeneracionChange = (value) => {
+    setGeneracionId(value);
+    form.setFieldsValue({ generacionId: value });
+    
+    // Actualizar años disponibles cuando se selecciona una generación
+    const generacionSeleccionada = generaciones.find(g => g.id === value);
+    if (generacionSeleccionada) {
+      const startYear = generacionSeleccionada.anioInicio || new Date().getFullYear();
+      const endYear = generacionSeleccionada.anioFin || new Date().getFullYear();
+      const anios = [];
+      for (let i = startYear; i <= endYear; i++) {
+        anios.push(i);
+      }
+      setAniosDisponibles(anios);
+    }
+  };
+
+  // Función para manejar la creación de un nuevo modelo
+  const handleNuevoModelo = async () => {
+    if (!nuevoModeloNombre.trim()) {
+      message.warning('Por favor ingresa el nombre del modelo');
+      return;
+    }
+    
+    if (!marcaId) {
+      message.warning('Por favor selecciona una marca primero');
+      return;
+    }
+    
+    try {
+      setCreandoModelo(true);
+      const response = await createModelo.mutateAsync({ 
+        nombre: nuevoModeloNombre.trim(),
+        marcaId: marcaId
+      });
+      
+      // Actualizar la lista de modelos y seleccionar el nuevo modelo
+      if (response?.id) {
+        setModeloId(response.id);
+        form.setFieldsValue({ modeloId: response.id });
+        message.success(`Modelo "${nuevoModeloNombre}" creado exitosamente`);
+        setNuevoModeloModal(false);
+        setNuevoModeloNombre('');
+      }
+    } catch (error) {
+      console.error('Error al crear el modelo:', error);
+      message.error('Error al crear el modelo. Por favor intenta nuevamente.');
+    } finally {
+      setCreandoModelo(false);
+    }
+  };
+
+  // Función para manejar la creación de una nueva generación
+  const handleNuevaGeneracion = async () => {
+    if (!nuevaGeneracionNombre.trim()) {
+      message.warning('Por favor ingresa el nombre de la generación');
+      return;
+    }
+
+    if (!modeloId) {
+      message.warning('Por favor selecciona un modelo primero');
+      return;
+    }
+
+    try {
+      setCreandoGeneracion(true);
+      const response = await createGeneracion.mutateAsync({ 
+        nombre: nuevaGeneracionNombre.trim(),
+        modeloId: modeloId,
+        anioInicio: parseInt(anioInicio, 10),
+        anioFin: parseInt(anioFin, 10)
+      });
+      
+      if (response?.data?.id) {
+        const newGeneration = response.data;
+        setGeneracionId(newGeneration.id);
+        form.setFieldsValue({ generacionId: newGeneration.id });
+        
+        // Update available years
+        const startYear = newGeneration.anioInicio || new Date().getFullYear();
+        const endYear = newGeneration.anioFin || new Date().getFullYear();
+        const anios = [];
+        for (let i = startYear; i <= endYear; i++) {
+          anios.push(i);
+        }
+        setAniosDisponibles(anios);
+        
+        setNuevaGeneracionModal(false);
+        setNuevaGeneracionNombre('');
+        setAnioInicio(new Date().getFullYear());
+        setAnioFin(new Date().getFullYear());
+      }
+    } catch (error) {
+      console.error('Error al crear la generación:', error);
+      message.error('Error al crear la generación. Por favor intenta nuevamente.');
+    } finally {
+      setCreandoGeneracion(false);
     }
   };
   
@@ -722,14 +839,88 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   showSearch
                   optionFilterProp="children"
                   filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
+                    option && option.children 
+                      ? option.children.toLowerCase().includes(input.toLowerCase())
+                      : option.props.className === 'add-new-option'
                   }
+                  dropdownRender={(menu) => {
+                    return (
+                      <div>
+                        {menu}
+                        <Divider style={{ margin: '8px 0' }} />
+                        {nuevoModeloModal ? (
+                          <div style={{ padding: '8px', display: 'flex', gap: '8px' }}>
+                            <Input
+                              autoFocus
+                              size="small"
+                              placeholder="Nombre del modelo"
+                              value={nuevoModeloNombre}
+                              onChange={(e) => setNuevoModeloNombre(e.target.value)}
+                              onPressEnter={handleNuevoModelo}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Escape') {
+                                  setNuevoModeloModal(false);
+                                  setNuevoModeloNombre('');
+                                }
+                              }}
+                              style={{ flex: 1 }}
+                            />
+                            <Button
+                              type="text"
+                              icon={<PlusOutlined />}
+                              onClick={handleNuevoModelo}
+                              loading={creandoModelo}
+                              disabled={!nuevoModeloNombre.trim()}
+                              title="Agregar"
+                            />
+                            <Button
+                              type="text"
+                              danger
+                              icon={<CloseOutlined />}
+                              onClick={() => {
+                                setNuevoModeloModal(false);
+                                setNuevoModeloNombre('');
+                              }}
+                              disabled={creandoModelo}
+                              title="Cancelar"
+                            />
+                          </div>
+                        ) : (
+                          <div 
+                            style={{ 
+                              padding: '4px 8px', 
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              color: '#1890ff',
+                              opacity: marcaId ? 1 : 0.5,
+                              pointerEvents: marcaId ? 'auto' : 'none'
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setNuevoModeloModal(true);
+                              setNuevoModeloNombre('');
+                            }}
+                          >
+                            <PlusOutlined style={{ marginRight: 8 }} />
+                            Agregar nuevo modelo
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }}
                 >
                   {modelos.map((modelo) => (
                     <Option key={modelo.id} value={modelo.id}>
                       {modelo.nombre}
                     </Option>
                   ))}
+                  {nuevoModeloModal && (
+                    <Option className="add-new-option" value="" style={{ display: 'none' }}>
+                      {nuevoModeloNombre}
+                    </Option>
+                  )}
                 </Select>
               </Form.Item>
             </Col>
@@ -742,34 +933,119 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 <Select 
                   placeholder="Selecciona una generación"
                   loading={isLoadingGeneraciones}
-                  disabled={!modeloId || isLoadingGeneraciones}
+                  onChange={handleGeneracionChange}
+                  disabled={!modeloId}
                   showSearch
                   optionFilterProp="children"
-                  filterOption={(input, option) => {
-                    return option.children.toLowerCase().includes(input.toLowerCase());
-                  }}
-                  style={{ width: '100%' }}
-                  value={selectedGeneracionId}
-                  onChange={(value) => {
-                    console.log('🎯 Generación seleccionada en onChange:', value);
-                    setSelectedGeneracionId(value);
-                    form.setFieldsValue({ generacionId: value });
-                  }}
+                  filterOption={(input, option) =>
+                    option && option.children 
+                      ? option.children.toLowerCase().includes(input.toLowerCase())
+                      : option.props.className === 'add-new-option'
+                  }
+                  dropdownRender={(menu) => (
+                    <div>
+                      {menu}
+                      <Divider style={{ margin: '8px 0' }} />
+                      {nuevaGeneracionModal ? (
+                        <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <Input
+                            autoFocus
+                            size="small"
+                            placeholder="Nombre de la generación"
+                            value={nuevaGeneracionNombre}
+                            onChange={(e) => setNuevaGeneracionNombre(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') {
+                                setNuevaGeneracionModal(false);
+                                setNuevaGeneracionNombre('');
+                              } else if (e.key === 'Enter') {
+                                handleNuevaGeneracion();
+                              }
+                            }}
+                          />
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <InputNumber
+                              size="small"
+                              placeholder="Año inicio"
+                              min={1900}
+                              max={2100}
+                              value={anioInicio}
+                              onChange={(value) => setAnioInicio(value)}
+                              style={{ width: '50%' }}
+                            />
+                            <InputNumber
+                              size="small"
+                              placeholder="Año fin"
+                              min={anioInicio}
+                              max={2100}
+                              value={anioFin}
+                              onChange={(value) => setAnioFin(value)}
+                              style={{ width: '50%' }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <Button
+                              type="text"
+                              danger
+                              icon={<CloseOutlined />}
+                              onClick={() => {
+                                setNuevaGeneracionModal(false);
+                                setNuevaGeneracionNombre('');
+                              }}
+                              disabled={creandoGeneracion}
+                              title="Cancelar"
+                            />
+                            <Button
+                              type="text"
+                              icon={<CheckOutlined />}
+                              onClick={handleNuevaGeneracion}
+                              loading={creandoGeneracion}
+                              disabled={!nuevaGeneracionNombre.trim()}
+                              title="Agregar"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          style={{ 
+                            padding: '4px 8px', 
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            color: '#1890ff',
+                            opacity: modeloId ? 1 : 0.5,
+                            pointerEvents: modeloId ? 'auto' : 'none'
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setNuevaGeneracionModal(true);
+                            setNuevaGeneracionNombre('');
+                          }}
+                        >
+                          <PlusOutlined style={{ marginRight: 8 }} />
+                          Agregar nueva generación
+                        </div>
+                      )}
+                    </div>
+                  )}
                 >
                   {generaciones.map((generacion) => {
-                    const startYear = generacion.anioInicio || 'N/A';
-                    const endYear = generacion.anioFin || 'Actual';
+                    const startYear = generacion.anioInicio || new Date().getFullYear();
+                    const endYear = generacion.anioFin || new Date().getFullYear();
                     const displayText = `${generacion.nombre} (${startYear}-${endYear})`;
                     
                     return (
-                      <Option 
-                        key={generacion.id}
-                        value={generacion.id}
-                      >
+                      <Option key={generacion.id} value={generacion.id}>
                         {displayText}
                       </Option>
                     );
                   })}
+                  {nuevaGeneracionModal && (
+                    <Option className="add-new-option" value="" style={{ display: 'none' }}>
+                      {nuevaGeneracionNombre} ({anioInicio} - {anioFin})
+                    </Option>
+                  )}
                 </Select>
               </Form.Item>
             </Col>

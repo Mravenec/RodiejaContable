@@ -1,9 +1,12 @@
-import { useQuery } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { message } from 'antd';
 import { modelosAPI } from '../api/modelos';
 
 export function useModelos(marcaId, enabled = true) {
-  return useQuery(
+  const queryClient = useQueryClient();
+  
+  // Query para obtener los modelos de una marca
+  const modelosQuery = useQuery(
     ['modelos', marcaId],
     async () => {
       try {
@@ -18,9 +21,31 @@ export function useModelos(marcaId, enabled = true) {
     },
     {
       enabled: !!marcaId && enabled,
-      staleTime: 5 * 60 * 1000,
-      cacheTime: 30 * 60 * 1000,
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      cacheTime: 30 * 60 * 1000, // 30 minutos
       refetchOnWindowFocus: false,
     }
   );
+
+  // Mutación para crear un nuevo modelo
+  const createModelo = useMutation(
+    (nuevoModelo) => modelosAPI.create(nuevoModelo),
+    {
+      onSuccess: () => {
+        // Invalida y vuelve a cargar la lista de modelos
+        queryClient.invalidateQueries(['modelos', marcaId]);
+        message.success('Modelo creado exitosamente');
+      },
+      onError: (error) => {
+        console.error('Error creating modelo:', error);
+        message.error('Error al crear el modelo');
+      }
+    }
+  );
+
+  return {
+    ...modelosQuery,
+    createModelo,
+    createModeloMutation: createModelo
+  };
 }

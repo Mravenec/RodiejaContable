@@ -1,11 +1,11 @@
-import { useQuery } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { message } from 'antd';
 import { generacionesAPI } from '../api/generaciones';
 
 export function useGeneraciones(modeloId, enabled = true) {
-  console.log('useGeneraciones - modeloId:', modeloId, 'enabled:', enabled);
+  const queryClient = useQueryClient();
   
-  return useQuery(
+  const generacionesQuery = useQuery(
     ['generaciones', modeloId],
     async () => {
       console.log('Iniciando fetch de generaciones para modeloId:', modeloId);
@@ -44,4 +44,26 @@ export function useGeneraciones(modeloId, enabled = true) {
       }
     }
   );
+
+  // Mutación para crear una nueva generación
+  const createGeneracion = useMutation(
+    (nuevaGeneracion) => generacionesAPI.create(nuevaGeneracion),
+    {
+      onSuccess: () => {
+        // Invalida y vuelve a cargar la lista de generaciones
+        queryClient.invalidateQueries(['generaciones', modeloId]);
+        message.success('Generación creada exitosamente');
+      },
+      onError: (error) => {
+        console.error('Error creating generacion:', error);
+        message.error('Error al crear la generación');
+      }
+    }
+  );
+
+  return {
+    ...generacionesQuery,
+    createGeneracion,
+    createGeneracionMutation: createGeneracion
+  };
 }
