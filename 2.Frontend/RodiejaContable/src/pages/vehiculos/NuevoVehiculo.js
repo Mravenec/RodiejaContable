@@ -16,11 +16,7 @@ import {
   Col,
   Upload,
   Alert,
-  Divider,
-  Tooltip,
-  Spin,
-  Input as AntdInput,
-  Modal
+  Divider
 } from 'antd';
 import { 
   SaveOutlined, 
@@ -46,7 +42,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [fileList, setFileList] = useState([]);
-  const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Estados para manejar la selección en cascada
@@ -62,7 +57,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [estadoValue, setEstadoValue] = useState('DISPONIBLE');
   const [notasValue, setNotasValue] = useState('');
   const [precioCompraValue, setPrecioCompraValue] = useState(null);
-  const [generacionId, setGeneracionId] = useState(null);
   
   // NUEVOS ESTADOS para costoGrua y comisiones
   const [costoGruaValue, setCostoGruaValue] = useState(0);
@@ -101,7 +95,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
     data: modelos = [], 
     isLoading: isLoadingModelos,
     error: errorModelos,
-    refetch: refetchModelos,
     createModelo 
   } = useModelos(marcaId);
   
@@ -311,7 +304,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
   
   // Función para manejar el cambio de generación
   const handleGeneracionChange = (value) => {
-    setGeneracionId(value);
+    setSelectedGeneracionId(value);
     form.setFieldsValue({ generacionId: value });
     
     // Actualizar años disponibles cuando se selecciona una generación
@@ -385,7 +378,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
       
       if (response?.data?.id) {
         const newGeneration = response.data;
-        setGeneracionId(newGeneration.id);
+        setSelectedGeneracionId(newGeneration.id);
         form.setFieldsValue({ generacionId: newGeneration.id });
         
         // Update available years
@@ -425,7 +418,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
       const errorMessage = error.response?.data?.message || 'Error al guardar el vehículo';
       console.error('❌ Error al guardar:', error);
       message.error(errorMessage);
-      setError(errorMessage);
     },
     onSettled: () => {
       // Ensure this runs after navigation
@@ -445,7 +437,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
       const errorMessage = error.response?.data?.message || 'Error al actualizar el vehículo';
       console.error('❌ Error al actualizar:', error);
       message.error(errorMessage);
-      setError(errorMessage);
     },
     onSettled: () => {
       setIsSubmitting(false);
@@ -474,7 +465,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const onFinish = async (values) => {
     console.log('🚀 === INICIANDO ENVÍO DEL FORMULARIO ===');
     setIsSubmitting(true);
-    setError(null);
     
     try {
       // Usar valores del estado como respaldo para los campos del formulario - ACTUALIZADO
@@ -621,7 +611,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
       });
       
       message.error(errorMessage);
-      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -1278,32 +1267,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
   if (isLoading) {
     return <Loading />;
   }
-
-  // Modal para agregar nueva marca
-  const NuevaMarcaModal = () => (
-    <Modal
-      title="Agregar Nueva Marca"
-      open={nuevaMarcaModal}
-      onOk={handleNuevaMarca}
-      onCancel={() => {
-        setNuevaMarcaModal(false);
-        setNuevaMarcaNombre('');
-      }}
-      confirmLoading={creandoMarca}
-      okText="Crear"
-      cancelText="Cancelar"
-    >
-      <Form.Item label="Nombre de la marca" required>
-        <AntdInput
-          placeholder="Ej: Toyota, Honda, etc."
-          value={nuevaMarcaNombre}
-          onChange={(e) => setNuevaMarcaNombre(e.target.value)}
-          onPressEnter={handleNuevaMarca}
-          disabled={creandoMarca}
-        />
-      </Form.Item>
-    </Modal>
-  );
 
   return (
     <div>
