@@ -75,23 +75,54 @@ const NuevaTransaccion = () => {
 
   const onFinish = async (values) => {
     try {
+      const esEgreso = tipoTransaccion === 'EGRESO';
+      const montoValor = parseFloat(monto) || 0;
+      
+      if (montoValor <= 0) {
+        message.error('El monto debe ser mayor a 0');
+        return;
+      }
+      
+      // Preparar el payload base
       const payload = {
         fecha: values.fecha.format('YYYY-MM-DD'),
         tipoTransaccionId: values.tipo,
-        empleadoId: values.empleado_id || null,
-        vehiculoId: values.vehiculo_id || null,
-        repuestoId: values.repuesto_id || null,
-        monto: parseFloat(monto),
-        comisionEmpleado: tipoTransaccion === 'INGRESO' ? parseFloat(comision) : 0,
+        monto: esEgreso ? -Math.abs(montoValor) : montoValor,
         descripcion: values.descripcion || null,
         referencia: values.referencia || null,
         estado: 'COMPLETADA'
       };
       
+      if (esEgreso) {
+        // Agregar campos específicos de egresos
+        Object.assign(payload, {
+          empleadoId: values.empleado_id || null,
+          vehiculoId: null,
+          repuestoId: null,
+          comisionEmpleado: 0,
+          proveedor: values.proveedor || null,
+          metodoPago: values.metodo_pago || 'EFECTIVO'
+        });
+      } else {
+        // Para ingresos, validar vehículo
+        if (!values.vehiculo_id) {
+          message.error('Debe seleccionar un vehículo');
+          return;
+        }
+        
+        // Agregar campos específicos de ingresos
+        Object.assign(payload, {
+          empleadoId: values.empleado_id || null,
+          vehiculoId: values.vehiculo_id,
+          repuestoId: values.repuesto_id || null,
+          comisionEmpleado: parseFloat(comision) || 0
+        });
+      }
+      
       crearTransaccion(payload);
     } catch (error) {
       console.error('Error al preparar los datos:', error);
-      message.error('Error al procesar los datos del formulario');
+      message.error(error.response?.data?.message || 'Error al procesar los datos del formulario');
     }
   };
 
@@ -102,10 +133,23 @@ const NuevaTransaccion = () => {
       
     if (tipoSeleccionado) {
       setTipoTransaccion(tipoSeleccionado.categoria);
+      
+      // Resetear campos específicos cuando cambia entre ingreso/egreso
+      if (tipoSeleccionado.categoria === 'INGRESO') {
+        form.setFieldsValue({ 
+          vehiculo_id: undefined, 
+          repuesto_id: undefined,
+          proveedor: undefined,
+          metodo_pago: undefined
+        });
+      } else {
+        form.setFieldsValue({ 
+          vehiculo_id: undefined,
+          repuesto_id: undefined,
+          comision: 0
+        });
+      }
     }
-    
-    // Resetear campos relacionados cuando cambia el tipo
-    form.setFieldsValue({ vehiculo_id: undefined, repuesto_id: undefined });
   };
 
 
@@ -190,15 +234,27 @@ const NuevaTransaccion = () => {
                   <Form.Item
                     name="monto"
                     label="Monto"
-                    rules={[{ required: true, message: 'Ingrese el monto' }]}
+                    rules={[{ 
+                      required: true, 
+                      message: 'Ingrese el monto',
+                      validator: (_, value) => {
+                        if (!value && value !== 0) {
+                          return Promise.reject('Por favor ingrese un monto');
+                        }
+                        if (parseFloat(value) <= 0) {
+                          return Promise.reject('El monto debe ser mayor a 0');
+                        }
+                        return Promise.resolve();
+                      }
+                    }]}
                   >
                     <InputNumber 
                       style={{ width: '100%' }} 
-                      min={0} 
+                      min={0.01}
                       step={0.01} 
                       precision={2}
-                      formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                      formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      parser={value => value.replace(/₡\s?|(,*)/g, '')}
                       onChange={handleMontoChange}
                     />
                   </Form.Item>
@@ -227,8 +283,7 @@ const NuevaTransaccion = () => {
                 <Col xs={24} md={12}>
                   <Form.Item
                     name="empleado_id"
-                    label="Empleado"
-                    rules={[{ required: true, message: 'Por favor seleccione un empleado' }]}
+                    label={tipoTransaccion === 'EGRESO' ? 'Empleado Responsable (opcional)' : 'Empleado (opcional)'}
                   >
                     <Select 
                       placeholder={loadingEmpleados ? 'Cargando empleados...' : 
@@ -257,7 +312,10 @@ const NuevaTransaccion = () => {
                   <Form.Item
                     name="vehiculo_id"
                     label="Vehículo"
-                    rules={[{ required: true, message: 'Por favor seleccione un vehículo' }]}
+                    rules={[{ 
+                      required: tipoTransaccion === 'INGRESO', 
+                      message: 'Para ingresos, debe seleccionar un vehículo' 
+                    }]}
                   >
                     <Select 
                       placeholder={
@@ -286,7 +344,7 @@ const NuevaTransaccion = () => {
                         const codigo = vehiculo.codigoVehiculo || 'SIN_CODIGO';
                         const anio = vehiculo.anio || 'Año N/A';
                         const estado = vehiculo.estado || 'SIN_ESTADO';
-                        const placa = codigo; // Usamos el código del vehículo como placa
+                        //const placa = codigo; // Usamos el código del vehículo como placa
                         
                         // Crear el texto de visualización
                         const displayText = `Vehículo ${codigo} (${anio}) - ${estado}`;
@@ -318,7 +376,7 @@ const NuevaTransaccion = () => {
                   
                   <Form.Item
                     name="repuesto_id"
-                    label="Repuesto (opcional)"
+                    label={tipoTransaccion === 'INGRESO' ? 'Repuesto (opcional)' : 'Repuesto'}
                   >
                     <Select 
                       placeholder="Seleccione el repuesto"
@@ -424,15 +482,27 @@ const NuevaTransaccion = () => {
                   <Form.Item
                     name="monto"
                     label="Monto"
-                    rules={[{ required: true, message: 'Ingrese el monto' }]}
+                    rules={[{ 
+                      required: true, 
+                      message: 'Ingrese el monto',
+                      validator: (_, value) => {
+                        if (!value && value !== 0) {
+                          return Promise.reject('Por favor ingrese un monto');
+                        }
+                        if (parseFloat(value) <= 0) {
+                          return Promise.reject('El monto debe ser mayor a 0');
+                        }
+                        return Promise.resolve();
+                      }
+                    }]}
                   >
                     <InputNumber 
                       style={{ width: '100%' }} 
-                      min={0} 
+                      min={0.01}
                       step={0.01} 
                       precision={2}
-                      formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                      formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      parser={value => value.replace(/₡\s?|(,*)/g, '')}
                       onChange={handleMontoChange}
                     />
                   </Form.Item>
