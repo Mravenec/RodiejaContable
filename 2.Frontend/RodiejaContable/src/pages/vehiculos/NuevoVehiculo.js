@@ -23,7 +23,8 @@ import {
   ArrowLeftOutlined, 
   PlusOutlined,
   CloseOutlined,
-  CheckOutlined
+  CheckOutlined,
+  EditOutlined
 } from '@ant-design/icons';
 import { Loading } from '../../components/Loading';
 import { useMarcas } from '../../hooks/useMarcas';
@@ -46,6 +47,8 @@ const NuevoVehiculo = ({ editMode = false }) => {
   
   // Estados para manejar la selección en cascada
   const [marcaId, setMarcaId] = useState(null);
+  const [editingMarcaId, setEditingMarcaId] = useState(null);
+  const [editingMarcaNombre, setEditingMarcaNombre] = useState('');
   const [modeloId, setModeloId] = useState(null);
   const [selectedGeneracionId, setSelectedGeneracionId] = useState(null);
   
@@ -88,7 +91,8 @@ const NuevoVehiculo = ({ editMode = false }) => {
     data: marcas = [], 
     isLoading: isLoadingMarcas,
     error: errorMarcas,
-    createMarcaMutation 
+    createMarcaMutation,
+    updateMarca 
   } = useMarcas();
   
   const { 
@@ -275,6 +279,39 @@ const NuevoVehiculo = ({ editMode = false }) => {
     console.log('🧹 Campo generación limpiado por cambio de modelo');
   };
   
+  // Función para manejar la edición de una marca
+  const handleEditarMarca = (marca) => {
+    setEditingMarcaId(marca.id);
+    setEditingMarcaNombre(marca.nombre);
+  };
+
+  // Función para guardar los cambios de la marca editada
+  const handleGuardarEdicionMarca = async () => {
+    if (!editingMarcaNombre.trim()) {
+      message.warning('El nombre de la marca no puede estar vacío');
+      return;
+    }
+
+    try {
+      await updateMarca.mutateAsync({
+        id: editingMarcaId,
+        nombre: editingMarcaNombre.trim()
+      });
+      
+      setEditingMarcaId(null);
+      setEditingMarcaNombre('');
+    } catch (error) {
+      console.error('Error al actualizar la marca:', error);
+      message.error('Error al actualizar la marca');
+    }
+  };
+
+  // Función para cancelar la edición
+  const handleCancelarEdicionMarca = () => {
+    setEditingMarcaId(null);
+    setEditingMarcaNombre('');
+  };
+
   // Función para manejar la creación de una nueva marca
   const handleNuevaMarca = async () => {
     if (!nuevaMarcaNombre.trim()) {
@@ -803,8 +840,55 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 >
                   {marcas.map((marca) => (
                     <Option key={marca.id} value={marca.id}>
-                      {marca.nombre}
-                    </Option>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    {editingMarcaId === marca.id ? (
+                      <div style={{ display: 'flex', width: '100%', gap: '8px' }}>
+                        <Input
+                          value={editingMarcaNombre}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setEditingMarcaNombre(e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          style={{ flex: 1 }}
+                          autoFocus
+                        />
+                        <Button 
+                          type="text" 
+                          icon={<CheckOutlined style={{ color: 'green' }} />} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGuardarEdicionMarca();
+                          }}
+                          size="small"
+                        />
+                        <Button 
+                          type="text" 
+                          icon={<CloseOutlined />} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelarEdicionMarca();
+                          }}
+                          size="small"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <span>{marca.nombre}</span>
+                        <Button 
+                          type="text" 
+                          icon={<EditOutlined />} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditarMarca(marca);
+                          }}
+                          size="small"
+                        />
+                      </>
+                    )}
+                  </div>
+                </Option>
                   ))}
                   {nuevaMarcaModal && (
                     <Option className="add-new-option" value="" style={{ display: 'none' }}>

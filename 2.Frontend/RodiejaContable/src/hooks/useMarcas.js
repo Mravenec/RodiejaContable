@@ -41,10 +41,28 @@ export function useMarcas() {
     }
   );
 
+  // Mutación para actualizar una marca existente
+  const updateMarca = useMutation(
+    ({ id, ...data }) => marcasAPI.update(id, data),
+    {
+      onSuccess: () => {
+        // Invalida y vuelve a cargar la lista de marcas
+        queryClient.invalidateQueries('marcas');
+        message.success('Marca actualizada exitosamente');
+      },
+      onError: (error) => {
+        console.error('Error updating marca:', error);
+        message.error('Error al actualizar la marca');
+      }
+    }
+  );
+
   return {
     ...marcasQuery,
     createMarca,
-    createMarcaMutation: createMarca
+    createMarcaMutation: createMarca,
+    updateMarca,
+    updateMarcaMutation: updateMarca
   };
 }
 

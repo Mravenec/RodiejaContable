@@ -97,6 +97,14 @@ Content-Type: application/json
   "nombre": "Subaru"
 }
 
+### Actualizar una marca existente
+PUT http://localhost:8080/api/marcas/1
+Content-Type: application/json
+
+{
+  "nombre": "Toyota Actualizado"
+}
+
 ### Insertar Isuzu
 POST http://localhost:8080/api/marcas
 Content-Type: application/json
