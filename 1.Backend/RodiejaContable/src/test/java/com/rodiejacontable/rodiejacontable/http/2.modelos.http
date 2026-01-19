@@ -757,3 +757,13 @@ Content-Type: application/json
   "marcaId": 10,
   "nombre": "Grand Vitara"
 }
+
+### Actualizar modelo
+PUT http://localhost:8080/api/modelos/1
+Content-Type: application/json
+
+{
+  "marcaId": 1,
+  "nombre": "Corolla Cross",
+  "activo": 1
+}

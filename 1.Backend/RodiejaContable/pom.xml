@@ -45,6 +45,12 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+		<!-- Validation -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
 		<!-- MariaDB Java Client -->
 		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>

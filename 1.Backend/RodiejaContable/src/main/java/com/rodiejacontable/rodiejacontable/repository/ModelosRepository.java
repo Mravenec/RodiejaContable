@@ -69,15 +69,55 @@ public class ModelosRepository {
                  .into(Modelos.class);
     }
     
+/**
+     * Actualiza un modelo existente en la base de datos
+     * 
+     * MÉTODOS DE ACTUALIZACIÓN CON jOOQ:
+     * 
+     * Opción 1: UPDATE manual con set() - MÁS CONTROL Y LEGIBLE
+     * Opción 2: Record.store() - MÁS AUTOMÁTICO
+     * 
+     * Aquí usamos Opción 1 por claridad y control explícito
+     * 
+     * @param modelo POJO con los datos actualizados (debe incluir ID)
+     * @return Modelo actualizado desde la BD
+     * 
+     * @throws RuntimeException si la actualización falla
+     */
     public Modelos update(Modelos modelo) {
-        return dsl.update(MODELOS)
-                 .set(MODELOS.MARCA_ID, modelo.getMarcaId())
-                 .set(MODELOS.NOMBRE, modelo.getNombre())
-                 .set(MODELOS.ACTIVO, modelo.getActivo())
-                 .where(MODELOS.ID.eq(modelo.getId()))
-                 .returning()
-                 .fetchOne()
-                 .into(Modelos.class);
+        
+        // =====================================================
+        // MÉTODO 1: UPDATE con DSL manual (RECOMENDADO)
+        // =====================================================
+        // Este enfoque es más explícito y da mayor control
+        
+        int rowsAffected = dsl.update(MODELOS)
+                // SET: especificamos cada campo a actualizar
+                .set(MODELOS.MARCA_ID, modelo.getMarcaId())
+                .set(MODELOS.NOMBRE, modelo.getNombre())
+                .set(MODELOS.ACTIVO, modelo.getActivo())
+                // WHERE: condición para identificar el registro
+                .where(MODELOS.ID.eq(modelo.getId()))
+                // execute() retorna el número de filas afectadas
+                .execute();
+        
+        // Verificar que se actualizó exactamente 1 registro
+        if (rowsAffected != 1) {
+            throw new RuntimeException(
+                "Error al actualizar modelo ID: " + modelo.getId() + 
+                ". Filas afectadas: " + rowsAffected
+            );
+        }
+        
+        // =====================================================
+        // Retornar el modelo actualizado desde la BD
+        // =====================================================
+        // Es buena práctica retornar el estado real de la BD
+        // por si hay triggers o valores calculados
+        return findById(modelo.getId())
+                .orElseThrow(() -> new RuntimeException(
+                    "Error crítico: modelo desapareció tras actualización"
+                ));
     }
     
     public boolean delete(Integer id) {

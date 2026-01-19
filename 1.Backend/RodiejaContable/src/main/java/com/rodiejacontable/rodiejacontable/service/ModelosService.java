@@ -53,25 +53,75 @@ public class ModelosService {
         return modelosRepository.save(modelo);
     }
     
+    /**
+     * Actualiza un modelo existente con validaciones completas
+     * 
+     * FLUJO DE VALIDACIÓN:
+     * 1. Verificar que el modelo existe (ResourceNotFoundException si no)
+     * 2. Si cambió nombre o marca, validar que no exista duplicado
+     * 3. Actualizar solo los campos modificables
+     * 4. Ejecutar actualización en BD
+     * 
+     * @param id ID del modelo a actualizar
+     * @param modelo Objeto con los nuevos datos
+     * @return Modelo actualizado desde la base de datos
+     * 
+     * @throws ResourceNotFoundException si el modelo no existe
+     * @throws ResourceAlreadyExistsException si el nuevo nombre ya existe para esa marca
+     */
     @Transactional
     public Modelos update(Integer id, Modelos modelo) {
-        // Verificar que el modelo exista
-        Modelos existingModelo = findById(id);
         
-        // Si se está cambiando el nombre, validar que no exista otro con el mismo nombre en la misma marca
-        if (!existingModelo.getNombre().equals(modelo.getNombre()) || 
-            !existingModelo.getMarcaId().equals(modelo.getMarcaId())) {
-                
-            if (modelosRepository.existsByNombreAndMarcaId(modelo.getNombre(), modelo.getMarcaId())) {
-                throw new ResourceAlreadyExistsException("Ya existe un modelo con el nombre: " + modelo.getNombre() + " para esta marca");
+        // =====================================================
+        // PASO 1: Verificar que el modelo existe
+        // =====================================================
+        Modelos existingModelo = modelosRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Modelo no encontrado con ID: " + id
+                ));
+        
+        // =====================================================
+        // PASO 2: Validar duplicados solo si cambió nombre o marca
+        // =====================================================
+        // Solo validamos si hay cambios en nombre O en marca
+        // Esto optimiza las consultas a BD
+        boolean nombreCambio = !existingModelo.getNombre().equals(modelo.getNombre());
+        boolean marcaCambio = !existingModelo.getMarcaId().equals(modelo.getMarcaId());
+        
+        if (nombreCambio || marcaCambio) {
+            // Verificar que no exista otro modelo con ese nombre en esa marca
+            boolean existe = modelosRepository.existsByNombreAndMarcaId(
+                modelo.getNombre(), 
+                modelo.getMarcaId()
+            );
+            
+            if (existe) {
+                throw new ResourceAlreadyExistsException(
+                    "Ya existe un modelo con el nombre '" + modelo.getNombre() + 
+                    "' para la marca ID " + modelo.getMarcaId()
+                );
             }
         }
         
-        // Actualizar los campos modificables
+        // =====================================================
+        // PASO 3: Actualizar campos modificables
+        // =====================================================
+        // IMPORTANTE: Solo actualizamos campos que el usuario puede modificar
+        // No tocamos: id, fecha_creacion (son inmutables)
+        
         existingModelo.setMarcaId(modelo.getMarcaId());
         existingModelo.setNombre(modelo.getNombre());
-        existingModelo.setActivo(modelo.getActivo() != null ? modelo.getActivo() : existingModelo.getActivo());
         
+        // Para el campo activo: usar el valor enviado, o mantener el actual si es null
+        existingModelo.setActivo(
+            modelo.getActivo() != null ? modelo.getActivo() : existingModelo.getActivo()
+        );
+        
+        // NOTA: fecha_creacion NO se modifica nunca en un update
+        
+        // =====================================================
+        // PASO 4: Ejecutar actualización en base de datos
+        // =====================================================
         return modelosRepository.update(existingModelo);
     }
     
