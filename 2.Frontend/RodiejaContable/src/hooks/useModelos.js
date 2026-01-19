@@ -43,9 +43,25 @@ export function useModelos(marcaId, enabled = true) {
     }
   );
 
+  // Mutación para actualizar un modelo existente
+  const updateModelo = useMutation(
+    ({ id, ...data }) => modelosAPI.update(id, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['modelos', marcaId]);
+        message.success('Modelo actualizado exitosamente');
+      },
+      onError: (error) => {
+        console.error('Error updating modelo:', error);
+        message.error('Error al actualizar el modelo');
+      }
+    }
+  );
+
   return {
     ...modelosQuery,
     createModelo,
-    createModeloMutation: createModelo
+    createModeloMutation: createModelo,
+    updateModelo
   };
 }

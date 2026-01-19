@@ -24,7 +24,7 @@ import {
   PlusOutlined,
   CloseOutlined,
   CheckOutlined,
-  EditOutlined
+  EditOutlined,
 } from '@ant-design/icons';
 import { Loading } from '../../components/Loading';
 import { useMarcas } from '../../hooks/useMarcas';
@@ -74,6 +74,10 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [nuevoModeloModal, setNuevoModeloModal] = useState(false);
   const [nuevoModeloNombre, setNuevoModeloNombre] = useState('');
   const [creandoModelo, setCreandoModelo] = useState(false);
+  
+  // Estado para la edición de modelos
+  const [editingModeloId, setEditingModeloId] = useState(null);
+  const [editingModeloNombre, setEditingModeloNombre] = useState('');
 
   // Estado para el modal de nueva generación
   const [nuevaGeneracionModal, setNuevaGeneracionModal] = useState(false);
@@ -99,7 +103,8 @@ const NuevoVehiculo = ({ editMode = false }) => {
     data: modelos = [], 
     isLoading: isLoadingModelos,
     error: errorModelos,
-    createModelo 
+    createModelo,
+    updateModelo 
   } = useModelos(marcaId);
   
   const { 
@@ -277,6 +282,40 @@ const NuevoVehiculo = ({ editMode = false }) => {
     setSelectedGeneracionId(null);
     form.setFieldsValue({ generacionId: undefined });
     console.log('🧹 Campo generación limpiado por cambio de modelo');
+  };
+
+  // Función para manejar la edición de un modelo
+  const handleEditarModelo = (modelo) => {
+    setEditingModeloId(modelo.id);
+    setEditingModeloNombre(modelo.nombre);
+  };
+
+  // Función para guardar los cambios del modelo editado
+  const handleGuardarEdicionModelo = async () => {
+    if (!editingModeloNombre.trim()) {
+      message.warning('El nombre del modelo no puede estar vacío');
+      return;
+    }
+
+    try {
+      await updateModelo.mutateAsync({
+        id: editingModeloId,
+        nombre: editingModeloNombre.trim(),
+        marcaId: marcaId
+      });
+      
+      setEditingModeloId(null);
+      setEditingModeloNombre('');
+    } catch (error) {
+      console.error('Error al actualizar el modelo:', error);
+      message.error('Error al actualizar el modelo');
+    }
+  };
+
+  // Función para cancelar la edición de un modelo
+  const handleCancelarEdicionModelo = () => {
+    setEditingModeloId(null);
+    setEditingModeloNombre('');
   };
   
   // Función para manejar la edición de una marca
@@ -986,7 +1025,54 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 >
                   {modelos.map((modelo) => (
                     <Option key={modelo.id} value={modelo.id}>
-                      {modelo.nombre}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        {editingModeloId === modelo.id ? (
+                          <div style={{ display: 'flex', width: '100%', gap: '8px' }}>
+                            <Input
+                              value={editingModeloNombre}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                setEditingModeloNombre(e.target.value);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              style={{ flex: 1 }}
+                              autoFocus
+                            />
+                            <Button 
+                              type="text" 
+                              icon={<CheckOutlined style={{ color: 'green' }} />} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleGuardarEdicionModelo();
+                              }}
+                              size="small"
+                            />
+                            <Button 
+                              type="text" 
+                              icon={<CloseOutlined />} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelarEdicionModelo();
+                              }}
+                              size="small"
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <span>{modelo.nombre}</span>
+                            <Button 
+                              type="text" 
+                              icon={<EditOutlined />} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditarModelo(modelo);
+                              }}
+                              size="small"
+                            />
+                          </>
+                        )}
+                      </div>
                     </Option>
                   ))}
                   {nuevoModeloModal && (
