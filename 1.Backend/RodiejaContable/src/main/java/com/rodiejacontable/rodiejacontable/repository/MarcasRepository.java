@@ -134,13 +134,33 @@ public class MarcasRepository {
     }
     
     public Marcas update(Marcas marca) {
-        return dsl.update(MARCAS)
-                 .set(MARCAS.NOMBRE, marca.getNombre())
-                 .set(MARCAS.ACTIVO, marca.getActivo())
-                 .where(MARCAS.ID.eq(marca.getId()))
-                 .returning()
-                 .fetchOne()
-                 .into(Marcas.class);
+        System.out.println("=== MarcasRepository.update() - Starting update for marca ID: " + marca.getId() + " ===");
+        System.out.println("Updating marca with values - Nombre: " + marca.getNombre() + ", Activo: " + marca.getActivo());
+        
+        try {
+            // First, execute the update
+            int updated = dsl.update(MARCAS)
+                    .set(MARCAS.NOMBRE, marca.getNombre())
+                    .set(MARCAS.ACTIVO, marca.getActivo())
+                    .where(MARCAS.ID.eq(marca.getId()))
+                    .execute();
+            
+            if (updated == 0) {
+                throw new RuntimeException("No se pudo actualizar la marca con ID: " + marca.getId());
+            }
+            
+            // Then fetch the updated marca
+            Marcas updatedMarca = dsl.selectFrom(MARCAS)
+                    .where(MARCAS.ID.eq(marca.getId()))
+                    .fetchOneInto(Marcas.class);
+            
+            System.out.println("Successfully updated marca: " + updatedMarca);
+            return updatedMarca;
+        } catch (Exception e) {
+            System.err.println("Error in MarcasRepository.update(): " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     public void delete(Integer id) {

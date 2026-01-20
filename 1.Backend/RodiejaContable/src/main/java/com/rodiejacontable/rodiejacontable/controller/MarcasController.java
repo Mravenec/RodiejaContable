@@ -66,6 +66,8 @@ public class MarcasController {
             @PathVariable Integer id, 
             @RequestBody Marcas marcaDetails) {
         try {
+            // Set the ID from the path variable to ensure it's not null
+            marcaDetails.setId(id);
             return ResponseEntity.ok(marcasService.update(id, marcaDetails));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();

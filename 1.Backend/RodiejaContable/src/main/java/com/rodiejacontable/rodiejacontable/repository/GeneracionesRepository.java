@@ -47,21 +47,41 @@ public class GeneracionesRepository {
     }
     
     public Generaciones update(Generaciones generacion) {
-        return dsl.update(GENERACIONES)
-                .set(GENERACIONES.MODELO_ID, generacion.getModeloId())
-                .set(GENERACIONES.NOMBRE, generacion.getNombre())
-                .set(GENERACIONES.DESCRIPCION, generacion.getDescripcion())
-                .set(GENERACIONES.ANIO_INICIO, generacion.getAnioInicio())
-                .set(GENERACIONES.ANIO_FIN, generacion.getAnioFin())
-                .set(GENERACIONES.TOTAL_INVERSION, generacion.getTotalInversion())
-                .set(GENERACIONES.TOTAL_INGRESOS, generacion.getTotalIngresos())
-                .set(GENERACIONES.TOTAL_EGRESOS, generacion.getTotalEgresos())
-                .set(GENERACIONES.BALANCE_NETO, generacion.getBalanceNeto())
-                .set(GENERACIONES.ACTIVO, generacion.getActivo())
-                .where(com.rodiejacontable.database.jooq.Tables.GENERACIONES.ID.eq(generacion.getId()))
-                .returning()
-                .fetchOne()
-                .into(com.rodiejacontable.database.jooq.tables.pojos.Generaciones.class);
+        System.out.println("=== GeneracionesRepository.update() - Starting update for generacion ID: " + generacion.getId() + " ===");
+        System.out.println("Updating generacion with values - Nombre: " + generacion.getNombre() + ", ModeloId: " + generacion.getModeloId());
+        
+        try {
+            // First, execute the update
+            int updated = dsl.update(GENERACIONES)
+                    .set(GENERACIONES.MODELO_ID, generacion.getModeloId())
+                    .set(GENERACIONES.NOMBRE, generacion.getNombre())
+                    .set(GENERACIONES.DESCRIPCION, generacion.getDescripcion())
+                    .set(GENERACIONES.ANIO_INICIO, generacion.getAnioInicio())
+                    .set(GENERACIONES.ANIO_FIN, generacion.getAnioFin())
+                    .set(GENERACIONES.TOTAL_INVERSION, generacion.getTotalInversion())
+                    .set(GENERACIONES.TOTAL_INGRESOS, generacion.getTotalIngresos())
+                    .set(GENERACIONES.TOTAL_EGRESOS, generacion.getTotalEgresos())
+                    .set(GENERACIONES.BALANCE_NETO, generacion.getBalanceNeto())
+                    .set(GENERACIONES.ACTIVO, generacion.getActivo())
+                    .where(GENERACIONES.ID.eq(generacion.getId()))
+                    .execute();
+            
+            if (updated == 0) {
+                throw new RuntimeException("No se pudo actualizar la generación con ID: " + generacion.getId());
+            }
+            
+            // Then fetch the updated generacion
+            Generaciones updatedGeneracion = dsl.selectFrom(GENERACIONES)
+                    .where(GENERACIONES.ID.eq(generacion.getId()))
+                    .fetchOneInto(Generaciones.class);
+            
+            System.out.println("Successfully updated generacion: " + updatedGeneracion);
+            return updatedGeneracion;
+        } catch (Exception e) {
+            System.err.println("Error in GeneracionesRepository.update(): " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     public void delete(Integer id) {

@@ -36,7 +36,8 @@ export function useMarcas() {
       },
       onError: (error) => {
         console.error('Error creating marca:', error);
-        message.error('Error al crear la marca');
+        const errorMessage = error.response?.data?.message || 'Error al crear la marca';
+        message.error(errorMessage);
       }
     }
   );
@@ -45,14 +46,38 @@ export function useMarcas() {
   const updateMarca = useMutation(
     ({ id, ...data }) => marcasAPI.update(id, data),
     {
-      onSuccess: () => {
-        // Invalida y vuelve a cargar la lista de marcas
-        queryClient.invalidateQueries('marcas');
-        message.success('Marca actualizada exitosamente');
+      // Actualización optimista
+      onMutate: async (newMarcaData) => {
+        // Cancelar cualquier consulta de marcas en curso
+        await queryClient.cancelQueries('marcas');
+        
+        // Guardar el estado anterior para hacer rollback en caso de error
+        const previousMarcas = queryClient.getQueryData('marcas') || [];
+        
+        // Actualizar el caché de manera optimista
+        queryClient.setQueryData('marcas', old => 
+          old.map(marca => 
+            marca.id === newMarcaData.id ? { ...marca, ...newMarcaData } : marca
+          )
+        );
+        
+        return { previousMarcas };
       },
-      onError: (error) => {
+      onError: (error, variables, context) => {
+        // Revertir al estado anterior en caso de error
+        if (context?.previousMarcas) {
+          queryClient.setQueryData('marcas', context.previousMarcas);
+        }
         console.error('Error updating marca:', error);
-        message.error('Error al actualizar la marca');
+        const errorMessage = error.response?.data?.message || error.message || 'Error al actualizar la marca';
+        message.error(errorMessage);
+      },
+      onSettled: () => {
+        // Siempre refetch después de error o éxito
+        queryClient.invalidateQueries('marcas');
+      },
+      onSuccess: () => {
+        message.success('Marca actualizada exitosamente');
       }
     }
   );

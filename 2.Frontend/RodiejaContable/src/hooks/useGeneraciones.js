@@ -61,9 +61,28 @@ export function useGeneraciones(modeloId, enabled = true) {
     }
   );
 
+  // Mutación para actualizar una generación existente
+  const updateGeneracion = useMutation(
+    ({ id, ...data }) => generacionesAPI.update(id, data),
+    {
+      onSuccess: () => {
+        // Invalida y vuelve a cargar la lista de generaciones
+        queryClient.invalidateQueries(['generaciones', modeloId]);
+        message.success('Generación actualizada exitosamente');
+      },
+      onError: (error) => {
+        console.error('Error updating generacion:', error);
+        const errorMessage = error.response?.data?.message || 'Error al actualizar la generación';
+        message.error(errorMessage);
+      }
+    }
+  );
+
   return {
     ...generacionesQuery,
     createGeneracion,
-    createGeneracionMutation: createGeneracion
+    createGeneracionMutation: createGeneracion,
+    updateGeneracion,
+    updateGeneracionMutation: updateGeneracion
   };
 }

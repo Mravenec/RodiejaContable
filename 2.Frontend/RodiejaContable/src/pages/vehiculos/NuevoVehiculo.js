@@ -78,6 +78,12 @@ const NuevoVehiculo = ({ editMode = false }) => {
   // Estado para la edición de modelos
   const [editingModeloId, setEditingModeloId] = useState(null);
   const [editingModeloNombre, setEditingModeloNombre] = useState('');
+  
+  // Estado para la edición de generaciones
+  const [editingGeneracionId, setEditingGeneracionId] = useState(null);
+  const [editingGeneracionNombre, setEditingGeneracionNombre] = useState('');
+  const [editingAnioInicio, setEditingAnioInicio] = useState(new Date().getFullYear());
+  const [editingAnioFin, setEditingAnioFin] = useState(new Date().getFullYear());
 
   // Estado para el modal de nueva generación
   const [nuevaGeneracionModal, setNuevaGeneracionModal] = useState(false);
@@ -90,6 +96,14 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [debugInfo, setDebugInfo] = useState('');
   
   // Hooks para cargar datos
+  const { 
+    data: generaciones = [], 
+    isLoading: isLoadingGeneraciones,
+    error: errorGeneraciones,
+    createGeneracion,
+    updateGeneracion
+  } = useGeneraciones(modeloId);
+
   // Este es el hook que obtiene la lista de marcas, incluyendo 'Toyota'
   const { 
     data: marcas = [], 
@@ -107,12 +121,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
     updateModelo 
   } = useModelos(marcaId);
   
-  const { 
-    data: generaciones = [], 
-    isLoading: isLoadingGeneraciones,
-    error: errorGeneraciones,
-    createGeneracion 
-  } = useGeneraciones(modeloId);
   
   // Efecto para actualizar los años disponibles cuando cambia la generación seleccionada
   useEffect(() => {
@@ -380,20 +388,54 @@ const NuevoVehiculo = ({ editMode = false }) => {
   
   // Función para manejar el cambio de generación
   const handleGeneracionChange = (value) => {
+    console.log('🔧 Generación seleccionada:', value);
     setSelectedGeneracionId(value);
     form.setFieldsValue({ generacionId: value });
+  };
+
+  // Función para manejar la edición de una generación
+  const handleEditarGeneracion = (generacion) => {
+    setEditingGeneracionId(generacion.id);
+    setEditingGeneracionNombre(generacion.nombre);
+    setEditingAnioInicio(generacion.anioInicio || new Date().getFullYear());
+    setEditingAnioFin(generacion.anioFin || new Date().getFullYear());
+  };
+
+  // Función para guardar la edición de una generación
+  const handleGuardarEdicionGeneracion = async () => {
+    if (!editingGeneracionId || !editingGeneracionNombre.trim()) return;
     
-    // Actualizar años disponibles cuando se selecciona una generación
-    const generacionSeleccionada = generaciones.find(g => g.id === value);
-    if (generacionSeleccionada) {
-      const startYear = generacionSeleccionada.anioInicio || new Date().getFullYear();
-      const endYear = generacionSeleccionada.anioFin || new Date().getFullYear();
+    try {
+      await updateGeneracion.mutateAsync({
+        id: editingGeneracionId,
+        nombre: editingGeneracionNombre.trim(),
+        anioInicio: editingAnioInicio,
+        anioFin: editingAnioFin,
+        modeloId: modeloId
+      });
+      
+      setEditingGeneracionId(null);
+      setEditingGeneracionNombre('');
+    } catch (error) {
+      console.error('Error al actualizar la generación:', error);
+      message.error('Error al actualizar la generación');
+      // Usar los años de edición actuales para reconstruir la lista de años
       const anios = [];
-      for (let i = startYear; i <= endYear; i++) {
+      const start = editingAnioInicio || new Date().getFullYear();
+      const end = editingAnioFin || new Date().getFullYear();
+      for (let i = start; i <= end; i++) {
         anios.push(i);
       }
       setAniosDisponibles(anios);
     }
+  };
+
+  // Función para cancelar la edición de una generación
+  const handleCancelarEdicionGeneracion = () => {
+    setEditingGeneracionId(null);
+    setEditingGeneracionNombre('');
+    setEditingAnioInicio(new Date().getFullYear());
+    setEditingAnioFin(new Date().getFullYear());
   };
 
   // Función para manejar la creación de un nuevo modelo
@@ -1196,7 +1238,72 @@ const NuevoVehiculo = ({ editMode = false }) => {
                     
                     return (
                       <Option key={generacion.id} value={generacion.id}>
-                        {displayText}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          {editingGeneracionId === generacion.id ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '8px' }}>
+                              <Input
+                                value={editingGeneracionNombre}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  setEditingGeneracionNombre(e.target.value);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                style={{ width: '100%' }}
+                                autoFocus
+                              />
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <InputNumber
+                                  value={editingAnioInicio}
+                                  min={1900}
+                                  max={2100}
+                                  onChange={(value) => setEditingAnioInicio(value)}
+                                  style={{ width: '50%' }}
+                                />
+                                <InputNumber
+                                  value={editingAnioFin}
+                                  min={editingAnioInicio}
+                                  max={2100}
+                                  onChange={(value) => setEditingAnioFin(value)}
+                                  style={{ width: '50%' }}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                <Button 
+                                  type="text" 
+                                  icon={<CheckOutlined style={{ color: 'green' }} />} 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleGuardarEdicionGeneracion();
+                                  }}
+                                  size="small"
+                                />
+                                <Button 
+                                  type="text" 
+                                  icon={<CloseOutlined />} 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancelarEdicionGeneracion();
+                                  }}
+                                  size="small"
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <span>{displayText}</span>
+                              <Button 
+                                type="text" 
+                                icon={<EditOutlined />} 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditarGeneracion(generacion);
+                                }}
+                                size="small"
+                              />
+                            </>
+                          )}
+                        </div>
                       </Option>
                     );
                   })}

@@ -94,22 +94,39 @@ public class MarcasService {
 
     @Transactional
     public Marcas update(Integer id, Marcas marcaDetails) {
-        Marcas marca = findById(id);
+        System.out.println("=== MarcasService.update() - Starting update for marca ID: " + id + " ===");
+        System.out.println("Received marcaDetails: " + marcaDetails);
+        
+        try {
+            Marcas marca = findById(id);
+            System.out.println("Found existing marca: " + marca);
 
-        // Si se está intentando cambiar el nombre, verificar que no exista otra marca con el nuevo nombre
-        if (marcaDetails.getNombre() != null && !marcaDetails.getNombre().equals(marca.getNombre())) {
-            if (marcasRepository.existsByNombre(marcaDetails.getNombre())) {
-                throw new ResourceAlreadyExistsException("Ya existe una marca con el nombre: " + marcaDetails.getNombre());
+            // Si se está intentando cambiar el nombre, verificar que no exista otra marca con el nuevo nombre
+            if (marcaDetails.getNombre() != null && !marcaDetails.getNombre().equals(marca.getNombre())) {
+                System.out.println("Updating nombre from: " + marca.getNombre() + " to: " + marcaDetails.getNombre());
+                if (marcasRepository.existsByNombre(marcaDetails.getNombre())) {
+                    String errorMsg = "Ya existe una marca con el nombre: " + marcaDetails.getNombre();
+                    System.err.println("Error: " + errorMsg);
+                    throw new ResourceAlreadyExistsException(errorMsg);
+                }
+                marca.setNombre(marcaDetails.getNombre());
             }
-            marca.setNombre(marcaDetails.getNombre());
-        }
 
-        // Actualizar solo los campos que no son nulos
-        if (marcaDetails.getActivo() != null) {
-            marca.setActivo(marcaDetails.getActivo());
-        }
+            // Actualizar solo los campos que no son nulos
+            if (marcaDetails.getActivo() != null) {
+                System.out.println("Updating activo from: " + marca.getActivo() + " to: " + marcaDetails.getActivo());
+                marca.setActivo(marcaDetails.getActivo());
+            }
 
-        return marcasRepository.update(marca);
+            System.out.println("Saving updated marca: " + marca);
+            Marcas updatedMarca = marcasRepository.update(marca);
+            System.out.println("Successfully updated marca: " + updatedMarca);
+            return updatedMarca;
+        } catch (Exception e) {
+            System.err.println("Error in MarcasService.update(): " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Transactional
