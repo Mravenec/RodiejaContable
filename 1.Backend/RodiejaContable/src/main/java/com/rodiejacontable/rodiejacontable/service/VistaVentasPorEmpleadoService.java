@@ -79,12 +79,20 @@ public class VistaVentasPorEmpleadoService {
                 totalVentas.divide(BigDecimal.valueOf(totalVentasCount), 2, BigDecimal.ROUND_HALF_UP) : 
                 BigDecimal.ZERO;
         
+        // Calcular tasa de conversión (ventas / transacciones * 100)
+        BigDecimal tasaConversion = totalTransacciones > 0 ? 
+                BigDecimal.valueOf(totalVentasCount)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(BigDecimal.valueOf(totalTransacciones), 2, BigDecimal.ROUND_HALF_UP) : 
+                BigDecimal.ZERO;
+        
         Map<String, Object> result = new java.util.HashMap<>();
         result.put("totalVentas", totalVentas);
         result.put("totalComisiones", totalComisiones);
         result.put("totalTransacciones", totalTransacciones);
         result.put("totalVentasCount", totalVentasCount);
         result.put("promedioVenta", promedioVenta);
+        result.put("tasaConversion", tasaConversion);
         result.put("totalEmpleados", ventas.size());
         
         return (Map<String, Object>)(Map<?, ?>)result;

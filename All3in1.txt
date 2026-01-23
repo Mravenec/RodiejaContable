@@ -1,0 +1,3253 @@
+// ========================================
+// SISTEMA UNIFICADO DE GESTIÓN VEHICULAR - DBDiagram.io
+// ========================================
+// Base de datos completa para yonke/desguace de vehículos
+// Autores: Sistema de gestión vehicular Costa Rica
+// Versión: 2.0 Completa con triggers y procedimientos
+
+// Nota: Este diagrama incluye todas las tablas, relaciones, triggers y procedimientos almacenados
+// para un sistema completo de gestión vehicular con inventario de repuestos y finanzas
+
+// ========================================
+// CONFIGURACIÓN GENERAL
+// ========================================
+// Nota sobre la base de datos:
+// - Motor: MySQL/MariaDB
+// - Charset: utf8mb4
+// - Collation: utf8mb4_unicode_ci
+// - Conexión: localhost:3306, usuario: root, password: 123456
+
+// ========================================
+// TABLAS PRINCIPALES - GESTIÓN DE VEHÍCULOS
+// ========================================
+
+Table marcas {
+  id int [pk, increment]
+  nombre varchar(50) [unique, not null]
+  activo boolean [default: true]
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  // Nota: Catálogo de marcas de vehículos (Toyota, Honda, etc.)
+}
+
+Table modelos {
+  id int [pk, increment]
+  marca_id int [not null]
+  nombre varchar(100) [not null]
+  activo boolean [default: true]
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  // Nota: Modelos específicos por marca (Corolla, Civic, etc.)
+}
+
+Table generaciones {
+  id int [pk, increment]
+  modelo_id int [not null]
+  nombre varchar(50) [not null]
+  descripcion varchar(200)
+  anio_inicio int [not null]
+  anio_fin int [not null]
+  total_investment decimal(15,2) [default: 0.00]
+  total_ingresos decimal(15,2) [default: 0.00]
+  total_egresos decimal(15,2) [default: 0.00]
+  balance_neto decimal(15,2) [default: 0.00]
+  activo boolean [default: true]
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  // Nota: Generaciones por modelo con control financiero completo
+  // Los campos totales se actualizan automáticamente via triggers
+}
+
+Table vehiculos {
+  id int [pk, increment]
+  codigo_vehiculo varchar(20) [unique]
+  generacion_id int [not null]
+  imagen_url text
+  anio int [not null]
+  precio_compra decimal(12,2) [not null]
+  costo_grua decimal(10,2) [default: 0]
+  comisiones decimal(10,2) [default: 0]
+  inversion_total decimal(12,2) [note: "Calculado: precio_compra + costo_grua + comisiones"]
+  costo_recuperado decimal(12,2) [default: 0, note: "Recuperación por ventas de partes"]
+  costo_pendiente decimal(12,2) [note: "Calculado: inversion_total - costo_recuperado"]
+  fecha_ingreso date [not null]
+  estado enum('DISPONIBLE', 'VENDIDO', 'DESARMADO', 'REPARACION') [default: 'DISPONIBLE']
+  precio_venta decimal(12,2)
+  fecha_venta date
+  activo boolean [default: true]
+  notas text
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  fecha_actualizacion timestamp [default: `CURRENT_TIMESTAMP`, note: "ON UPDATE CURRENT_TIMESTAMP"]
+  // Nota: Vehículos individuales con seguimiento financiero completo
+  // El estado cambia automáticamente al registrar ventas
+}
+
+// ========================================
+// TABLAS DE INVENTARIO DE REPUESTOS
+// ========================================
+
+Table inventario_repuestos {
+  id int [pk, increment]
+  codigo_repuesto varchar(100) [unique]
+  vehiculo_origen_id int
+  anio_registro smallint [note: "YEAR(fecha_creacion)"]
+  mes_registro tinyint [note: "MONTH(fecha_creacion)"]
+  codigo_ubicacion varchar(100)
+  imagen_url text
+  parte_vehiculo enum('MOTOR','CHASIS','CARROCERIA','COMPUTADORA','CAJA DE CAMBIO','AIRBAGS O BOLSAS DE AIRE','EJES Y DIFERENCIA','SUSPENSION Y AMORTIGUAMIENTO','EMBRAGUE','SISTEMA DE FRENOS','TANQUE DE GASOLINA','DISTRIBUIDOR','RADIADOR','VENTILADOR','BOMBA DE AGUA','BATERIA','AROS Y LLANTAS','SISTEMA DE DIRECCION','SISTEMA ELECTRICO','FUSIBLES','ALTERNADOR','VÁLVULAS DE ESCAPE','TURBO') [not null]
+  descripcion text
+  precio_costo decimal(10,2) [default: 0.00]
+  precio_venta decimal(10,2) [default: 0.00]
+  precio_mayoreo decimal(10,2) [default: 0.00]
+  formula_15 decimal(10,2) [note: "precio_costo * 1.15"]
+  formula_30 decimal(10,2) [note: "precio_costo * 1.30"]
+  // Sistema de ubicación física completo
+  bodega enum('0-','R-','D-','C-') [default: '0-']
+  zona enum('0-','Z1-','Z2-','Z3-','Z4-','Z5-','Z6-','Z7-','Z8-','Z9-','Z10-','Z11-','Z12-','Z13-','Z14-','Z15-','Z16-','Z17-','Z18-','Z19-','Z20-','Z21-','Z22-') [default: '0-']
+  pared enum('0-','PE-','PO-','PN-','PS-') [default: '0-']
+  malla enum('0-','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','V29','V30','V31','V32','V33','V34','V35','V36','V37','V38','V39','V40','V41','V42','V43','V44','V45','V46','V47','V48','V49','V50','V51','V52','V53','V54','V55','V56','V57','V58','V59','V60','V61','V62','V63','V64','V65','V66','V67','V68','V69','V70','V71','V72','V73','V74','V75','V76','V77','V78','V79','V80','V81','V82','V83','V84','V85','V86','V87','V88','V89','V90','V91','V92','V93','V94','V95','V96','V97','V98','V99','V100','V101','V102','V103','V104','V105','V106','V107','V108','V109','V110','V111','V112','V113','V114','V115','V116','V117','V118','V119','V120','V121','V122','V123','V124','V125','V126','V127','V128','V129','V130','V131','V132','V133','V134','V135','V136','V137','V138','V139','V140','V141','V142','V143','V144','V145','V146','V147','V148','V149','V150','V151','V152','V153','V154','V155','V156','V157','V158','V159','V160','V161','V162','V163','V164','V165','V166','V167','V168','V169','V170','V171','V172','V173','V174','V175','V176','V177','V178','V179','V180','V181','V182','V183','V184','V185','V186','V187','V188','V189','V190','V191','V192','V193','V194','V195','V196','V197','V198','V199','V200') [default: '0-']
+  horizontal enum('0-','HA-','HB-','HC-','HD-','HE-','HF-','HG-','HH-','HI-','HJ-','HK-','HL-','HM-','HN-','HO-','HP-','HQ-','HR-','HS-','HT-') [default: '0-']
+  estante enum('E1','E2','E3','E4','E5','E6','E7','E8','E9','E10','E11','E12','E13','E14') [default: 'E1']
+  nivel enum('0-','N1-','N2-','N3-','N4-','N5-','N6-','N7-','N8-','N9-','N10-','N11-','N12-','N13-','N14-','N15-','N16-','N17-','N18-','N19-','N20-','N21-','N22-') [default: '0-']
+  piso enum('P1-','P2-','P3-','P4-','P5-','P6-','P7-','P8-','P9-','P10-','P11-','P12-','P13-','P14-','P15-','P16-','P17-','P18-','P19-','P20-','P21-') [default: 'P1-']
+  plastica enum('CP1-','CP2-','CP3-','CP4-','CP5-','CP6-','CP7-','CP8-','CP9-','CP10-','CP11-','CP12-','CP13-','CP14-','CP15-','CP16-','CP17-','CP18-','CP19-','CP20-','CP21-','CP22-','CP23-','CP24-','CP25-','CP26-','CP27-','CP28-','CP29-','CP30-','CP31-','CP32-','CP33-','CP34-','CP35-','CP36-','CP37-','CP38-','CP39-','CP40-','CP41-','CP42-','CP43-','CP44-','CP45-','CP46-','CP47-','CP48-','CP49-','CP50-','CP51-','CP52-')
+  carton enum('MM1-','MM2-','MM3-','MM4-','MM5-','MM6-','MM7-','MM8-','MM9-','MM10-','MM11-','MM12-','MM13-','MM14-','MM15-','MM16-','MM17-','MM18-','MM19-','MM20-','MM21-','MM22-','MM23-','MM24-','MM25-','MM26-','MM27-','MM28-','MM29-','MM30-','MM31-','MM32-','MM33-','MM34-','MM35-','MM36-','MM37-','MM38-','MM39-','MM40-','MM41-','MM42-','MM43-','MM44-','MM45-','MM46-','MM47-','MM48-','MM49-','MM50-','MM51-','MM52-')
+  posicion varchar(10)
+  cantidad int [default: 1]
+  estado enum('STOCK','VENDIDO','PROCESO','AGOTADO','DAÑADO','USADO_INTERNO') [default: 'STOCK']
+  condicion enum('100%-','50%-','0%-') [default: '100%-']
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  fecha_actualizacion timestamp [default: `CURRENT_TIMESTAMP`, note: "ON UPDATE CURRENT_TIMESTAMP"]
+  // Nota: Sistema completo de inventario con ubicación física detallada
+  // Código generado automáticamente por trigger basado en generación o temporal
+}
+
+// ========================================
+// TABLAS DE GESTIÓN FINANCIERA
+// ========================================
+
+Table empleados {
+  id int [pk, increment]
+  nombre varchar(100) [unique, not null]
+  activo boolean [default: true]
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  // Nota: Catálogo de empleados/vendedores para comisiones
+}
+
+Table tipos_transacciones {
+  id int [pk, increment]
+  nombre varchar(50) [unique, not null]
+  descripcion varchar(200)
+  categoria enum('INGRESO', 'EGRESO') [not null]
+  activo boolean [default: true]
+  // Nota: Tipos de transacciones financieras (ventas, compras, gastos, etc.)
+}
+
+Table transacciones_financieras {
+  id int [pk, increment]
+  codigo_transaccion varchar(20) [unique]
+  fecha date [not null]
+  dia tinyint [note: "DAY(fecha)"]
+  mes tinyint [note: "MONTH(fecha)"]
+  anio smallint [note: "YEAR(fecha)"]
+  tipo_transaccion_id int [not null]
+  empleado_id int
+  vehiculo_id int
+  repuesto_id int
+  generacion_id int
+  monto decimal(12,2) [not null]
+  comision_empleado decimal(12,2) [default: 0.00]
+  descripcion text
+  referencia varchar(100)
+  estado enum('PENDIENTE', 'COMPLETADA', 'CANCELADA') [default: 'COMPLETADA']
+  activo boolean [default: true]
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  fecha_actualizacion timestamp [default: `CURRENT_TIMESTAMP`, note: "ON UPDATE CURRENT_TIMESTAMP"]
+  // Nota: Registro completo de todas las transacciones financieras
+  // Código generado automáticamente: TRX-YYYYMM-NNNN
+  // generacion_id se completa automáticamente si no se proporciona
+}
+
+// ========================================
+// TABLAS DE AUDITORÍA E HISTÓRICO
+// ========================================
+
+Table historial_vehiculos {
+  id int [pk, increment]
+  vehiculo_id int [not null]
+  accion enum('INSERT', 'UPDATE', 'DELETE') [not null]
+  campo_modificado varchar(50)
+  valor_anterior text
+  valor_nuevo text
+  usuario varchar(100)
+  fecha_cambio timestamp [default: `CURRENT_TIMESTAMP`]
+  ip_usuario varchar(45)
+  observaciones text
+  // Nota: Auditoría completa de cambios en vehículos
+}
+
+Table historial_repuestos {
+  id int [pk, increment]
+  repuesto_id int [not null]
+  accion enum('INSERT', 'UPDATE', 'DELETE') [not null]
+  campo_modificado varchar(50)
+  valor_anterior text
+  valor_nuevo text
+  usuario varchar(100)
+  fecha_cambio timestamp [default: `CURRENT_TIMESTAMP`]
+  ip_usuario varchar(45)
+  observaciones text
+  // Nota: Auditoría completa de cambios en repuestos
+}
+
+Table historial_transacciones {
+  id int [pk, increment]
+  transaccion_id int [not null]
+  accion enum('INSERT', 'UPDATE', 'DELETE') [not null]
+  campo_modificado varchar(50)
+  valor_anterior text
+  valor_nuevo text
+  usuario varchar(100)
+  fecha_cambio timestamp [default: `CURRENT_TIMESTAMP`]
+  ip_usuario varchar(45)
+  observaciones text
+  // Nota: Auditoría completa de cambios en transacciones
+}
+
+// ========================================
+// RELACIONES ENTRE TABLAS
+// ========================================
+
+Ref: modelos.marca_id > marcas.id
+Ref: generaciones.modelo_id > modelos.id
+Ref: vehiculos.generacion_id > generaciones.id
+Ref: inventario_repuestos.vehiculo_origen_id > vehiculos.id
+Ref: transacciones_financieras.tipo_transaccion_id > tipos_transacciones.id
+Ref: transacciones_financieras.empleado_id > empleados.id
+Ref: transacciones_financieras.vehiculo_id > vehiculos.id
+Ref: transacciones_financieras.repuesto_id > inventario_repuestos.id
+Ref: transacciones_financieras.generacion_id > generaciones.id
+Ref: historial_vehiculos.vehiculo_id > vehiculos.id
+Ref: historial_repuestos.repuesto_id > inventario_repuestos.id
+Ref: historial_transacciones.transaccion_id > transacciones_financieras.id
+
+// ========================================
+// ÍNDICES IMPORTANTES (Notas)
+// ========================================
+
+/*
+ÍNDICES CLAVE PARA RENDIMIENTO:
+
+1. VEHÍCULOS:
+   - idx_generacion_activo (generacion_id, activo)
+   - idx_fecha_ingreso (fecha_ingreso)
+   - idx_estado (estado)
+   - idx_anio (anio)
+
+2. INVENTARIO REPUESTOS:
+   - idx_vehiculo_origen (vehiculo_origen_id)
+   - idx_estado (estado)
+   - idx_parte_vehiculo (parte_vehiculo)
+   - idx_fecha_registro (anio_registro, mes_registro)
+
+3. TRANSACCIONES FINANCIERAS:
+   - idx_fecha (fecha)
+   - idx_tipo_transaccion (tipo_transaccion_id)
+   - idx_empleado (empleado_id)
+   - idx_vehiculo (vehiculo_id)
+   - idx_generacion (generacion_id)
+   - idx_estado (estado)
+
+4. HISTORIAL:
+   - idx_vehiculo_fecha (vehiculo_id, fecha_cambio)
+   - idx_repuesto_fecha (repuesto_id, fecha_cambio)
+   - idx_transaccion_fecha (transaccion_id, fecha_cambio)
+   - idx_accion (accion)
+*/
+
+// ========================================
+// TRIGGERS - AUTOMATIZACIÓN COMPLETA
+// ========================================
+
+/*
+TRIGGERS IMPLEMENTADOS:
+
+1. TRIGGERS DE GENERACIÓN DE CÓDIGOS:
+   - tr_generar_codigo_vehiculo: Genera código único tipo "TOCO-001"
+   - tr_generar_codigo_repuesto: Genera código tipo "REP-Toyota-2020-2024-0001"
+   - tr_generar_codigo_ubicacion: Genera código de ubicación completo
+   - tr_generar_codigo_transaccion: Genera código tipo "TRX-202407-0001"
+
+2. TRIGGERS FINANCIEROS:
+   - tr_actualizar_costo_recuperado_vehiculo: Actualiza recuperación por ventas
+   - tr_venta_vehiculo_actualiza_estado: Cambia estado a VENDIDO automáticamente
+   - tr_actualizar_estado_repuesto_por_venta: Cambia estado de repuesto a VENDIDO
+   - tr_reembolso_repuesto: Revierte estado y stock por reembolsos
+
+3. TRIGGERS DE TOTALES:
+   - tr_actualizar_totales_generacion_insert: Actualiza totales de generación
+   - tr_actualizar_totales_generacion_update: Actualiza al modificar
+   - tr_actualizar_totales_generacion_delete: Actualiza al eliminar
+   - tr_actualizar_totales_vehiculo_insert/update/delete: Actualiza inversión
+
+4. TRIGGERS DE AUDITORÍA:
+   - tr_audit_vehiculos_update: Audita cambios importantes en vehículos
+   - tr_audit_repuestos_update: Audita cambios en repuestos
+   - tr_audit_transacciones_update: Audita cambios en transacciones
+
+5. TRIGGERS DE INTEGRACIÓN:
+   - tr_insertar_compra_vehiculo: Registra compra automática al insertar vehículo
+   - tr_completar_generacion_id: Deduce generación automáticamente
+*/
+
+// ========================================
+// STORED PROCEDURES - PROCEDIMIENTOS ALMACENADOS
+// ========================================
+
+/*
+PROCEDIMIENTOS ALMACENADOS:
+
+1. sp_insertar_repuesto_con_generacion_sin_vehiculo:
+   - Inserta repuesto sin vehículo origen
+   - Genera código único por generación
+   - Registra transacción de compra automáticamente
+   - Parámetros: generacion_id, marca_nombre, parte_vehiculo, descripción, precios, ubicación, estado, condición, imagen_url
+
+2. sp_historial_vehiculo(p_vehiculo_id):
+   - Consulta historial completo de un vehículo específico
+   - Incluye descripción del vehículo y cambios ordenados por fecha
+
+3. sp_actividad_auditoria_fecha(p_fecha_inicio, p_fecha_fin):
+   - Reporte de actividad de auditoría por rango de fechas
+   - Agrupa por tipo de entidad y acción
+   - Muestra total de cambios y usuarios activos
+
+// ========================================
+// VISTAS PRINCIPALES - REPORTES Y ANÁLISIS
+// ========================================
+
+VISTAS IMPLEMENTADAS:
+
+1. VISTAS OPERATIVAS:
+   - vista_vehiculos_completa: Información completa de vehículos con totales financieros
+   - vista_inventario_completo: Inventario con información del vehículo origen
+   - vista_transacciones_completas: Todas las transacciones con detalles completos
+
+2. VISTAS DE RESUMEN:
+   - vista_resumen_generaciones: Resumen financiero por generación
+   - vista_dashboard_ejecutivo: Indicadores clave del negocio
+   - vista_rentabilidad_generaciones: Análisis ROI por generación
+
+3. VISTAS DE ANÁLISIS:
+   - vista_analisis_financiero_mensual: Análisis financiero mensual detallado
+   - vista_inventario_critico: Repuestos críticos por antigüedad y margen
+   - vista_top_productos_vendidos: Productos más vendidos
+
+4. VISTAS DE VENTAS:
+   - vista_ventas_por_empleado: Rendimiento por vendedor
+   - vista_ventas_empleado_mensual: Ventas mensuales por empleado
+
+5. VISTAS DE AUDITORÍA:
+   - vista_auditoria_completa: Historial unificado de todos los cambios
+
+// ========================================
+// FLUJO DE TRABAJO AUTOMATIZADO
+// ========================================
+
+PROCESOS AUTOMATIZADOS:
+
+1. COMPRA DE VEHÍCULO:
+   - INSERT en vehiculos → trigger genera código
+   - trigger tr_insertar_compra_vehiculo crea transacción financiera
+   - trigger tr_actualizar_totales_generacion_insert actualiza totales
+
+2. DESARME DE VEHÍCULO:
+   - INSERT en inventario_repuestos → trigger genera código
+   - trigger tr_generar_codigo_ubicacion genera ubicación
+   - trigger tr_actualizar_totales_vehiculo_insert actualiza inversión
+
+3. VENTA DE VEHÍCULO:
+   - INSERT en transacciones_financieras (Venta Vehículo)
+   - trigger tr_venta_vehiculo_actualiza_estado cambia estado a VENDIDO
+   - trigger tr_actualizar_costo_recuperado_vehiculo actualiza recuperación
+   - trigger tr_actualizar_totales_generacion_insert actualiza totales
+
+4. VENTA DE REPUESTO:
+   - INSERT en transacciones_financieras (Venta Repuesto)
+   - trigger tr_actualizar_estado_repuesto_por_venta cambia estado
+   - trigger tr_actualizar_costo_recuperado_vehiculo actualiza recuperación vehículo origen
+   - trigger tr_actualizar_totales_generacion_insert actualiza totales
+
+5. COMPRA DE REPUESTO SIN VEHÍCULO:
+   - CALL sp_insertar_repuesto_con_generacion_sin_vehiculo
+   - Procedimiento inserta repuesto y crea transacción de compra
+   - Triggers actualizan totales automáticamente
+
+// ========================================
+// DATOS DE PRUEBA INCLUIDOS
+// ========================================
+
+DATOS DE EJEMPLO:
+
+MARCAS: Toyota, Honda
+MODELOS: Corolla, Civic, Hilux
+GENERACIONES: gen12 (Corolla 2020-2024), gen10 (Civic 2016-2021), gen8 (Hilux 2016-2023)
+EMPLEADOS: ACXEL, ADRIANA, AMAURIS, CACHORRO, DIEGO, JHONATHAN, LUIS MIRANDA, NALLELY, VICTORIA
+
+TIPOS DE TRANSACCIONES (18 tipos):
+INGRESOS: Venta Vehículo, Venta Repuesto, Venta Mayoreo, Servicios Mecánicos, Alquiler Espacio, Otros Ingresos
+EGRESOS: Compra Vehículo, Compra Repuesto, Reparación Vehículo, Mantenimiento Local, Comisión Vendedor, Costo Grúa, Transporte, Combustible, Servicios Públicos, Impuestos, Salarios, Otros Egresos
+
+// ========================================
+// RESTRICCIONES Y VALIDACIONES
+// ========================================
+
+VALIDACIONES IMPLEMENTADAS:
+
+1. RESTRICCIONES ÚNICAS:
+   - marcas.nombre
+   - modelos.nombre por marca
+   - generaciones.nombre por modelo
+   - vehiculos.codigo_vehiculo
+   - inventario_repuestos.codigo_repuesto
+   - transacciones_financieras.codigo_transaccion
+   - empleados.nombre
+
+2. RESTRICCIONES DE CHECK:
+   - generaciones.anio_inicio <= generaciones.anio_fin
+
+3. VALIDACIONES EN TRIGGERS:
+   - Estados válidos para auditoría
+   - Generación de códigos únicos con reintentos
+   - Deducción automática de generación_id
+   - Actualización consistente de totales
+
+// ========================================
+// SEGURIDAD Y AUDITORÍA
+// ========================================
+
+CARACTERÍSTICAS DE SEGURIDAD:
+
+1. AUDITORÍA COMPLETA:
+   - Todos los cambios importantes registrados
+   - Usuario que realiza el cambio (USER())
+   - Fecha y hora exacta del cambio
+   - Valor anterior y nuevo
+   - IP del usuario (cuando está disponible)
+
+2. INTEGRIDAD REFERENCIAL:
+   - Foreign keys en todas las relaciones
+   - Protección contra eliminación en cascada controlada
+
+3. CONSISTENCIA DE DATOS:
+   - Triggers aseguran consistencia financiera
+   - Cálculos automáticos de totales
+   - Estados sincronizados entre tablas
+
+// ========================================
+// ESCALABILIDAD Y MANTENIMIENTO
+// ========================================
+
+CARACTERÍSTICAS DE ESCALABILIDAD:
+
+1. ÍNDICES OPTIMIZADOS:
+   - Índices compuestos para consultas frecuentes
+   - Índices por fechas para reportes
+   - Índices por estados para filtros
+
+2. CAMPOS CALCULADOS:
+   - Stored columns para rendimiento
+   - Cálculos automáticos de totales
+   - Fórmulas de precio precalculadas
+
+3. PARTIAL DATA:
+   - Campos de año/mes para particionamiento futuro
+   - Estructura preparada para particionamiento por fechas
+
+4. MANTENIMIENTO:
+   - Triggers centralizan lógica de negocio
+   - Vistas simplifican consultas complejas
+   - Procedimientos para operaciones comunes
+
+// ========================================
+// INTEGRACIÓN CON APLICACIONES
+// ========================================
+
+PUNTOS DE INTEGRACIÓN:
+
+1. API REST:
+   - Endpoints para CRUD de todas las entidades
+   - Endpoints especializados para operaciones complejas
+   - Endpoints de reportes y análisis
+
+2. APLICACIÓN WEB:
+   - Dashboard con vistas principales
+   - Formularios con validaciones
+   - Reportes en tiempo real
+
+3. MÓVIL:
+   - Consulta de inventario por código QR
+   - Registro rápido de ventas
+   - Notificaciones de estados críticos
+
+// ========================================
+// BACKUP Y RECUPERACIÓN
+// ========================================
+
+ESTRATEGIA DE BACKUP:
+
+1. BACKUPS AUTOMÁTICOS:
+   - Diario para transacciones
+   - Semanal para tablas principales
+   - Mensual para histórico completo
+
+2. PUNTO DE RESTAURACIÓN:
+   - Logs binarios para recuperación punto en el tiempo
+   - Snapshots para desastres
+   - Replicación para alta disponibilidad
+
+3. ARCHIVO:
+   - Movimiento de datos históricos
+   - Compresión de auditoría antigua
+   - Políticas de retención configurables
+
+// ========================================
+// MONITOREO Y ALERTAS
+// ========================================
+
+SISTEMA DE MONITOREO:
+
+1. MÉTRICAS CLAVE:
+   - Vehículos por estado
+   - Rotación de inventario
+   - Rentabilidad por generación
+   - Comisiones por vendedor
+
+2. ALERTAS AUTOMÁTICAS:
+   - Inventario crítico (>365 días)
+   - Márgenes bajos (<20%)
+   - Estados inconsistentes
+   - Errores en triggers
+
+3. REPORTES PROGRAMADOS:
+   - Diario: Resumen de ventas
+   - Semanal: Análisis financiero
+   - Mensual: Balance completo
+   - Trimestral: ROI por generación
+
+// ========================================
+// EXTENSIONES FUTURAS
+// ========================================
+
+MEJORAS PLANIFICADAS:
+
+1. INTELIGENCIA ARTIFICIAL:
+   - Predicción de precios
+   - Optimización de inventario
+   - Detección de anomalías
+
+2. INTEGRACIONES:
+   - Sistemas de contabilidad
+   - Plataformas de e-commerce
+   - Sistemas de logística
+
+3. MOBILIDAD:
+   - Aplicación móvil completa
+   - Sincronización offline
+   - Geolocalización de inventario
+
+4. ANALÍTICA AVANZADA:
+   - Machine learning para tendencias
+   - Análisis predictivo
+   - Dashboards interactivos
+
+// ========================================
+// CONSIDERACIONES FINALES
+// ========================================
+
+Este sistema está diseñado para:
+
+✅ GESTIÓN COMPLETA: Control total del ciclo de vida de vehículos y repuestos
+✅ AUTOMATIZACIÓN: Mínima intervención manual mediante triggers
+✅ AUDITORÍA: Registro completo de todas las operaciones
+✅ ESCALABILIDAD: Estructura preparada para crecimiento
+✅ ANÁLISIS: Múltiples vistas para toma de decisiones
+✅ INTEGRACIÓN: Facilidad de conexión con otros sistemas
+✅ MANTENIMIENTO: Código centralizado y modular
+
+La base de datos está lista para producción con datos de prueba completos
+y documentación exhaustiva para desarrollo y mantenimiento.
+*/
+@startuml
+skinparam classAttributeIconSize 0
+skinparam monochrome true
+skinparam packageStyle rectangle
+
+title Diagrama Completo y Exhaustivo - Database jOOQ (Sistema Vehicular)
+
+' --- Definiciones de Herencia de jOOQ ---
+abstract class CatalogImpl
+abstract class SchemaImpl
+abstract class TableImpl
+abstract class AbstractRoutine
+abstract class UpdatableRecordImpl
+abstract class TableRecordImpl
+interface EnumType
+
+' =====================================================
+' PAQUETE PRINCIPAL - com.rodiejacontable.database.jooq
+' =====================================================
+
+package "com.rodiejacontable.database.jooq" {
+    
+    note "Clases principales generadas por jOOQ" as N1
+    
+    class DefaultCatalog {
+        /** The reference instance of DEFAULT_CATALOG */
+        + {static} DEFAULT_CATALOG : DefaultCatalog
+        /** The schema sistema_vehicular. */
+        - SISTEMA_VEHICULAR : SistemaVehicular
+        --
+        + getSchemas() : List<Schema>
+    }
+    DefaultCatalog --|> CatalogImpl
+    DefaultCatalog .. N1
+    
+    class SistemaVehicular {
+        /** The reference instance of sistema_vehicular */
+        + {static} SISTEMA_VEHICULAR : SistemaVehicular
+        /** Tablas del sistema */
+        - EMPLEADOS : Empleados
+        - GENERACIONES : Generaciones
+        - HISTORIAL_REPUESTOS : HistorialRepuestos
+        - HISTORIAL_TRANSACCIONES : HistorialTransacciones
+        - HISTORIAL_VEHICULOS : HistorialVehiculos
+        - INVENTARIO_REPUESTOS : InventarioRepuestos
+        - MARCAS : Marcas
+        - MODELOS : Modelos
+        - TIPOS_TRANSACCIONES : TiposTransacciones
+        - TRANSACCIONES_FINANCIERAS : TransaccionesFinancieras
+        - VEHICULOS : Vehiculos
+        /** Vistas del sistema */
+        - VISTA_ANALISIS_FINANCIERO_MENSUAL : VistaAnalisisFinancieroMensual
+        - VISTA_AUDITORIA_COMPLETA : VistaAuditoriaCompleta
+        - VISTA_DASHBOARD_EJECUTIVO : VistaDashboardEjecutivo
+        - VISTA_INVENTARIO_COMPLETO : VistaInventarioCompleto
+        - VISTA_INVENTARIO_CRITICO : VistaInventarioCritico
+        - VISTA_RENTABILIDAD_GENERACIONES : VistaRentabilidadGeneraciones
+        - VISTA_RESUMEN_GENERACIONES : VistaResumenGeneraciones
+        - VISTA_TOP_PRODUCTOS_VENDIDOS : VistaTopProductosVendidos
+        - VISTA_TRANSACCIONES_COMPLETAS : VistaTransaccionesCompletas
+        - VISTA_VEHICULOS_COMPLETA : VistaVehiculosCompleta
+        - VISTA_VENTAS_EMPLEADO_MENSUAL : VistaVentasEmpleadoMensual
+        - VISTA_VENTAS_POR_EMPLEADO : VistaVentasPorEmpleado
+        --
+        + getCatalog() : Catalog
+        + getTables() : List<Table<?>>
+    }
+    SistemaVehicular --|> SchemaImpl
+    SistemaVehicular .. N1
+    
+    class Tables {
+        /** Convenience access to all tables in sistema_vehicular */
+        + {static} EMPLEADOS : Empleados
+        + {static} GENERACIONES : Generaciones
+        + {static} HISTORIAL_REPUESTOS : HistorialRepuestos
+        + {static} HISTORIAL_TRANSACCIONES : HistorialTransacciones
+        + {static} HISTORIAL_VEHICULOS : HistorialVehiculos
+        + {static} INVENTARIO_REPUESTOS : InventarioRepuestos
+        + {static} MARCAS : Marcas
+        + {static} MODELOS : Modelos
+        + {static} TIPOS_TRANSACCIONES : TiposTransacciones
+        + {static} TRANSACCIONES_FINANCIERAS : TransaccionesFinancieras
+        + {static} VEHICULOS : Vehiculos
+        + {static} VISTA_ANALISIS_FINANCIERO_MENSUAL : VistaAnalisisFinancieroMensual
+        + {static} VISTA_AUDITORIA_COMPLETA : VistaAuditoriaCompleta
+        + {static} VISTA_DASHBOARD_EJECUTIVO : VistaDashboardEjecutivo
+        + {static} VISTA_INVENTARIO_COMPLETO : VistaInventarioCompleto
+        + {static} VISTA_INVENTARIO_CRITICO : VistaInventarioCritico
+        + {static} VISTA_RENTABILIDAD_GENERACIONES : VistaRentabilidadGeneraciones
+        + {static} VISTA_RESUMEN_GENERACIONES : VistaResumenGeneraciones
+        + {static} VISTA_TOP_PRODUCTOS_VENDIDOS : VistaTopProductosVendidos
+        + {static} VISTA_TRANSACCIONES_COMPLETAS : VistaTransaccionesCompletas
+        + {static} VISTA_VEHICULOS_COMPLETA : VistaVehiculosCompleta
+        + {static} VISTA_VENTAS_EMPLEADO_MENSUAL : VistaVentasEmpleadoMensual
+        + {static} VISTA_VENTAS_POR_EMPLEADO : VistaVentasPorEmpleado
+    }
+    Tables .. N1
+    
+    class Keys {
+        /** UNIQUE and PRIMARY KEY definitions */
+        + {static} KEY_EMPLEADOS_NOMBRE : UniqueKey<EmpleadosRecord>
+        + {static} KEY_EMPLEADOS_PRIMARY : UniqueKey<EmpleadosRecord>
+        + {static} KEY_GENERACIONES_PRIMARY : UniqueKey<GeneracionesRecord>
+        + {static} KEY_HISTORIAL_REPUESTOS_PRIMARY : UniqueKey<HistorialRepuestosRecord>
+        + {static} KEY_HISTORIAL_TRANSACCIONES_PRIMARY : UniqueKey<HistorialTransaccionesRecord>
+        + {static} KEY_HISTORIAL_VEHICULOS_PRIMARY : UniqueKey<HistorialVehiculosRecord>
+        + {static} KEY_INVENTARIO_REPUESTOS_PRIMARY : UniqueKey<InventarioRepuestosRecord>
+        + {static} KEY_MARCAS_PRIMARY : UniqueKey<MarcasRecord>
+        + {static} KEY_MODELOS_PRIMARY : UniqueKey<ModelosRecord>
+        + {static} KEY_TIPOS_TRANSACCIONES_PRIMARY : UniqueKey<TiposTransaccionesRecord>
+        + {static} KEY_TRANSACCIONES_FINANCIERAS_PRIMARY : UniqueKey<TransaccionesFinancierasRecord>
+        + {static} KEY_VEHICULOS_PRIMARY : UniqueKey<VehiculosRecord>
+        /** FOREIGN KEY definitions */
+        + {static} FK_GENERACIONES_MODELOS : ForeignKey<GeneracionesRecord, ModelosRecord>
+        + {static} FK_HISTORIAL_REPUESTOS_INVENTARIO_REPUESTOS : ForeignKey<HistorialRepuestosRecord, InventarioRepuestosRecord>
+        + {static} FK_HISTORIAL_TRANSACCIONES_TRANSACCIONES_FINANCIERAS : ForeignKey<HistorialTransaccionesRecord, TransaccionesFinancierasRecord>
+        + {static} FK_HISTORIAL_VEHICULOS_VEHICULOS : ForeignKey<HistorialVehiculosRecord, VehiculosRecord>
+        + {static} FK_INVENTARIO_REPUESTOS_VEHICULOS : ForeignKey<InventarioRepuestosRecord, VehiculosRecord>
+        + {static} FK_MODELOS_MARCAS : ForeignKey<ModelosRecord, MarcasRecord>
+        + {static} FK_TRANSACCIONES_FINANCIERAS_EMPLEADOS : ForeignKey<TransaccionesFinancierasRecord, EmpleadosRecord>
+        + {static} FK_TRANSACCIONES_FINANCIERAS_GENERACIONES : ForeignKey<TransaccionesFinancierasRecord, GeneracionesRecord>
+        + {static} FK_TRANSACCIONES_FINANCIERAS_INVENTARIO_REPUESTOS : ForeignKey<TransaccionesFinancierasRecord, InventarioRepuestosRecord>
+        + {static} FK_TRANSACCIONES_FINANCIERAS_TIPOS_TRANSACCIONES : ForeignKey<TransaccionesFinancierasRecord, TiposTransaccionesRecord>
+        + {static} FK_TRANSACCIONES_FINANCIERAS_VEHICULOS : ForeignKey<TransaccionesFinancierasRecord, VehiculosRecord>
+        + {static} FK_VEHICULOS_GENERACIONES : ForeignKey<VehiculosRecord, GeneracionesRecord>
+    }
+    Keys .. N1
+    
+    class Indexes {
+        /** INDEX definitions */
+        + {static} IDX_EMPLEADOS_NOMBRE : Index
+        + {static} IDX_GENERACIONES_NOMBRE : Index
+        + {static} IDX_GENERACIONES_MODELO_ID : Index
+        + {static} IDX_HISTORIAL_REPUESTOS_REPUESTO_ID : Index
+        + {static} IDX_HISTORIAL_REPUESTOS_FECHA_CAMBIO : Index
+        + {static} IDX_HISTORIAL_TRANSACCIONES_TRANSACCION_ID : Index
+        + {static} IDX_HISTORIAL_TRANSACCIONES_FECHA_CAMBIO : Index
+        + {static} IDX_HISTORIAL_VEHICULOS_VEHICULO_ID : Index
+        + {static} IDX_HISTORIAL_VEHICULOS_FECHA_CAMBIO : Index
+        + {static} IDX_INVENTARIO_REPUESTOS_CODIGO_REPUESTO : Index
+        + {static} IDX_INVENTARIO_REPUESTOS_VEHICULO_ORIGEN_ID : Index
+        + {static} IDX_INVENTARIO_REPUESTOS_ESTADO : Index
+        + {static} IDX_MARCAS_NOMBRE : Index
+        + {static} IDX_MODELOS_NOMBRE : Index
+        + {static} IDX_MODELOS_MARCA_ID : Index
+        + {static} IDX_TIPOS_TRANSACCIONES_NOMBRE : Index
+        + {static} IDX_TRANSACCIONES_FINANCIERAS_CODIGO_TRANSACCION : Index
+        + {static} IDX_TRANSACCIONES_FINANCIERAS_FECHA : Index
+        + {static} IDX_TRANSACCIONES_FINANCIERAS_TIPO_TRANSACCION_ID : Index
+        + {static} IDX_TRANSACCIONES_FINANCIERAS_EMPLEADO_ID : Index
+        + {static} IDX_TRANSACCIONES_FINANCIERAS_VEHICULO_ID : Index
+        + {static} IDX_TRANSACCIONES_FINANCIERAS_REPUESTO_ID : Index
+        + {static} IDX_TRANSACCIONES_FINANCIERAS_GENERACION_ID : Index
+        + {static} IDX_VEHICULOS_CODIGO_VEHICULO : Index
+        + {static} IDX_VEHICULOS_GENERACION_ID : Index
+        + {static} IDX_VEHICULOS_ESTADO : Index
+    }
+    Indexes .. N1
+    
+    class Routines {
+        /** Convenience access to all routines in sistema_vehicular */
+        + {static} SP_ACTIVIDAD_AUDITORIA_FECHA : SpActividadAuditoriaFecha
+        + {static} SP_HISTORIAL_VEHICULO : SpHistorialVehiculo
+        + {static} SP_INSERTAR_REPUESTO_CON_GENERACION_SIN_VEHICULO : SpInsertarRepuestoConGeneracionSinVehiculo
+    }
+    Routines .. N1
+}
+
+' =====================================================
+' PAQUETE DE ENUMS
+' =====================================================
+
+package "com.rodiejacontable.database.jooq.enums" {
+    
+    note "Enums generados por jOOQ desde la base de datos" as N2
+    
+    enum HistorialRepuestosAccion {
+        INSERT("INSERT")
+        UPDATE("UPDATE")
+        DELETE("DELETE")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : HistorialRepuestosAccion
+    }
+    HistorialRepuestosAccion ..|> EnumType
+    HistorialRepuestosAccion .. N2
+    
+    enum HistorialTransaccionesAccion {
+        INSERT("INSERT")
+        UPDATE("UPDATE")
+        DELETE("DELETE")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : HistorialTransaccionesAccion
+    }
+    HistorialTransaccionesAccion ..|> EnumType
+    HistorialTransaccionesAccion .. N2
+    
+    enum HistorialVehiculosAccion {
+        INSERT("INSERT")
+        UPDATE("UPDATE")
+        DELETE("DELETE")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : HistorialVehiculosAccion
+    }
+    HistorialVehiculosAccion ..|> EnumType
+    HistorialVehiculosAccion .. N2
+    
+    enum InventarioRepuestosBodega {
+        BODEGA_A("BODEGA_A")
+        BODEGA_B("BODEGA_B")
+        BODEGA_C("BODEGA_C")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : InventarioRepuestosBodega
+    }
+    InventarioRepuestosBodega ..|> EnumType
+    InventarioRepuestosBodega .. N2
+    
+    enum InventarioRepuestosCondicion {
+        NUEVO("NUEVO")
+        USADO("USADO")
+        REPARADO("REPARADO")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : InventarioRepuestosCondicion
+    }
+    InventarioRepuestosCondicion ..|> EnumType
+    InventarioRepuestosCondicion .. N2
+    
+    enum InventarioRepuestosEstado {
+        DISPONIBLE("DISPONIBLE")
+        VENDIDO("VENDIDO")
+        RESERVADO("RESERVADO")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : InventarioRepuestosEstado
+    }
+    InventarioRepuestosEstado ..|> EnumType
+    InventarioRepuestosEstado .. N2
+    
+    enum TiposTransaccionesCategoria {
+        INGRESO("INGRESO")
+        EGRESO("EGRESO")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : TiposTransaccionesCategoria
+    }
+    TiposTransaccionesCategoria ..|> EnumType
+    TiposTransaccionesCategoria .. N2
+    
+    enum TransaccionesFinancierasEstado {
+        PENDIENTE("PENDIENTE")
+        COMPLETADO("COMPLETADO")
+        CANCELADO("CANCELADO")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : TransaccionesFinancierasEstado
+    }
+    TransaccionesFinancierasEstado ..|> EnumType
+    TransaccionesFinancierasEstado .. N2
+    
+    enum VehiculosEstado {
+        DISPONIBLE("DISPONIBLE")
+        VENDIDO("VENDIDO")
+        DESARMADO("DESARMADO")
+        REPARACION("REPARACION")
+        --
+        - literal : String
+        + getLiteral() : String
+        + lookupLiteral(literal: String) : VehiculosEstado
+    }
+    VehiculosEstado ..|> EnumType
+    VehiculosEstado .. N2
+}
+
+' =====================================================
+' PAQUETE DE ROUTINES
+' =====================================================
+
+package "com.rodiejacontable.database.jooq.routines" {
+    
+    note "Procedimientos almacenados generados por jOOQ" as N3
+    
+    class SpActividadAuditoriaFecha {
+        /** The parameter sistema_vehicular.sp_actividad_auditoria_fecha.p_fecha_inicio. */
+        + {static} P_FECHA_INICIO : Parameter<LocalDate>
+        /** The parameter sistema_vehicular.sp_actividad_auditoria_fecha.p_fecha_fin. */
+        + {static} P_FECHA_FIN : Parameter<LocalDate>
+        --
+        + setPFechaInicio(value: LocalDate)
+        + setPFechaFin(value: LocalDate)
+    }
+    SpActividadAuditoriaFecha --|> AbstractRoutine
+    SpActividadAuditoriaFecha .. N3
+    
+    class SpHistorialVehiculo {
+        /** The parameter sistema_vehicular.sp_historial_vehiculo.p_vehiculo_id. */
+        + {static} P_VEHICULO_ID : Parameter<Integer>
+        --
+        + setPVehiculoId(value: Integer)
+    }
+    SpHistorialVehiculo --|> AbstractRoutine
+    SpHistorialVehiculo .. N3
+    
+    class SpInsertarRepuestoConGeneracionSinVehiculo {
+        /** The parameter p_generacion_id. */
+        + {static} P_GENERACION_ID : Parameter<Integer>
+        /** The parameter p_marca_nombre. */
+        + {static} P_MARCA_NOMBRE : Parameter<String>
+        /** The parameter p_parte_vehiculo. */
+        + {static} P_PARTE_VEHICULO : Parameter<String>
+        /** The parameter p_descripcion. */
+        + {static} P_DESCRIPCION : Parameter<String>
+        /** The parameter p_precio_costo. */
+        + {static} P_PRECIO_COSTO : Parameter<BigDecimal>
+        /** The parameter p_precio_venta. */
+        + {static} P_PRECIO_VENTA : Parameter<BigDecimal>
+        /** The parameter p_precio_mayoreo. */
+        + {static} P_PRECIO_MAYOREO : Parameter<BigDecimal>
+        /** The parameter p_bodega. */
+        + {static} P_BODEGA : Parameter<String>
+        /** The parameter p_zona. */
+        + {static} P_ZONA : Parameter<String>
+        /** The parameter p_pared. */
+        + {static} P_PARED : Parameter<String>
+        /** The parameter p_malla. */
+        + {static} P_MALLA : Parameter<String>
+        /** The parameter p_estante. */
+        + {static} P_ESTANTE : Parameter<String>
+        /** The parameter p_piso. */
+        + {static} P_PISO : Parameter<String>
+        /** The parameter p_estado. */
+        + {static} P_ESTADO : Parameter<String>
+        /** The parameter p_condicion. */
+        + {static} P_CONDICION : Parameter<String>
+        /** The parameter p_imagen_url. */
+        + {static} P_IMAGEN_URL : Parameter<String>
+        --
+        + setPGeneracionId(value: Integer)
+        + setPMarcaNombre(value: String)
+        + setPParteVehiculo(value: String)
+        + setPDescripcion(value: String)
+        + setPPrecioCosto(value: BigDecimal)
+        + setPPrecioVenta(value: BigDecimal)
+        + setPPrecioMayoreo(value: BigDecimal)
+        + setPBodega(value: String)
+        + setPZona(value: String)
+        + setPPared(value: String)
+        + setPMalla(value: String)
+        + setPEstante(value: String)
+        + setPPiso(value: String)
+        + setPEstado(value: String)
+        + setPCondicion(value: String)
+        + setPImagenUrl(value: String)
+    }
+    SpInsertarRepuestoConGeneracionSinVehiculo --|> AbstractRoutine
+    SpInsertarRepuestoConGeneracionSinVehiculo .. N3
+}
+
+' =====================================================
+' PAQUETE DE TABLES - CLASES PRINCIPALES
+' =====================================================
+
+package "com.rodiejacontable.database.jooq.tables" {
+    
+    note "Clases de tabla generadas por jOOQ" as N4
+    
+    class Empleados {
+        /** The reference instance of sistema_vehicular.empleados */
+        + {static} EMPLEADOS : Empleados
+        /** Columnas de la tabla */
+        + ID : TableField<EmpleadosRecord, Integer>
+        + NOMBRE : TableField<EmpleadosRecord, String>
+        + ACTIVO : TableField<EmpleadosRecord, Byte>
+        + FECHA_CREACION : TableField<EmpleadosRecord, LocalDateTime>
+        --
+        + getRecordType() : Class<EmpleadosRecord>
+        + rename(name: String) : Empleados
+        + as(alias: String) : Empleados
+    }
+    Empleados --|> TableImpl
+    Empleados .. N4
+    
+    class Generaciones {
+        /** The reference instance of sistema_vehicular.generaciones */
+        + {static} GENERACIONES : Generaciones
+        /** Columnas de la tabla */
+        + ID : TableField<GeneracionesRecord, Integer>
+        + MODELO_ID : TableField<GeneracionesRecord, Integer>
+        + NOMBRE : TableField<GeneracionesRecord, String>
+        + DESCRIPCION : TableField<GeneracionesRecord, String>
+        + ANIO_INICIO : TableField<GeneracionesRecord, Integer>
+        + ANIO_FIN : TableField<GeneracionesRecord, Integer>
+        + TOTAL_INVERSION : TableField<GeneracionesRecord, BigDecimal>
+        + TOTAL_INGRESOS : TableField<GeneracionesRecord, BigDecimal>
+        + TOTAL_EGRESOS : TableField<GeneracionesRecord, BigDecimal>
+        + BALANCE_NETO : TableField<GeneracionesRecord, BigDecimal>
+        + ACTIVO : TableField<GeneracionesRecord, Byte>
+        + FECHA_CREACION : TableField<GeneracionesRecord, LocalDateTime>
+        --
+        + getRecordType() : Class<GeneracionesRecord>
+        + rename(name: String) : Generaciones
+        + as(alias: String) : Generaciones
+    }
+    Generaciones --|> TableImpl
+    Generaciones .. N4
+    
+    class HistorialRepuestos {
+        /** The reference instance of sistema_vehicular.historial_repuestos */
+        + {static} HISTORIAL_REPUESTOS : HistorialRepuestos
+        /** Columnas de la tabla */
+        + ID : TableField<HistorialRepuestosRecord, Integer>
+        + REPUESTO_ID : TableField<HistorialRepuestosRecord, Integer>
+        + ACCION : TableField<HistorialRepuestosRecord, HistorialRepuestosAccion>
+        + CAMPO_MODIFICADO : TableField<HistorialRepuestosRecord, String>
+        + VALOR_ANTERIOR : TableField<HistorialRepuestosRecord, String>
+        + VALOR_NUEVO : TableField<HistorialRepuestosRecord, String>
+        + USUARIO : TableField<HistorialRepuestosRecord, String>
+        + FECHA_CAMBIO : TableField<HistorialRepuestosRecord, LocalDateTime>
+        + IP_USUARIO : TableField<HistorialRepuestosRecord, String>
+        + OBSERVACIONES : TableField<HistorialRepuestosRecord, String>
+        --
+        + getRecordType() : Class<HistorialRepuestosRecord>
+        + rename(name: String) : HistorialRepuestos
+        + as(alias: String) : HistorialRepuestos
+    }
+    HistorialRepuestos --|> TableImpl
+    HistorialRepuestos .. N4
+    
+    class HistorialTransacciones {
+        /** The reference instance of sistema_vehicular.historial_transacciones */
+        + {static} HISTORIAL_TRANSACCIONES : HistorialTransacciones
+        /** Columnas de la tabla */
+        + ID : TableField<HistorialTransaccionesRecord, Integer>
+        + TRANSACCION_ID : TableField<HistorialTransaccionesRecord, Integer>
+        + ACCION : TableField<HistorialTransaccionesRecord, HistorialTransaccionesAccion>
+        + CAMPO_MODIFICADO : TableField<HistorialTransaccionesRecord, String>
+        + VALOR_ANTERIOR : TableField<HistorialTransaccionesRecord, String>
+        + VALOR_NUEVO : TableField<HistorialTransaccionesRecord, String>
+        + USUARIO : TableField<HistorialTransaccionesRecord, String>
+        + FECHA_CAMBIO : TableField<HistorialTransaccionesRecord, LocalDateTime>
+        + IP_USUARIO : TableField<HistorialTransaccionesRecord, String>
+        + OBSERVACIONES : TableField<HistorialTransaccionesRecord, String>
+        --
+        + getRecordType() : Class<HistorialTransaccionesRecord>
+        + rename(name: String) : HistorialTransacciones
+        + as(alias: String) : HistorialTransacciones
+    }
+    HistorialTransacciones --|> TableImpl
+    HistorialTransacciones .. N4
+    
+    class HistorialVehiculos {
+        /** The reference instance of sistema_vehicular.historial_vehiculos */
+        + {static} HISTORIAL_VEHICULOS : HistorialVehiculos
+        /** Columnas de la tabla */
+        + ID : TableField<HistorialVehiculosRecord, Integer>
+        + VEHICULO_ID : TableField<HistorialVehiculosRecord, Integer>
+        + ACCION : TableField<HistorialVehiculosRecord, HistorialVehiculosAccion>
+        + CAMPO_MODIFICADO : TableField<HistorialVehiculosRecord, String>
+        + VALOR_ANTERIOR : TableField<HistorialVehiculosRecord, String>
+        + VALOR_NUEVO : TableField<HistorialVehiculosRecord, String>
+        + USUARIO : TableField<HistorialVehiculosRecord, String>
+        + FECHA_CAMBIO : TableField<HistorialVehiculosRecord, LocalDateTime>
+        + IP_USUARIO : TableField<HistorialVehiculosRecord, String>
+        + OBSERVACIONES : TableField<HistorialVehiculosRecord, String>
+        --
+        + getRecordType() : Class<HistorialVehiculosRecord>
+        + rename(name: String) : HistorialVehiculos
+        + as(alias: String) : HistorialVehiculos
+    }
+    HistorialVehiculos --|> TableImpl
+    HistorialVehiculos .. N4
+    
+    class InventarioRepuestos {
+        /** The reference instance of sistema_vehicular.inventario_repuestos */
+        + {static} INVENTARIO_REPUESTOS : InventarioRepuestos
+        /** Columnas de la tabla */
+        + ID : TableField<InventarioRepuestosRecord, Integer>
+        + CODIGO_REPUESTO : TableField<InventarioRepuestosRecord, String>
+        + VEHICULO_ORIGEN_ID : TableField<InventarioRepuestosRecord, Integer>
+        + ANIO_REGISTRO : TableField<InventarioRepuestosRecord, Short>
+        + MES_REGISTRO : TableField<InventarioRepuestosRecord, Byte>
+        + CODIGO_UBICACION : TableField<InventarioRepuestosRecord, String>
+        + IMAGEN_URL : TableField<InventarioRepuestosRecord, String>
+        + PARTE_VEHICULO : TableField<InventarioRepuestosRecord, InventarioRepuestosParteVehiculo>
+        + DESCRIPCION : TableField<InventarioRepuestosRecord, String>
+        + PRECIO_COSTO : TableField<InventarioRepuestosRecord, BigDecimal>
+        + PRECIO_VENTA : TableField<InventarioRepuestosRecord, BigDecimal>
+        + PRECIO_MAYOREO : TableField<InventarioRepuestosRecord, BigDecimal>
+        + FORMULA_15 : TableField<InventarioRepuestosRecord, BigDecimal>
+        + FORMULA_30 : TableField<InventarioRepuestosRecord, BigDecimal>
+        + BODEGA : TableField<InventarioRepuestosRecord, InventarioRepuestosBodega>
+        + ZONA : TableField<InventarioRepuestosRecord, InventarioRepuestosZona>
+        + PARED : TableField<InventarioRepuestosRecord, InventarioRepuestosPared>
+        + MALLA : TableField<InventarioRepuestosRecord, InventarioRepuestosMalla>
+        + HORIZONTAL : TableField<InventarioRepuestosRecord, InventarioRepuestosHorizontal>
+        + ESTANTE : TableField<InventarioRepuestosRecord, InventarioRepuestosEstante>
+        + NIVEL : TableField<InventarioRepuestosRecord, InventarioRepuestosNivel>
+        + PISO : TableField<InventarioRepuestosRecord, InventarioRepuestosPiso>
+        + PLASTICA : TableField<InventarioRepuestosRecord, InventarioRepuestosPlastica>
+        + CARTON : TableField<InventarioRepuestosRecord, InventarioRepuestosCarton>
+        + POSICION : TableField<InventarioRepuestosRecord, String>
+        + CANTIDAD : TableField<InventarioRepuestosRecord, UInteger>
+        + ESTADO : TableField<InventarioRepuestosRecord, InventarioRepuestosEstado>
+        + CONDICION : TableField<InventarioRepuestosRecord, InventarioRepuestosCondicion>
+        + FECHA_CREACION : TableField<InventarioRepuestosRecord, LocalDateTime>
+        + FECHA_ACTUALIZACION : TableField<InventarioRepuestosRecord, LocalDateTime>
+        --
+        + getRecordType() : Class<InventarioRepuestosRecord>
+        + rename(name: String) : InventarioRepuestos
+        + as(alias: String) : InventarioRepuestos
+    }
+    InventarioRepuestos --|> TableImpl
+    InventarioRepuestos .. N4
+    
+    class Marcas {
+        /** The reference instance of sistema_vehicular.marcas */
+        + {static} MARCAS : Marcas
+        /** Columnas de la tabla */
+        + ID : TableField<MarcasRecord, Integer>
+        + NOMBRE : TableField<MarcasRecord, String>
+        + ACTIVO : TableField<MarcasRecord, Byte>
+        + FECHA_CREACION : TableField<MarcasRecord, LocalDateTime>
+        --
+        + getRecordType() : Class<MarcasRecord>
+        + rename(name: String) : Marcas
+        + as(alias: String) : Marcas
+    }
+    Marcas --|> TableImpl
+    Marcas .. N4
+    
+    class Modelos {
+        /** The reference instance of sistema_vehicular.modelos */
+        + {static} MODELOS : Modelos
+        /** Columnas de la tabla */
+        + ID : TableField<ModelosRecord, Integer>
+        + MARCA_ID : TableField<ModelosRecord, Integer>
+        + NOMBRE : TableField<ModelosRecord, String>
+        + ACTIVO : TableField<ModelosRecord, Byte>
+        + FECHA_CREACION : TableField<ModelosRecord, LocalDateTime>
+        --
+        + getRecordType() : Class<ModelosRecord>
+        + rename(name: String) : Modelos
+        + as(alias: String) : Modelos
+    }
+    Modelos --|> TableImpl
+    Modelos .. N4
+    
+    class TiposTransacciones {
+        /** The reference instance of sistema_vehicular.tipos_transacciones */
+        + {static} TIPOS_TRANSACCIONES : TiposTransacciones
+        /** Columnas de la tabla */
+        + ID : TableField<TiposTransaccionesRecord, Integer>
+        + NOMBRE : TableField<TiposTransaccionesRecord, String>
+        + DESCRIPCION : TableField<TiposTransaccionesRecord, String>
+        + CATEGORIA : TableField<TiposTransaccionesRecord, TiposTransaccionesCategoria>
+        + ACTIVO : TableField<TiposTransaccionesRecord, Byte>
+        --
+        + getRecordType() : Class<TiposTransaccionesRecord>
+        + rename(name: String) : TiposTransacciones
+        + as(alias: String) : TiposTransacciones
+    }
+    TiposTransacciones --|> TableImpl
+    TiposTransacciones .. N4
+    
+    class TransaccionesFinancieras {
+        /** The reference instance of sistema_vehicular.transacciones_financieras */
+        + {static} TRANSACCIONES_FINANCIERAS : TransaccionesFinancieras
+        /** Columnas de la tabla */
+        + ID : TableField<TransaccionesFinancierasRecord, Integer>
+        + CODIGO_TRANSACCION : TableField<TransaccionesFinancierasRecord, String>
+        + FECHA : TableField<TransaccionesFinancierasRecord, LocalDate>
+        + DIA : TableField<TransaccionesFinancierasRecord, Byte>
+        + MES : TableField<TransaccionesFinancierasRecord, Byte>
+        + ANIO : TableField<TransaccionesFinancierasRecord, Short>
+        + TIPO_TRANSACCION_ID : TableField<TransaccionesFinancierasRecord, Integer>
+        + EMPLEADO_ID : TableField<TransaccionesFinancierasRecord, Integer>
+        + VEHICULO_ID : TableField<TransaccionesFinancierasRecord, Integer>
+        + REPUESTO_ID : TableField<TransaccionesFinancierasRecord, Integer>
+        + GENERACION_ID : TableField<TransaccionesFinancierasRecord, Integer>
+        + MONTO : TableField<TransaccionesFinancierasRecord, BigDecimal>
+        + COMISION_EMPLEADO : TableField<TransaccionesFinancierasRecord, BigDecimal>
+        + DESCRIPCION : TableField<TransaccionesFinancierasRecord, String>
+        + REFERENCIA : TableField<TransaccionesFinancierasRecord, String>
+        + ESTADO : TableField<TransaccionesFinancierasRecord, TransaccionesFinancierasEstado>
+        + ACTIVO : TableField<TransaccionesFinancierasRecord, Byte>
+        + FECHA_CREACION : TableField<TransaccionesFinancierasRecord, LocalDateTime>
+        + FECHA_ACTUALIZACION : TableField<TransaccionesFinancierasRecord, LocalDateTime>
+        --
+        + getRecordType() : Class<TransaccionesFinancierasRecord>
+        + rename(name: String) : TransaccionesFinancieras
+        + as(alias: String) : TransaccionesFinancieras
+    }
+    TransaccionesFinancieras --|> TableImpl
+    TransaccionesFinancieras .. N4
+    
+    class Vehiculos {
+        /** The reference instance of sistema_vehicular.vehiculos */
+        + {static} VEHICULOS : Vehiculos
+        /** Columnas de la tabla */
+        + ID : TableField<VehiculosRecord, Integer>
+        + CODIGO_VEHICULO : TableField<VehiculosRecord, String>
+        + GENERACION_ID : TableField<VehiculosRecord, Integer>
+        + IMAGEN_URL : TableField<VehiculosRecord, String>
+        + ANIO : TableField<VehiculosRecord, Integer>
+        + PRECIO_COMPRA : TableField<VehiculosRecord, BigDecimal>
+        + COSTO_GRUA : TableField<VehiculosRecord, BigDecimal>
+        + COMISIONES : TableField<VehiculosRecord, BigDecimal>
+        + INVERSION_TOTAL : TableField<VehiculosRecord, BigDecimal>
+        + COSTO_RECUPERADO : TableField<VehiculosRecord, BigDecimal>
+        + COSTO_PENDIENTE : TableField<VehiculosRecord, BigDecimal>
+        + FECHA_INGRESO : TableField<VehiculosRecord, LocalDate>
+        + ESTADO : TableField<VehiculosRecord, VehiculosEstado>
+        + PRECIO_VENTA : TableField<VehiculosRecord, BigDecimal>
+        + FECHA_VENTA : TableField<VehiculosRecord, LocalDate>
+        + ACTIVO : TableField<VehiculosRecord, Byte>
+        + NOTAS : TableField<VehiculosRecord, String>
+        + FECHA_CREACION : TableField<VehiculosRecord, LocalDateTime>
+        + FECHA_ACTUALIZACION : TableField<VehiculosRecord, LocalDateTime>
+        --
+        + getRecordType() : Class<VehiculosRecord>
+        + rename(name: String) : Vehiculos
+        + as(alias: String) : Vehiculos
+    }
+    Vehiculos --|> TableImpl
+    Vehiculos .. N4
+    
+    ' =====================================================
+    ' VISTAS - CLASES DE VISTAS
+    ' =====================================================
+    
+    class VistaAnalisisFinancieroMensual {
+        /** The reference instance of sistema_vehicular.vista_analisis_financiero_mensual */
+        + {static} VISTA_ANALISIS_FINANCIERO_MENSUAL : VistaAnalisisFinancieroMensual
+        /** Columnas de la vista */
+        + ANIO : TableField<VistaAnalisisFinancieroMensualRecord, Integer>
+        + MES : TableField<VistaAnalisisFinancieroMensualRecord, Integer>
+        + NOMBRE_MES : TableField<VistaAnalisisFinancieroMensualRecord, String>
+        + TOTAL_TRANSACCIONES : TableField<VistaAnalisisFinancieroMensualRecord, Long>
+        + TOTAL_INGRESOS_BRUTOS : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        + TOTAL_EGRESOS : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        + TOTAL_COMISIONES : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        + TOTAL_INGRESOS_NETOS : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        + BALANCE_NETO : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        + VEHICULOS_VENDIDOS : TableField<VistaAnalisisFinancieroMensualRecord, Long>
+        + REPUESTOS_VENDIDOS : TableField<VistaAnalisisFinancieroMensualRecord, Long>
+        + PROMEDIO_VENTA : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        + RATIO_INGRESOS_EGRESOS : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        + PORCENTAJE_COMISIONES : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        + MARGEN_UTILIDAD_PORCENTAJE : TableField<VistaAnalisisFinancieroMensualRecord, BigDecimal>
+        --
+        + getRecordType() : Class<VistaAnalisisFinancieroMensualRecord>
+        + rename(name: String) : VistaAnalisisFinancieroMensual
+        + as(alias: String) : VistaAnalisisFinancieroMensual
+    }
+    VistaAnalisisFinancieroMensual --|> TableImpl
+    VistaAnalisisFinancieroMensual .. N4
+    
+    class VistaAuditoriaCompleta {
+        /** The reference instance of sistema_vehicular.vista_auditoria_completa */
+        + {static} VISTA_AUDITORIA_COMPLETA : VistaAuditoriaCompleta
+        /** Columnas de la vista */
+        + TIPO_ENTIDAD : TableField<VistaAuditoriaCompletaRecord, String>
+        + ENTIDAD_ID : TableField<VistaAuditoriaCompletaRecord, String>
+        + CODIGO_ENTIDAD : TableField<VistaAuditoriaCompletaRecord, String>
+        + DESCRIPCION_ENTIDAD : TableField<VistaAuditoriaCompletaRecord, String>
+        + ACCION : TableField<VistaAuditoriaCompletaRecord, String>
+        + CAMPO_MODIFICADO : TableField<VistaAuditoriaCompletaRecord, String>
+        + VALOR_ANTERIOR : TableField<VistaAuditoriaCompletaRecord, String>
+        + VALOR_NUEVO : TableField<VistaAuditoriaCompletaRecord, String>
+        + USUARIO : TableField<VistaAuditoriaCompletaRecord, String>
+        + FECHA_CAMBIO : TableField<VistaAuditoriaCompletaRecord, LocalDateTime>
+        + OBSERVACIONES : TableField<VistaAuditoriaCompletaRecord, String>
+        --
+        + getRecordType() : Class<VistaAuditoriaCompletaRecord>
+        + rename(name: String) : VistaAuditoriaCompleta
+        + as(alias: String) : VistaAuditoriaCompleta
+    }
+    VistaAuditoriaCompleta --|> TableImpl
+    VistaAuditoriaCompleta .. N4
+    
+    class VistaDashboardEjecutivo {
+        /** The reference instance of sistema_vehicular.vista_dashboard_ejecutivo */
+        + {static} VISTA_DASHBOARD_EJECUTIVO : VistaDashboardEjecutivo
+        /** Columnas de la vista */
+        + SECCION : TableField<VistaDashboardEjecutivoRecord, String>
+        + TOTAL_VEHICULOS : TableField<VistaDashboardEjecutivoRecord, Long>
+        + VEHICULOS_DISPONIBLES : TableField<VistaDashboardEjecutivoRecord, Long>
+        + VEHICULOS_VENDIDOS : TableField<VistaDashboardEjecutivoRecord, Long>
+        + TOTAL_REPUESTOS : TableField<VistaDashboardEjecutivoRecord, Long>
+        + REPUESTOS_STOCK : TableField<VistaDashboardEjecutivoRecord, Long>
+        + INVERSION_TOTAL : TableField<VistaDashboardEjecutivoRecord, BigDecimal>
+        + INGRESOS_TOTALES : TableField<VistaDashboardEjecutivoRecord, BigDecimal>
+        + EGRESOS_TOTALES : TableField<VistaDashboardEjecutivoRecord, BigDecimal>
+        + BALANCE_NETO_TOTAL : TableField<VistaDashboardEjecutivoRecord, BigDecimal>
+        + ROI_PROMEDIO : TableField<VistaDashboardEjecutivoRecord, BigDecimal>
+        --
+        + getRecordType() : Class<VistaDashboardEjecutivoRecord>
+        + rename(name: String) : VistaDashboardEjecutivo
+        + as(alias: String) : VistaDashboardEjecutivo
+    }
+    VistaDashboardEjecutivo --|> TableImpl
+    VistaDashboardEjecutivo .. N4
+    
+    class VistaInventarioCompleto {
+        /** The reference instance of sistema_vehicular.vista_inventario_completo */
+        + {static} VISTA_INVENTARIO_COMPLETO : VistaInventarioCompleto
+        /** Columnas de la vista */
+        + ID : TableField<VistaInventarioCompletoRecord, Integer>
+        + CODIGO_REPUESTO : TableField<VistaInventarioCompletoRecord, String>
+        + CODIGO_UBICACION : TableField<VistaInventarioCompletoRecord, String>
+        + PARTE_VEHICULO : TableField<VistaInventarioCompletoRecord, VistaInventarioCompletoParteVehiculo>
+        + DESCRIPCION : TableField<VistaInventarioCompletoRecord, String>
+        + PRECIO_COSTO : TableField<VistaInventarioCompletoRecord, BigDecimal>
+        + PRECIO_VENTA : TableField<VistaInventarioCompletoRecord, BigDecimal>
+        + PRECIO_MAYOREO : TableField<VistaInventarioCompletoRecord, BigDecimal>
+        + FORMULA_15 : TableField<VistaInventarioCompletoRecord, BigDecimal>
+        + FORMULA_30 : TableField<VistaInventarioCompletoRecord, BigDecimal>
+        + ESTADO : TableField<VistaInventarioCompletoRecord, VistaInventarioCompletoEstado>
+        + ANIO_REGISTRO : TableField<VistaInventarioCompletoRecord, Short>
+        + MES_REGISTRO : TableField<VistaInventarioCompletoRecord, Byte>
+        + CODIGO_VEHICULO : TableField<VistaInventarioCompletoRecord, String>
+        + MARCA : TableField<VistaInventarioCompletoRecord, String>
+        + MODELO : TableField<VistaInventarioCompletoRecord, String>
+        + GENERACION : TableField<VistaInventarioCompletoRecord, String>
+        + ANIO_VEHICULO : TableField<VistaInventarioCompletoRecord, Integer>
+        + CLAVE_GENERACION : TableField<VistaInventarioCompletoRecord, String>
+        --
+        + getRecordType() : Class<VistaInventarioCompletoRecord>
+        + rename(name: String) : VistaInventarioCompleto
+        + as(alias: String) : VistaInventarioCompleto
+    }
+    VistaInventarioCompleto --|> TableImpl
+    VistaInventarioCompleto .. N4
+    
+    class VistaInventarioCritico {
+        /** The reference instance of sistema_vehicular.vista_inventario_critico */
+        + {static} VISTA_INVENTARIO_CRITICO : VistaInventarioCritico
+        /** Columnas de la vista */
+        + CODIGO_REPUESTO : TableField<VistaInventarioCriticoRecord, String>
+        + PARTE_VEHICULO : TableField<VistaInventarioCriticoRecord, VistaInventarioCriticoParteVehiculo>
+        + DESCRIPCION : TableField<VistaInventarioCriticoRecord, String>
+        + PRECIO_COSTO : TableField<VistaInventarioCriticoRecord, BigDecimal>
+        + PRECIO_VENTA : TableField<VistaInventarioCriticoRecord, BigDecimal>
+        + PRECIO_MAYOREO : TableField<VistaInventarioCriticoRecord, BigDecimal>
+        + FORMULA_15 : TableField<VistaInventarioCriticoRecord, BigDecimal>
+        + FORMULA_30 : TableField<VistaInventarioCriticoRecord, BigDecimal>
+        + ESTADO : TableField<VistaInventarioCriticoRecord, VistaInventarioCriticoEstado>
+        + CODIGO_UBICACION : TableField<VistaInventarioCriticoRecord, String>
+        + VEHICULO_ORIGEN : TableField<VistaInventarioCriticoRecord, String>
+        + ANIO_VEHICULO : TableField<VistaInventarioCriticoRecord, Integer>
+        + ANIO_REGISTRO : TableField<VistaInventarioCriticoRecord, Short>
+        + MES_REGISTRO : TableField<VistaInventarioCriticoRecord, Byte>
+        + DIAS_EN_INVENTARIO : TableField<VistaInventarioCriticoRecord, Integer>
+        + CLASIFICACION_MARGEN : TableField<VistaInventarioCriticoRecord, String>
+        + CLASIFICACION_ROTACION : TableField<VistaInventarioCriticoRecord, String>
+        --
+        + getRecordType() : Class<VistaInventarioCriticoRecord>
+        + rename(name: String) : VistaInventarioCritico
+        + as(alias: String) : VistaInventarioCritico
+    }
+    VistaInventarioCritico --|> TableImpl
+    VistaInventarioCritico .. N4
+    
+    class VistaRentabilidadGeneraciones {
+        /** The reference instance of sistema_vehicular.vista_rentabilidad_generaciones */
+        + {static} VISTA_RENTABILIDAD_GENERACIONES : VistaRentabilidadGeneraciones
+        /** Columnas de la vista */
+        + GENERACION_ID : TableField<VistaRentabilidadGeneracionesRecord, Integer>
+        + GENERACION_COMPLETA : TableField<VistaRentabilidadGeneracionesRecord, String>
+        + ANIO_INICIO : TableField<VistaRentabilidadGeneracionesRecord, Integer>
+        + ANIO_FIN : TableField<VistaRentabilidadGeneracionesRecord, Integer>
+        + TOTAL_VEHICULOS : TableField<VistaRentabilidadGeneracionesRecord, Long>
+        + VEHICULOS_VENDIDOS : TableField<VistaRentabilidadGeneracionesRecord, Long>
+        + VEHICULOS_DISPONIBLES : TableField<VistaRentabilidadGeneracionesRecord, Long>
+        + TOTAL_INVERSION : TableField<VistaRentabilidadGeneracionesRecord, BigDecimal>
+        + TOTAL_INGRESOS : TableField<VistaRentabilidadGeneracionesRecord, BigDecimal>
+        + TOTAL_EGRESOS : TableField<VistaRentabilidadGeneracionesRecord, BigDecimal>
+        + BALANCE_NETO : TableField<VistaRentabilidadGeneracionesRecord, BigDecimal>
+        + ROI_PORCENTAJE : TableField<VistaRentabilidadGeneracionesRecord, BigDecimal>
+        + UTILIDAD_POR_VEHICULO : TableField<VistaRentabilidadGeneracionesRecord, BigDecimal>
+        + MULTIPLICADOR_INVERSION : TableField<VistaRentabilidadGeneracionesRecord, BigDecimal>
+        + CLASIFICACION_RENTABILIDAD : TableField<VistaRentabilidadGeneracionesRecord, String>
+        --
+        + getRecordType() : Class<VistaRentabilidadGeneracionesRecord>
+        + rename(name: String) : VistaRentabilidadGeneraciones
+        + as(alias: String) : VistaRentabilidadGeneraciones
+    }
+    VistaRentabilidadGeneraciones --|> TableImpl
+    VistaRentabilidadGeneraciones .. N4
+    
+    class VistaResumenGeneraciones {
+        /** The reference instance of sistema_vehicular.vista_resumen_generaciones */
+        + {static} VISTA_RESUMEN_GENERACIONES : VistaResumenGeneraciones
+        /** Columnas de la vista */
+        + GENERACION_ID : TableField<VistaResumenGeneracionesRecord, Integer>
+        + MARCA : TableField<VistaResumenGeneracionesRecord, String>
+        + MODELO : TableField<VistaResumenGeneracionesRecord, String>
+        + GENERACION : TableField<VistaResumenGeneracionesRecord, String>
+        + DESCRIPCION : TableField<VistaResumenGeneracionesRecord, String>
+        + CLAVE_GENERACION : TableField<VistaResumenGeneracionesRecord, String>
+        + ANIO_INICIO : TableField<VistaResumenGeneracionesRecord, Integer>
+        + ANIO_FIN : TableField<VistaResumenGeneracionesRecord, Integer>
+        + TOTAL_VEHICULOS : TableField<VistaResumenGeneracionesRecord, Long>
+        + TOTAL_REPUESTOS : TableField<VistaResumenGeneracionesRecord, Long>
+        + TOTAL_INVERSION : TableField<VistaResumenGeneracionesRecord, BigDecimal>
+        + TOTAL_INGRESOS : TableField<VistaResumenGeneracionesRecord, BigDecimal>
+        + TOTAL_EGRESOS : TableField<VistaResumenGeneracionesRecord, BigDecimal>
+        + BALANCE_NETO : TableField<VistaResumenGeneracionesRecord, BigDecimal>
+        + PORCENTAJE_RETORNO : TableField<VistaResumenGeneracionesRecord, BigDecimal>
+        --
+        + getRecordType() : Class<VistaResumenGeneracionesRecord>
+        + rename(name: String) : VistaResumenGeneraciones
+        + as(alias: String) : VistaResumenGeneraciones
+    }
+    VistaResumenGeneraciones --|> TableImpl
+    VistaResumenGeneraciones .. N4
+    
+    class VistaTopProductosVendidos {
+        /** The reference instance of sistema_vehicular.vista_top_productos_vendidos */
+        + {static} VISTA_TOP_PRODUCTOS_VENDIDOS : VistaTopProductosVendidos
+        /** Columnas de la vista */
+        + TIPO_PRODUCTO : TableField<VistaTopProductosVendidosRecord, String>
+        + PRODUCTO : TableField<VistaTopProductosVendidosRecord, String>
+        + VECES_VENDIDO : TableField<VistaTopProductosVendidosRecord, Long>
+        + TOTAL_INGRESOS : TableField<VistaTopProductosVendidosRecord, BigDecimal>
+        + PROMEDIO_VENTA : TableField<VistaTopProductosVendidosRecord, BigDecimal>
+        + TOTAL_COMISIONES : TableField<VistaTopProductosVendidosRecord, BigDecimal>
+        --
+        + getRecordType() : Class<VistaTopProductosVendidosRecord>
+        + rename(name: String) : VistaTopProductosVendidos
+        + as(alias: String) : VistaTopProductosVendidos
+    }
+    VistaTopProductosVendidos --|> TableImpl
+    VistaTopProductosVendidos .. N4
+    
+    class VistaTransaccionesCompletas {
+        /** The reference instance of sistema_vehicular.vista_transacciones_completas */
+        + {static} VISTA_TRANSACCIONES_COMPLETAS : VistaTransaccionesCompletas
+        /** Columnas de la vista */
+        + ID : TableField<VistaTransaccionesCompletasRecord, Integer>
+        + CODIGO_TRANSACCION : TableField<VistaTransaccionesCompletasRecord, String>
+        + FECHA : TableField<VistaTransaccionesCompletasRecord, LocalDate>
+        + MONTO : TableField<VistaTransaccionesCompletasRecord, BigDecimal>
+        + COMISION_EMPLEADO : TableField<VistaTransaccionesCompletasRecord, BigDecimal>
+        + DESCRIPCION : TableField<VistaTransaccionesCompletasRecord, String>
+        + REFERENCIA : TableField<VistaTransaccionesCompletasRecord, String>
+        + ESTADO : TableField<VistaTransaccionesCompletasRecord, VistaTransaccionesCompletasEstado>
+        + TIPO_TRANSACCION : TableField<VistaTransaccionesCompletasRecord, String>
+        + CATEGORIA : TableField<VistaTransaccionesCompletasRecord, VistaTransaccionesCompletasCategoria>
+        + EMPLEADO : TableField<VistaTransaccionesCompletasRecord, String>
+        + CODIGO_VEHICULO : TableField<VistaTransaccionesCompletasRecord, String>
+        + CODIGO_REPUESTO : TableField<VistaTransaccionesCompletasRecord, String>
+        + MARCA : TableField<VistaTransaccionesCompletasRecord, String>
+        + MODELO : TableField<VistaTransaccionesCompletasRecord, String>
+        + GENERACION : TableField<VistaTransaccionesCompletasRecord, String>
+        + CLAVE_GENERACION : TableField<VistaTransaccionesCompletasRecord, String>
+        --
+        + getRecordType() : Class<VistaTransaccionesCompletasRecord>
+        + rename(name: String) : VistaTransaccionesCompletas
+        + as(alias: String) : VistaTransaccionesCompletas
+    }
+    VistaTransaccionesCompletas --|> TableImpl
+    VistaTransaccionesCompletas .. N4
+    
+    class VistaVehiculosCompleta {
+        /** The reference instance of sistema_vehicular.vista_vehiculos_completa */
+        + {static} VISTA_VEHICULOS_COMPLETA : VistaVehiculosCompleta
+        /** Columnas de la vista */
+        + ID : TableField<VistaVehiculosCompletaRecord, Integer>
+        + CODIGO_VEHICULO : TableField<VistaVehiculosCompletaRecord, String>
+        + ANIO : TableField<VistaVehiculosCompletaRecord, Integer>
+        + PRECIO_COMPRA : TableField<VistaVehiculosCompletaRecord, BigDecimal>
+        + COSTO_GRUA : TableField<VistaVehiculosCompletaRecord, BigDecimal>
+        + COMISIONES : TableField<VistaVehiculosCompletaRecord, BigDecimal>
+        + INVERSION_TOTAL : TableField<VistaVehiculosCompletaRecord, BigDecimal>
+        + PRECIO_VENTA : TableField<VistaVehiculosCompletaRecord, BigDecimal>
+        + FECHA_INGRESO : TableField<VistaVehiculosCompletaRecord, LocalDate>
+        + FECHA_VENTA : TableField<VistaVehiculosCompletaRecord, LocalDate>
+        + ESTADO : TableField<VistaVehiculosCompletaRecord, VistaVehiculosCompletaEstado>
+        + ACTIVO : TableField<VistaVehiculosCompletaRecord, Byte>
+        + NOTAS : TableField<VistaVehiculosCompletaRecord, String>
+        + MARCA : TableField<VistaVehiculosCompletaRecord, String>
+        + MODELO : TableField<VistaVehiculosCompletaRecord, String>
+        + GENERACION : TableField<VistaVehiculosCompletaRecord, String>
+        + GENERACION_DESCRIPCION : TableField<VistaVehiculosCompletaRecord, String>
+        + ANIO_INICIO : TableField<VistaVehiculosCompletaRecord, Integer>
+        + ANIO_FIN : TableField<VistaVehiculosCompletaRecord, Integer>
+        + CLAVE_GENERACION : TableField<VistaVehiculosCompletaRecord, String>
+        + TOTAL_INGRESOS_VEHICULO : TableField<VistaVehiculosCompletaRecord, BigDecimal>
+        + TOTAL_EGRESOS_VEHICULO : TableField<VistaVehiculosCompletaRecord, BigDecimal>
+        + BALANCE_NETO_VEHICULO : TableField<VistaVehiculosCompletaRecord, BigDecimal>
+        --
+        + getRecordType() : Class<VistaVehiculosCompletaRecord>
+        + rename(name: String) : VistaVehiculosCompleta
+        + as(alias: String) : VistaVehiculosCompleta
+    }
+    VistaVehiculosCompleta --|> TableImpl
+    VistaVehiculosCompleta .. N4
+    
+    class VistaVentasEmpleadoMensual {
+        /** The reference instance of sistema_vehicular.vista_ventas_empleado_mensual */
+        + {static} VISTA_VENTAS_EMPLEADO_MENSUAL : VistaVentasEmpleadoMensual
+        /** Columnas de la vista */
+        + EMPLEADO : TableField<VistaVentasEmpleadoMensualRecord, String>
+        + ANIO : TableField<VistaVentasEmpleadoMensualRecord, Integer>
+        + MES : TableField<VistaVentasEmpleadoMensualRecord, Integer>
+        + NOMBRE_MES : TableField<VistaVentasEmpleadoMensualRecord, String>
+        + TRANSACCIONES_VENTA : TableField<VistaVentasEmpleadoMensualRecord, Long>
+        + TOTAL_VENTAS : TableField<VistaVentasEmpleadoMensualRecord, BigDecimal>
+        + TOTAL_COMISIONES : TableField<VistaVentasEmpleadoMensualRecord, BigDecimal>
+        + CONTRIBUCION_NETA : TableField<VistaVentasEmpleadoMensualRecord, BigDecimal>
+        + PROMEDIO_VENTA : TableField<VistaVentasEmpleadoMensualRecord, BigDecimal>
+        + PORCENTAJE_COMISION : TableField<VistaVentasEmpleadoMensualRecord, BigDecimal>
+        --
+        + getRecordType() : Class<VistaVentasEmpleadoMensualRecord>
+        + rename(name: String) : VistaVentasEmpleadoMensual
+        + as(alias: String) : VistaVentasEmpleadoMensual
+    }
+    VistaVentasEmpleadoMensual --|> TableImpl
+    VistaVentasEmpleadoMensual .. N4
+    
+    class VistaVentasPorEmpleado {
+        /** The reference instance of sistema_vehicular.vista_ventas_por_empleado */
+        + {static} VISTA_VENTAS_POR_EMPLEADO : VistaVentasPorEmpleado
+        /** Columnas de la vista */
+        + EMPLEADO : TableField<VistaVentasPorEmpleadoRecord, String>
+        + TOTAL_TRANSACCIONES : TableField<VistaVentasPorEmpleadoRecord, Long>
+        + TRANSACCIONES_VENTA : TableField<VistaVentasPorEmpleadoRecord, Long>
+        + TOTAL_VENTAS : TableField<VistaVentasPorEmpleadoRecord, BigDecimal>
+        + TOTAL_COMISIONES : TableField<VistaVentasPorEmpleadoRecord, BigDecimal>
+        + PROMEDIO_VENTA : TableField<VistaVentasPorEmpleadoRecord, BigDecimal>
+        + PORCENTAJE_COMISION : TableField<VistaVentasPorEmpleadoRecord, BigDecimal>
+        --
+        + getRecordType() : Class<VistaVentasPorEmpleadoRecord>
+        + rename(name: String) : VistaVentasPorEmpleado
+        + as(alias: String) : VistaVentasPorEmpleado
+    }
+    VistaVentasPorEmpleado --|> TableImpl
+    VistaVentasPorEmpleado .. N4
+}
+
+' =====================================================
+' PAQUETE DE POJOS
+' =====================================================
+
+package "com.rodiejacontable.database.jooq.tables.pojos" {
+    
+    note "POJOs generados por jOOQ - Clases de datos simples" as N5
+    
+    class Empleados {
+        - id : Integer
+        - nombre : String
+        - activo : Byte
+        - fechaCreacion : LocalDateTime
+        --
+        + getId() : Integer
+        + setId(id: Integer) : Empleados
+        + getNombre() : String
+        + setNombre(nombre: String) : Empleados
+        + getActivo() : Byte
+        + setActivo(activo: Byte) : Empleados
+        + getFechaCreacion() : LocalDateTime
+        + setFechaCreacion(fechaCreacion: LocalDateTime) : Empleados
+    }
+    Empleados .. N5
+    
+    class Generaciones {
+        - id : Integer
+        - modeloId : Integer
+        - nombre : String
+        - descripcion : String
+        - anioInicio : Integer
+        - anioFin : Integer
+        - totalInversion : BigDecimal
+        - totalIngresos : BigDecimal
+        - totalEgresos : BigDecimal
+        - balanceNeto : BigDecimal
+        - activo : Byte
+        - fechaCreacion : LocalDateTime
+        --
+        + getId() : Integer
+        + setId(id: Integer) : Generaciones
+        + getModeloId() : Integer
+        + setModeloId(modeloId: Integer) : Generaciones
+        + getNombre() : String
+        + setNombre(nombre: String) : Generaciones
+        + getDescripcion() : String
+        + setDescripcion(descripcion: String) : Generaciones
+        + getAnioInicio() : Integer
+        + setAnioInicio(anioInicio: Integer) : Generaciones
+        + getAnioFin() : Integer
+        + setAnioFin(anioFin: Integer) : Generaciones
+        + getTotalInversion() : BigDecimal
+        + setTotalInversion(totalInversion: BigDecimal) : Generaciones
+        + getTotalIngresos() : BigDecimal
+        + setTotalIngresos(totalIngresos: BigDecimal) : Generaciones
+        + getTotalEgresos() : BigDecimal
+        + setTotalEgresos(totalEgresos: BigDecimal) : Generaciones
+        + getBalanceNeto() : BigDecimal
+        + setBalanceNeto(balanceNeto: BigDecimal) : Generaciones
+        + getActivo() : Byte
+        + setActivo(activo: Byte) : Generaciones
+        + getFechaCreacion() : LocalDateTime
+        + setFechaCreacion(fechaCreacion: LocalDateTime) : Generaciones
+    }
+    Generaciones .. N5
+    
+    class Vehiculos {
+        - id : Integer
+        - codigoVehiculo : String
+        - generacionId : Integer
+        - imagenUrl : String
+        - anio : Integer
+        - precioCompra : BigDecimal
+        - costoGrua : BigDecimal
+        - comisiones : BigDecimal
+        - inversionTotal : BigDecimal
+        - costoRecuperado : BigDecimal
+        - costoPendiente : BigDecimal
+        - fechaIngreso : LocalDate
+        - estado : VehiculosEstado
+        - precioVenta : BigDecimal
+        - fechaVenta : LocalDate
+        - activo : Byte
+        - notas : String
+        - fechaCreacion : LocalDateTime
+        - fechaActualizacion : LocalDateTime
+        --
+        + getId() : Integer
+        + setId(id: Integer) : Vehiculos
+        + getCodigoVehiculo() : String
+        + setCodigoVehiculo(codigoVehiculo: String) : Vehiculos
+        + getGeneracionId() : Integer
+        + setGeneracionId(generacionId: Integer) : Vehiculos
+        + getImagenUrl() : String
+        + setImagenUrl(imagenUrl: String) : Vehiculos
+        + getAnio() : Integer
+        + setAnio(anio: Integer) : Vehiculos
+        + getPrecioCompra() : BigDecimal
+        + setPrecioCompra(precioCompra: BigDecimal) : Vehiculos
+        + getCostoGrua() : BigDecimal
+        + setCostoGrua(costoGrua: BigDecimal) : Vehiculos
+        + getComisiones() : BigDecimal
+        + setComisiones(comisiones: BigDecimal) : Vehiculos
+        + getInversionTotal() : BigDecimal
+        + setInversionTotal(inversionTotal: BigDecimal) : Vehiculos
+        + getCostoRecuperado() : BigDecimal
+        + setCostoRecuperado(costoRecuperado: BigDecimal) : Vehiculos
+        + getCostoPendiente() : BigDecimal
+        + setCostoPendiente(costoPendiente: BigDecimal) : Vehiculos
+        + getFechaIngreso() : LocalDate
+        + setFechaIngreso(fechaIngreso: LocalDate) : Vehiculos
+        + getEstado() : VehiculosEstado
+        + setEstado(estado: VehiculosEstado) : Vehiculos
+        + getPrecioVenta() : BigDecimal
+        + setPrecioVenta(precioVenta: BigDecimal) : Vehiculos
+        + getFechaVenta() : LocalDate
+        + setFechaVenta(fechaVenta: LocalDate) : Vehiculos
+        + getActivo() : Byte
+        + setActivo(activo: Byte) : Vehiculos
+        + getNotas() : String
+        + setNotas(notas: String) : Vehiculos
+        + getFechaCreacion() : LocalDateTime
+        + setFechaCreacion(fechaCreacion: LocalDateTime) : Vehiculos
+        + getFechaActualizacion() : LocalDateTime
+        + setFechaActualizacion(fechaActualizacion: LocalDateTime) : Vehiculos
+    }
+    Vehiculos .. N5
+    
+    class InventarioRepuestos {
+        - id : Integer
+        - codigoRepuesto : String
+        - vehiculoOrigenId : Integer
+        - anioRegistro : Short
+        - mesRegistro : Byte
+        - codigoUbicacion : String
+        - imagenUrl : String
+        - parteVehiculo : InventarioRepuestosParteVehiculo
+        - descripcion : String
+        - precioCosto : BigDecimal
+        - precioVenta : BigDecimal
+        - precioMayoreo : BigDecimal
+        - formula_15 : BigDecimal
+        - formula_30 : BigDecimal
+        - bodega : InventarioRepuestosBodega
+        - zona : InventarioRepuestosZona
+        - pared : InventarioRepuestosPared
+        - malla : InventarioRepuestosMalla
+        - horizontal : InventarioRepuestosHorizontal
+        - estante : InventarioRepuestosEstante
+        - nivel : InventarioRepuestosNivel
+        - piso : InventarioRepuestosPiso
+        - plastica : InventarioRepuestosPlastica
+        - carton : InventarioRepuestosCarton
+        - posicion : String
+        - cantidad : UInteger
+        - estado : InventarioRepuestosEstado
+        - condicion : InventarioRepuestosCondicion
+        - fechaCreacion : LocalDateTime
+        - fechaActualizacion : LocalDateTime
+        --
+        + getId() : Integer
+        + setId(id: Integer) : InventarioRepuestos
+        + getCodigoRepuesto() : String
+        + setCodigoRepuesto(codigoRepuesto: String) : InventarioRepuestos
+        + getVehiculoOrigenId() : Integer
+        + setVehiculoOrigenId(vehiculoOrigenId: Integer) : InventarioRepuestos
+        + getAnioRegistro() : Short
+        + setAnioRegistro(anioRegistro: Short) : InventarioRepuestos
+        + getMesRegistro() : Byte
+        + setMesRegistro(mesRegistro: Byte) : InventarioRepuestos
+        + getCodigoUbicacion() : String
+        + setCodigoUbicacion(codigoUbicacion: String) : InventarioRepuestos
+        + getImagenUrl() : String
+        + setImagenUrl(imagenUrl: String) : InventarioRepuestos
+        + getParteVehiculo() : InventarioRepuestosParteVehiculo
+        + setParteVehiculo(parteVehiculo: InventarioRepuestosParteVehiculo) : InventarioRepuestos
+        + getDescripcion() : String
+        + setDescripcion(descripcion: String) : InventarioRepuestos
+        + getPrecioCosto() : BigDecimal
+        + setPrecioCosto(precioCosto: BigDecimal) : InventarioRepuestos
+        + getPrecioVenta() : BigDecimal
+        + setPrecioVenta(precioVenta: BigDecimal) : InventarioRepuestos
+        + getPrecioMayoreo() : BigDecimal
+        + setPrecioMayoreo(precioMayoreo: BigDecimal) : InventarioRepuestos
+        + getFormula_15() : BigDecimal
+        + setFormula_15(formula_15: BigDecimal) : InventarioRepuestos
+        + getFormula_30() : BigDecimal
+        + setFormula_30(formula_30: BigDecimal) : InventarioRepuestos
+        + getBodega() : InventarioRepuestosBodega
+        + setBodega(bodega: InventarioRepuestosBodega) : InventarioRepuestos
+        + getZona() : InventarioRepuestosZona
+        + setZona(zona: InventarioRepuestosZona) : InventarioRepuestos
+        + getPared() : InventarioRepuestosPared
+        + setPared(pared: InventarioRepuestosPared) : InventarioRepuestos
+        + getMalla() : InventarioRepuestosMalla
+        + setMalla(malla: InventarioRepuestosMalla) : InventarioRepuestos
+        + getHorizontal() : InventarioRepuestosHorizontal
+        + setHorizontal(horizontal: InventarioRepuestosHorizontal) : InventarioRepuestos
+        + getEstante() : InventarioRepuestosEstante
+        + setEstante(estante: InventarioRepuestosEstante) : InventarioRepuestos
+        + getNivel() : InventarioRepuestosNivel
+        + setNivel(nivel: InventarioRepuestosNivel) : InventarioRepuestos
+        + getPiso() : InventarioRepuestosPiso
+        + setPiso(piso: InventarioRepuestosPiso) : InventarioRepuestos
+        + getPlastica() : InventarioRepuestosPlastica
+        + setPlastica(plastica: InventarioRepuestosPlastica) : InventarioRepuestos
+        + getCarton() : InventarioRepuestosCarton
+        + setCarton(carton: InventarioRepuestosCarton) : InventarioRepuestos
+        + getPosicion() : String
+        + setPosicion(posicion: String) : InventarioRepuestos
+        + getCantidad() : UInteger
+        + setCantidad(cantidad: UInteger) : InventarioRepuestos
+        + getEstado() : InventarioRepuestosEstado
+        + setEstado(estado: InventarioRepuestosEstado) : InventarioRepuestos
+        + getCondicion() : InventarioRepuestosCondicion
+        + setCondicion(condicion: InventarioRepuestosCondicion) : InventarioRepuestos
+        + getFechaCreacion() : LocalDateTime
+        + setFechaCreacion(fechaCreacion: LocalDateTime) : InventarioRepuestos
+        + getFechaActualizacion() : LocalDateTime
+        + setFechaActualizacion(fechaActualizacion: LocalDateTime) : InventarioRepuestos
+    }
+    InventarioRepuestos .. N5
+    
+    class TransaccionesFinancieras {
+        - id : Integer
+        - codigoTransaccion : String
+        - fecha : LocalDate
+        - dia : Byte
+        - mes : Byte
+        - anio : Short
+        - tipoTransaccionId : Integer
+        - empleadoId : Integer
+        - vehiculoId : Integer
+        - repuestoId : Integer
+        - generacionId : Integer
+        - monto : BigDecimal
+        - comisionEmpleado : BigDecimal
+        - descripcion : String
+        - referencia : String
+        - estado : TransaccionesFinancierasEstado
+        - activo : Byte
+        - fechaCreacion : LocalDateTime
+        - fechaActualizacion : LocalDateTime
+        --
+        + getId() : Integer
+        + setId(id: Integer) : TransaccionesFinancieras
+        + getCodigoTransaccion() : String
+        + setCodigoTransaccion(codigoTransaccion: String) : TransaccionesFinancieras
+        + getFecha() : LocalDate
+        + setFecha(fecha: LocalDate) : TransaccionesFinancieras
+        + getDia() : Byte
+        + setDia(dia: Byte) : TransaccionesFinancieras
+        + getMes() : Byte
+        + setMes(mes: Byte) : TransaccionesFinancieras
+        + getAnio() : Short
+        + setAnio(anio: Short) : TransaccionesFinancieras
+        + getTipoTransaccionId() : Integer
+        + setTipoTransaccionId(tipoTransaccionId: Integer) : TransaccionesFinancieras
+        + getEmpleadoId() : Integer
+        + setEmpleadoId(empleadoId: Integer) : TransaccionesFinancieras
+        + getVehiculoId() : Integer
+        + setVehiculoId(vehiculoId: Integer) : TransaccionesFinancieras
+        + getRepuestoId() : Integer
+        + setRepuestoId(repuestoId: Integer) : TransaccionesFinancieras
+        + getGeneracionId() : Integer
+        + setGeneracionId(generacionId: Integer) : TransaccionesFinancieras
+        + getMonto() : BigDecimal
+        + setMonto(monto: BigDecimal) : TransaccionesFinancieras
+        + getComisionEmpleado() : BigDecimal
+        + setComisionEmpleado(comisionEmpleado: BigDecimal) : TransaccionesFinancieras
+        + getDescripcion() : String
+        + setDescripcion(descripcion: String) : TransaccionesFinancieras
+        + getReferencia() : String
+        + setReferencia(referencia: String) : TransaccionesFinancieras
+        + getEstado() : TransaccionesFinancierasEstado
+        + setEstado(estado: TransaccionesFinancierasEstado) : TransaccionesFinancieras
+        + getActivo() : Byte
+        + setActivo(activo: Byte) : TransaccionesFinancieras
+        + getFechaCreacion() : LocalDateTime
+        + setFechaCreacion(fechaCreacion: LocalDateTime) : TransaccionesFinancieras
+        + getFechaActualizacion() : LocalDateTime
+        + setFechaActualizacion(fechaActualizacion: LocalDateTime) : TransaccionesFinancieras
+    }
+    TransaccionesFinancieras .. N5
+    
+    ' --- Relaciones Lógicas entre POJOs ---
+    Modelos --> Marcas : marcaId
+    Generaciones --> Modelos : modeloId
+    Vehiculos --> Generaciones : generacionId
+    InventarioRepuestos --> Vehiculos : vehiculoOrigenId
+    TransaccionesFinancieras --> TiposTransacciones : tipoTransaccionId
+    TransaccionesFinancieras --> Empleados : empleadoId
+    TransaccionesFinancieras --> Vehiculos : vehiculoId
+    TransaccionesFinancieras --> InventarioRepuestos : repuestoId
+    TransaccionesFinancieras --> Generaciones : generacionId
+}
+
+' =====================================================
+' PAQUETE DE RECORDS
+' =====================================================
+
+package "com.rodiejacontable.database.jooq.tables.records" {
+    
+    note "Records generados por jOOQ - Clases especializadas para manipulación de filas" as N6
+    
+    class EmpleadosRecord {
+        /** Setter for sistema_vehicular.empleados.id. */
+        + setId(value: Integer) : EmpleadosRecord
+        /** Getter for sistema_vehicular.empleados.id. */
+        + getId() : Integer
+        + setNombre(value: String) : EmpleadosRecord
+        + getNombre() : String
+        + setActivo(value: Byte) : EmpleadosRecord
+        + getActivo() : Byte
+        + setFechaCreacion(value: LocalDateTime) : EmpleadosRecord
+        + getFechaCreacion() : LocalDateTime
+    }
+    EmpleadosRecord --|> UpdatableRecordImpl
+    EmpleadosRecord ..> com.rodiejacontable.database.jooq.tables.pojos.Empleados : references
+    EmpleadosRecord .. N6
+    
+    class GeneracionesRecord {
+        + setId(value: Integer) : GeneracionesRecord
+        + getId() : Integer
+        + setModeloId(value: Integer) : GeneracionesRecord
+        + getModeloId() : Integer
+        + setNombre(value: String) : GeneracionesRecord
+        + getNombre() : String
+        + setDescripcion(value: String) : GeneracionesRecord
+        + getDescripcion() : String
+        + setAnioInicio(value: Integer) : GeneracionesRecord
+        + getAnioInicio() : Integer
+        + setAnioFin(value: Integer) : GeneracionesRecord
+        + getAnioFin() : Integer
+        + setTotalInversion(value: BigDecimal) : GeneracionesRecord
+        + getTotalInversion() : BigDecimal
+        + setTotalIngresos(value: BigDecimal) : GeneracionesRecord
+        + getTotalIngresos() : BigDecimal
+        + setTotalEgresos(value: BigDecimal) : GeneracionesRecord
+        + getTotalEgresos() : BigDecimal
+        + setBalanceNeto(value: BigDecimal) : GeneracionesRecord
+        + getBalanceNeto() : BigDecimal
+        + setActivo(value: Byte) : GeneracionesRecord
+        + getActivo() : Byte
+        + setFechaCreacion(value: LocalDateTime) : GeneracionesRecord
+        + getFechaCreacion() : LocalDateTime
+    }
+    GeneracionesRecord --|> UpdatableRecordImpl
+    GeneracionesRecord ..> com.rodiejacontable.database.jooq.tables.pojos.Generaciones : references
+    GeneracionesRecord .. N6
+    
+    class VehiculosRecord {
+        + setId(value: Integer) : VehiculosRecord
+        + getId() : Integer
+        + setCodigoVehiculo(value: String) : VehiculosRecord
+        + getCodigoVehiculo() : String
+        + setGeneracionId(value: Integer) : VehiculosRecord
+        + getGeneracionId() : Integer
+        + setImagenUrl(value: String) : VehiculosRecord
+        + getImagenUrl() : String
+        + setAnio(value: Integer) : VehiculosRecord
+        + getAnio() : Integer
+        + setPrecioCompra(value: BigDecimal) : VehiculosRecord
+        + getPrecioCompra() : BigDecimal
+        + setCostoGrua(value: BigDecimal) : VehiculosRecord
+        + getCostoGrua() : BigDecimal
+        + setComisiones(value: BigDecimal) : VehiculosRecord
+        + getComisiones() : BigDecimal
+        + setInversionTotal(value: BigDecimal) : VehiculosRecord
+        + getInversionTotal() : BigDecimal
+        + setCostoRecuperado(value: BigDecimal) : VehiculosRecord
+        + getCostoRecuperado() : BigDecimal
+        + setCostoPendiente(value: BigDecimal) : VehiculosRecord
+        + getCostoPendiente() : BigDecimal
+        + setFechaIngreso(value: LocalDate) : VehiculosRecord
+        + getFechaIngreso() : LocalDate
+        + setEstado(value: VehiculosEstado) : VehiculosRecord
+        + getEstado() : VehiculosEstado
+        + setPrecioVenta(value: BigDecimal) : VehiculosRecord
+        + getPrecioVenta() : BigDecimal
+        + setFechaVenta(value: LocalDate) : VehiculosRecord
+        + getFechaVenta() : LocalDate
+        + setActivo(value: Byte) : VehiculosRecord
+        + getActivo() : Byte
+        + setNotas(value: String) : VehiculosRecord
+        + getNotas() : String
+        + setFechaCreacion(value: LocalDateTime) : VehiculosRecord
+        + getFechaCreacion() : LocalDateTime
+        + setFechaActualizacion(value: LocalDateTime) : VehiculosRecord
+        + getFechaActualizacion() : LocalDateTime
+    }
+    VehiculosRecord --|> UpdatableRecordImpl
+    VehiculosRecord ..> com.rodiejacontable.database.jooq.tables.pojos.Vehiculos : references
+    VehiculosRecord .. N6
+    
+    class InventarioRepuestosRecord {
+        + setId(value: Integer) : InventarioRepuestosRecord
+        + getId() : Integer
+        + setCodigoRepuesto(value: String) : InventarioRepuestosRecord
+        + getCodigoRepuesto() : String
+        + setVehiculoOrigenId(value: Integer) : InventarioRepuestosRecord
+        + getVehiculoOrigenId() : Integer
+        + setAnioRegistro(value: Short) : InventarioRepuestosRecord
+        + getAnioRegistro() : Short
+        + setMesRegistro(value: Byte) : InventarioRepuestosRecord
+        + getMesRegistro() : Byte
+        + setCodigoUbicacion(value: String) : InventarioRepuestosRecord
+        + getCodigoUbicacion() : String
+        + setImagenUrl(value: String) : InventarioRepuestosRecord
+        + getImagenUrl() : String
+        + setParteVehiculo(value: InventarioRepuestosParteVehiculo) : InventarioRepuestosRecord
+        + getParteVehiculo() : InventarioRepuestosParteVehiculo
+        + setDescripcion(value: String) : InventarioRepuestosRecord
+        + getDescripcion() : String
+        + setPrecioCosto(value: BigDecimal) : InventarioRepuestosRecord
+        + getPrecioCosto() : BigDecimal
+        + setPrecioVenta(value: BigDecimal) : InventarioRepuestosRecord
+        + getPrecioVenta() : BigDecimal
+        + setPrecioMayoreo(value: BigDecimal) : InventarioRepuestosRecord
+        + getPrecioMayoreo() : BigDecimal
+        + setFormula_15(value: BigDecimal) : InventarioRepuestosRecord
+        + getFormula_15() : BigDecimal
+        + setFormula_30(value: BigDecimal) : InventarioRepuestosRecord
+        + getFormula_30() : BigDecimal
+        + setBodega(value: InventarioRepuestosBodega) : InventarioRepuestosRecord
+        + getBodega() : InventarioRepuestosBodega
+        + setZona(value: InventarioRepuestosZona) : InventarioRepuestosRecord
+        + getZona() : InventarioRepuestosZona
+        + setPared(value: InventarioRepuestosPared) : InventarioRepuestosRecord
+        + getPared() : InventarioRepuestosPared
+        + setMalla(value: InventarioRepuestosMalla) : InventarioRepuestosRecord
+        + getMalla() : InventarioRepuestosMalla
+        + setHorizontal(value: InventarioRepuestosHorizontal) : InventarioRepuestosRecord
+        + getHorizontal() : InventarioRepuestosHorizontal
+        + setEstante(value: InventarioRepuestosEstante) : InventarioRepuestosRecord
+        + getEstante() : InventarioRepuestosEstante
+        + setNivel(value: InventarioRepuestosNivel) : InventarioRepuestosRecord
+        + getNivel() : InventarioRepuestosNivel
+        + setPiso(value: InventarioRepuestosPiso) : InventarioRepuestosRecord
+        + getPiso() : InventarioRepuestosPiso
+        + setPlastica(value: InventarioRepuestosPlastica) : InventarioRepuestosRecord
+        + getPlastica() : InventarioRepuestosPlastica
+        + setCarton(value: InventarioRepuestosCarton) : InventarioRepuestosRecord
+        + getCarton() : InventarioRepuestosCarton
+        + setPosicion(value: String) : InventarioRepuestosRecord
+        + getPosicion() : String
+        + setCantidad(value: UInteger) : InventarioRepuestosRecord
+        + getCantidad() : UInteger
+        + setEstado(value: InventarioRepuestosEstado) : InventarioRepuestosRecord
+        + getEstado() : InventarioRepuestosEstado
+        + setCondicion(value: InventarioRepuestosCondicion) : InventarioRepuestosRecord
+        + getCondicion() : InventarioRepuestosCondicion
+        + setFechaCreacion(value: LocalDateTime) : InventarioRepuestosRecord
+        + getFechaCreacion() : LocalDateTime
+        + setFechaActualizacion(value: LocalDateTime) : InventarioRepuestosRecord
+        + getFechaActualizacion() : LocalDateTime
+    }
+    InventarioRepuestosRecord --|> UpdatableRecordImpl
+    InventarioRepuestosRecord ..> com.rodiejacontable.database.jooq.tables.pojos.InventarioRepuestos : references
+    InventarioRepuestosRecord .. N6
+    
+    class TransaccionesFinancierasRecord {
+        + setId(value: Integer) : TransaccionesFinancierasRecord
+        + getId() : Integer
+        + setCodigoTransaccion(value: String) : TransaccionesFinancierasRecord
+        + getCodigoTransaccion() : String
+        + setFecha(value: LocalDate) : TransaccionesFinancierasRecord
+        + getFecha() : LocalDate
+        + setDia(value: Byte) : TransaccionesFinancierasRecord
+        + getDia() : Byte
+        + setMes(value: Byte) : TransaccionesFinancierasRecord
+        + getMes() : Byte
+        + setAnio(value: Short) : TransaccionesFinancierasRecord
+        + getAnio() : Short
+        + setTipoTransaccionId(value: Integer) : TransaccionesFinancierasRecord
+        + getTipoTransaccionId() : Integer
+        + setEmpleadoId(value: Integer) : TransaccionesFinancierasRecord
+        + getEmpleadoId() : Integer
+        + setVehiculoId(value: Integer) : TransaccionesFinancierasRecord
+        + getVehiculoId() : Integer
+        + setRepuestoId(value: Integer) : TransaccionesFinancierasRecord
+        + getRepuestoId() : Integer
+        + setGeneracionId(value: Integer) : TransaccionesFinancierasRecord
+        + getGeneracionId() : Integer
+        + setMonto(value: BigDecimal) : TransaccionesFinancierasRecord
+        + getMonto() : BigDecimal
+        + setComisionEmpleado(value: BigDecimal) : TransaccionesFinancierasRecord
+        + getComisionEmpleado() : BigDecimal
+        + setDescripcion(value: String) : TransaccionesFinancierasRecord
+        + getDescripcion() : String
+        + setReferencia(value: String) : TransaccionesFinancierasRecord
+        + getReferencia() : String
+        + setEstado(value: TransaccionesFinancierasEstado) : TransaccionesFinancierasRecord
+        + getEstado() : TransaccionesFinancierasEstado
+        + setActivo(value: Byte) : TransaccionesFinancierasRecord
+        + getActivo() : Byte
+        + setFechaCreacion(value: LocalDateTime) : TransaccionesFinancierasRecord
+        + getFechaCreacion() : LocalDateTime
+        + setFechaActualizacion(value: LocalDateTime) : TransaccionesFinancierasRecord
+        + getFechaActualizacion() : LocalDateTime
+    }
+    TransaccionesFinancierasRecord --|> UpdatableRecordImpl
+    TransaccionesFinancierasRecord ..> com.rodiejacontable.database.jooq.tables.pojos.TransaccionesFinancieras : references
+    TransaccionesFinancierasRecord .. N6
+}
+
+' =====================================================
+' RELACIONES ENTRE PAQUETES
+' =====================================================
+
+' Relaciones de herencia jOOQ
+com.rodiejacontable.database.jooq.routines.SpActividadAuditoriaFecha ..> com.rodiejacontable.database.jooq.SistemaVehicular : uses schema
+com.rodiejacontable.database.jooq.routines.SpHistorialVehiculo ..> com.rodiejacontable.database.jooq.SistemaVehicular : uses schema
+com.rodiejacontable.database.jooq.routines.SpInsertarRepuestoConGeneracionSinVehiculo ..> com.rodiejacontable.database.jooq.SistemaVehicular : uses schema
+
+' Relaciones de tablas con esquema
+com.rodiejacontable.database.jooq.tables.Empleados ..> com.rodiejacontable.database.jooq.SistemaVehicular : belongs to
+com.rodiejacontable.database.jooq.tables.Generaciones ..> com.rodiejacontable.database.jooq.SistemaVehicular : belongs to
+com.rodiejacontable.database.jooq.tables.Vehiculos ..> com.rodiejacontable.database.jooq.SistemaVehicular : belongs to
+com.rodiejacontable.database.jooq.tables.InventarioRepuestos ..> com.rodiejacontable.database.jooq.SistemaVehicular : belongs to
+com.rodiejacontable.database.jooq.tables.TransaccionesFinancieras ..> com.rodiejacontable.database.jooq.SistemaVehicular : belongs to
+
+' Relaciones de esquema con catálogo
+com.rodiejacontable.database.jooq.SistemaVehicular ..> com.rodiejacontable.database.jooq.DefaultCatalog : belongs to
+
+@enduml
+@startuml
+skinparam class {
+    BackgroundColor White
+    ArrowColor #263238
+    BorderColor #263238
+    HeaderBackgroundColor #ECEFF1
+}
+
+package com.rodiejacontable.rodiejacontable.exception {
+
+    class "<<Exception>>\nEmpleadoNoEncontradoException" as EmpleadoNoEncontradoException {
+        {static} + @ResponseStatus(HttpStatus.NOT_FOUND)
+        + EmpleadoNoEncontradoException(message: String)
+    }
+
+    class "<<Exception>>\nResourceNotFoundException" as ResourceNotFoundException {
+        {static} + @ResponseStatus(HttpStatus.NOT_FOUND)
+        + ResourceNotFoundException(message: String)
+    }
+
+    class "<<Exception>>\nResourceAlreadyExistsException" as ResourceAlreadyExistsException {
+        {static} + @ResponseStatus(HttpStatus.CONFLICT)
+        - {static} serialVersionUID: long = 1L
+        + ResourceAlreadyExistsException()
+        + ResourceAlreadyExistsException(message: String)
+        + ResourceAlreadyExistsException(message: String, cause: Throwable)
+        + ResourceAlreadyExistsException(cause: Throwable)
+    }
+
+    class "<<ControllerAdvice>>\nGlobalExceptionHandler" as GlobalExceptionHandler {
+        + @ExceptionHandler(EmpleadoNoEncontradoException.class)
+        + handleEmpleadoNoEncontradoException(ex: EmpleadoNoEncontradoException, request: WebRequest): ResponseEntity<Map<String, Object>>
+    }
+
+    '' Relaciones de herencia basadas en las fuentes
+    RuntimeException <|-- EmpleadoNoEncontradoException
+    RuntimeException <|-- ResourceNotFoundException
+    RuntimeException <|-- ResourceAlreadyExistsException
+    ResponseEntityExceptionHandler <|-- GlobalExceptionHandler
+
+}
+
+note right of GlobalExceptionHandler
+  El método genera un body con:
+  - timestamp
+  - status (404)
+  - error ("No encontrado")
+  - message (ex.getMessage())
+end note
+
+'' Definiciones externas para completar el diagrama
+hide RuntimeException members
+hide ResponseEntityExceptionHandler members
+@enduml
+@startuml
+skinparam class {
+    BackgroundColor White
+    ArrowColor #263238
+    BorderColor #263238
+    HeaderBackgroundColor #ECEFF1
+}
+
+package com.rodiejacontable.rodiejacontable.repository {
+
+    class AuditoriaRepository {
+        - dsl: DSLContext
+        + AuditoriaRepository(dsl: DSLContext)
+        + obtenerActividadAuditoriaPorFechas(fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + obtenerHistorialVehiculo(vehiculoId: Integer): List
+    }
+
+    class EmpleadosRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findById(id: Integer): Optional
+        + save(empleado: Empleados): Empleados
+        + update(empleado: Empleados): Empleados
+        + delete(id: Integer): void
+    }
+
+    class GeneracionesRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findById(id: Integer): Optional
+        + save(generacion: Generaciones): Generaciones
+        + update(generacion: Generaciones): Generaciones
+        + delete(id: Integer): void
+        + findByModeloId(modeloId: Integer): List
+        + findByActivo(activo: Byte): List
+    }
+
+    class HistorialRepuestosRepository {
+        - dslContext: DSLContext
+        + HistorialRepuestosRepository(dslContext: DSLContext)
+        + save(historial: HistorialRepuestos): HistorialRepuestos
+        + findById(id: Integer): Optional
+        + findByRepuestoId(repuestoId: Integer): List
+        + findAll(): List
+    }
+
+    class HistorialTransaccionesRepository {
+        - dslContext: DSLContext
+        + HistorialTransaccionesRepository(dslContext: DSLContext)
+        + save(historial: HistorialTransacciones): HistorialTransacciones
+        + findById(id: Integer): Optional
+        + findByTransaccionId(transaccionId: Integer): List
+        + findAll(): List
+    }
+
+    class HistorialVehiculosRepository {
+        - dslContext: DSLContext
+        + HistorialVehiculosRepository(dslContext: DSLContext)
+        + save(historial: HistorialVehiculos): HistorialVehiculos
+        + findById(id: Integer): Optional
+        + findByVehiculoId(vehiculoId: Integer): List
+        + findAll(): List
+    }
+
+    class InventarioRepuestosRepository {
+        - dsl: DSLContext
+        + InventarioRepuestosRepository(dsl: DSLContext)
+        + save(repuesto: InventarioRepuestos): InventarioRepuestos
+        + findById(id: Integer): Optional
+        + findByVehiculoOrigenId(vehiculoId: Integer): List
+        + findByCodigoRepuesto(codigoRepuesto: String): List
+        + findAll(): List
+        + delete(id: Integer): void
+        + insertarRepuestoConGeneracionSinVehiculo(...): void
+    }
+
+    class MarcasRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findAllActivas(): List
+        + findById(id: Integer): Optional
+        + findByNombre(nombre: String): Optional
+        + save(marca: Marcas): Marcas
+        + update(marca: Marcas): Marcas
+        + delete(id: Integer): void
+        + existsByNombre(nombre: String): boolean
+    }
+
+    class ModelosRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findByMarcaId(marcaId: Integer): List
+        + findActivosByMarcaId(marcaId: Integer): List
+        + findById(id: Integer): Optional
+        + findByNombreAndMarcaId(nombre: String, marcaId: Integer): Optional
+        + existsByNombreAndMarcaId(nombre: String, marcaId: Integer): boolean
+        + save(modelo: Modelos): Modelos
+        + update(modelo: Modelos): Modelos
+        + delete(id: Integer): boolean
+    }
+
+    class TiposTransaccionesRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findByCategoria(categoria: TiposTransaccionesCategoria): List
+        + findActivos(): List
+        + findById(id: Integer): Optional
+        + findByNombre(nombre: String): Optional
+        + existsByNombre(nombre: String): boolean
+        + save(tipoTransaccion: TiposTransacciones): TiposTransacciones
+        + update(tipoTransaccion: TiposTransacciones): TiposTransacciones
+        + delete(id: Integer): boolean
+    }
+
+    class TransaccionesFinancierasRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findByFechaBetween(fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + findByTipoTransaccionId(tipoTransaccionId: Integer): List
+        + findByVehiculoId(vehiculoId: Integer): List
+        + findByEmpleadoId(empleadoId: Integer): List
+        + findById(id: Integer): Optional
+        + findByCodigoTransaccion(codigoTransaccion: String): Optional
+        + existsByCodigoTransaccion(codigoTransaccion: String): boolean
+        + getTotalMontoByTipoTransaccionAndPeriodo(...): BigDecimal
+        + save(transaccion: TransaccionesFinancieras): TransaccionesFinancieras
+        + update(transaccion: TransaccionesFinancieras): TransaccionesFinancieras
+        + delete(id: Integer): boolean
+        + actualizarEstado(id: Integer, estado: TransaccionesFinancierasEstado): void
+    }
+
+    class VehiculosRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findByEstado(estado: VehiculosEstado): List
+        + findByGeneracionId(generacionId: Integer): List
+        + findByAnio(anio: Integer): List
+        + findActivos(): List
+        + findById(id: Integer): Optional
+        + findByCodigoVehiculo(codigoVehiculo: String): Optional
+        + existsByCodigoVehiculo(codigoVehiculo: String): boolean
+        + save(vehiculo: Vehiculos): Vehiculos
+        + update(vehiculo: Vehiculos): Vehiculos
+        + delete(id: Integer): boolean
+        + actualizarEstado(id: Integer, estado: VehiculosEstado): void
+        + findHierarchicalVehicles(): Map
+        + marcarComoVendido(id: Integer, precioVenta: BigDecimal, fechaVenta: LocalDate): void
+    }
+
+    class VistaAnalisisFinancieroMensualRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findByAnio(anio: Integer): List
+        + findByAnioAndMes(anio: Integer, mes: Integer): List
+        + findDistinctYears(): List
+    }
+
+    class VistaAuditoriaCompletaRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findByTipoEntidad(tipoEntidad: String): List
+        + findByEntidadId(entidadId: String): List
+        + findByUsuario(usuario: String): List
+        + findByFechaCambioBetween(fechaInicio: LocalDateTime, fechaFin: LocalDateTime): List
+        + findByAccion(accion: String): List
+        + findDistinctTiposEntidad(): List
+        + findDistinctUsuarios(): List
+        + findDistinctAcciones(): List
+    }
+
+    class VistaDashboardEjecutivoRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findBySeccion(seccion: String): VistaDashboardEjecutivo
+        + getTotalInversion(): BigDecimal
+        + getTotalIngresos(): BigDecimal
+        + getTotalEgresos(): BigDecimal
+        + getTotalVehiculos(): Long
+        + getTotalVehiculosDisponibles(): Long
+        + getTotalVehiculosVendidos(): Long
+        + getTotalRepuestos(): Long
+        + getTotalRepuestosStock(): Long
+        + getRoiPromedio(): BigDecimal
+    }
+
+    class VistaInventarioCompletoRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findById(id: Integer): Optional
+        + findByEstado(estado: VistaInventarioCompletoEstado): List
+        + findByParteVehiculo(parteVehiculo: VistaInventarioCompletoParteVehiculo): List
+        + findByMarca(marca: String): List
+        + findByModelo(modelo: String): List
+        + findByAnioVehiculo(anioVehiculo: Integer): List
+        + findByRangoPrecio(precioMin: BigDecimal, precioMax: BigDecimal): List
+        + buscarPorCodigoODescripcion(termino: String): List
+        + findDistinctMarcas(): List
+        + findDistinctModelos(): List
+        + findDistinctAnios(): List
+    }
+
+    class VistaInventarioCriticoRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findByEstado(estado: VistaInventarioCriticoEstado): List
+        + findByParteVehiculo(parteVehiculo: VistaInventarioCriticoParteVehiculo): List
+        + findByClasificacionMargen(clasificacion: String): List
+        + findByClasificacionRotacion(clasificacion: String): List
+        + findByDiasEnInventarioGreaterThan(dias: Integer): List
+        + findByVehiculoOrigen(vehiculoOrigen: String): List
+        + findByAnioVehiculo(anio: Integer): List
+        + findDistinctClasificacionesMargen(): List
+        + findDistinctClasificacionesRotacion(): List
+        + findDistinctAniosVehiculo(): List
+    }
+
+    class VistaRentabilidadGeneracionesRepository {
+        - dsl: DSLContext
+        + findAll(): List
+        + findById(generacionId: Integer): Optional
+        + findByAnioInicio(anioInicio: Integer): List
+        + findByAnioFin(anioFin: Integer): List
+        + findByRangoAnios(anioInicio: Integer, anioFin: Integer): List
+        + findByClasificacionRentabilidad(clasificacion: String): List
+        + findDistinctClasificacionesRentabilidad(): List
+        + findDistinctAniosInicio(): List
+        + findDistinctAniosFin(): List
+        + getEstadisticasGenerales(): Map
+    }
+
+    class VistaResumenGeneracionesRepository {
+        - dsl: DSLContext
+        + VistaResumenGeneracionesRepository(dsl: DSLContext)
+        + findAll(): List
+        + findById(generacionId: Integer): Optional
+        + findByMarca(marca: String): List
+        + findByModelo(modelo: String): List
+        + findByAnioInicio(anioInicio: Integer): List
+        + findByAnioFin(anioFin: Integer): List
+        + findByRangoAnios(anioInicio: Integer, anioFin: Integer): List
+        + findDistinctMarcas(): List
+        + findDistinctModelos(): List
+        + findDistinctAniosInicio(): List
+        + findWithFilters(filters: Map): List
+        + findByMotor(motor: String): List
+        + findByTransmision(transmision: String): List
+        + findByCombustible(combustible: String): List
+        + buscarGeneraciones(...): List
+        + getEstadisticas(): Map
+    }
+
+    class VistaTopProductosVendidosRepository {
+        - dsl: DSLContext
+        + VistaTopProductosVendidosRepository(dsl: DSLContext)
+        + findAll(): List
+        + findByTipoProducto(tipoProducto: String): List
+        + findTopN(limit: int): List
+        + findDistinctTipoProducto(): List
+        + buscarConFiltros(tipo: String, busqueda: String, limit: Integer): List
+    }
+
+    class VistaTransaccionesCompletasRepository {
+        - dsl: DSLContext
+        + VistaTransaccionesCompletasRepository(dsl: DSLContext)
+        + findAll(): List
+        + findByFechaBetween(fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + findByCategoria(categoria: VistaTransaccionesCompletasCategoria): List
+        + findByEstado(estado: VistaTransaccionesCompletasEstado): List
+        + findByEmpleado(empleado: String): List
+        + getTotalIngresosPorRangoFechas(fechaInicio: LocalDate, fechaFin: LocalDate): BigDecimal
+        + getTotalEgresosPorRangoFechas(fechaInicio: LocalDate, fechaFin: LocalDate): BigDecimal
+        + findByTipoTransaccion(tipo: String): List
+        + findByVehiculo(placa: String): List
+        + findByMontoGreaterThanEqual(montoMinimo: BigDecimal): List
+        + findByMontoLessThanEqual(montoMaximo: BigDecimal): List
+        + buscarConFiltros(...): List
+        + getEstadisticas(): Map
+    }
+
+    class VistaVehiculosCompletaRepository {
+        - dsl: DSLContext
+        + VistaVehiculosCompletaRepository(dsl: DSLContext)
+        + findAll(): List
+        + findById(id: Integer): Optional
+        + findByEstado(estado: VistaVehiculosCompletaEstado): List
+        + findByMarca(marca: String): List
+        + findByModelo(modelo: String): List
+        + findByAnio(anio: Integer): List
+        + findByRangoFechasIngreso(fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + findVehiculosVendidos(): List
+        + findVehiculosEnInventario(): List
+        + findDistinctMarcas(): List
+        + findDistinctModelos(): List
+        + findDistinctAnios(): List
+        + findByTipoTransmision(transmision: String): List
+        + findByTipoVehiculo(tipo: String): List
+        + findByPrecioVentaBetween(minPrecio: BigDecimal, maxPrecio: BigDecimal): List
+        + getEstadisticasGenerales(): Map
+    }
+
+    class VistaVentasPorEmpleadoRepository {
+        - dsl: DSLContext
+        + VistaVentasPorEmpleadoRepository(dsl: DSLContext)
+        + findAll(): List
+        + findByEmpleado(empleado: String): Optional
+        + findTopNVentas(limit: int): List
+        + findAllEmpleados(): List
+        + findVentasComparativas(empleados: List, fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + findByEmpleadoAndRangoFechas(empleado: String, fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + findByRangoFechas(fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + findByTipoProducto(tipoProducto: String): List
+        + findVentasMensualesPorEmpleado(year: int): List
+    }
+
+}
+@enduml
+@startuml
+skinparam class {
+    BackgroundColor White
+    ArrowColor #263238
+    BorderColor #263238
+    HeaderBackgroundColor #ECEFF1
+}
+
+package com.rodiejacontable.rodiejacontable.service {
+
+    class AuditoriaService {
+        - auditoriaRepository: AuditoriaRepository
+        + AuditoriaService(auditoriaRepository: AuditoriaRepository)
+        + obtenerActividadAuditoriaPorFechas(fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + obtenerHistorialVehiculo(vehiculoId: Integer): List
+    }
+
+    class EmpleadosService {
+        - empleadoRepository: EmpleadosRepository
+        + findAll(): List
+        + findById(id: Integer): Empleados
+        + create(empleado: Empleados): Empleados
+        + update(id: Integer, empleadoDetails: Empleados): Empleados
+        + delete(id: Integer): void
+    }
+
+    class GeneracionesService {
+        - generacionRepository: GeneracionesRepository
+        + findAll(): List
+        + findById(id: Integer): Generaciones
+        + create(generacion: Generaciones): Generaciones
+        + update(id: Integer, generacionDetails: Generaciones): Generaciones
+        + delete(id: Integer): void
+        + findByModeloId(modeloId: Integer): List
+        + findByActivo(activo: Byte): List
+    }
+
+    class HistorialRepuestosService {
+        - historialRepository: HistorialRepuestosRepository
+        + HistorialRepuestosService(historialRepository: HistorialRepuestosRepository)
+        + registrarCambio(repuestoId: Integer, accion: HistorialRepuestosAccion, campo: String, anterior: String, nuevo: String, usuario: String, ip: String, obs: String): HistorialRepuestos
+        + obtenerPorId(id: Integer): Optional
+        + obtenerPorRepuestoId(repuestoId: Integer): List
+        + obtenerTodoElHistorial(): List
+    }
+
+    class HistorialTransaccionesService {
+        - historialRepository: HistorialTransaccionesRepository
+        + HistorialTransaccionesService(historialRepository: HistorialTransaccionesRepository)
+        + registrarCambio(transaccionId: Integer, accion: HistorialTransaccionesAccion, campo: String, anterior: String, nuevo: String, usuario: String, ip: String, obs: String): HistorialTransacciones
+        + obtenerPorId(id: Integer): Optional
+        + obtenerPorTransaccionId(transaccionId: Integer): List
+        + obtenerTodoElHistorial(): List
+    }
+
+    class HistorialVehiculosService {
+        - historialRepository: HistorialVehiculosRepository
+        + HistorialVehiculosService(historialRepository: HistorialVehiculosRepository)
+        + registrarCambio(vehiculoId: Integer, accion: HistorialVehiculosAccion, campo: String, anterior: String, nuevo: String, usuario: String, ip: String, obs: String): HistorialVehiculos
+        + obtenerPorId(id: Integer): Optional
+        + obtenerPorVehiculoId(vehiculoId: Integer): List
+        + obtenerTodo(): List
+    }
+
+    class InventarioRepuestosService {
+        - inventarioRepuestosRepository: InventarioRepuestosRepository
+        + InventarioRepuestosService(inventarioRepuestosRepository: InventarioRepuestosRepository)
+        + crearRepuesto(repuesto: InventarioRepuestos): InventarioRepuestos
+        + crearRepuestoSinVehiculoOrigen(...): void
+        + actualizarRepuesto(id: Integer, repuestoActualizado: InventarioRepuestos): InventarioRepuestos
+        + obtenerPorId(id: Integer): Optional
+        + obtenerPorVehiculoOrigenId(vehiculoId: Integer): List
+        + buscarPorCodigoRepuesto(codigoRepuesto: String): List
+        + obtenerTodos(): List
+        + eliminarRepuesto(id: Integer): void
+    }
+
+    class MarcasService {
+        - marcasRepository: MarcasRepository
+        + findAll(): List
+        + findAllActivas(): List
+        + findById(id: Integer): Marcas
+        + create(marca: Marcas): Marcas
+        + update(id: Integer, marcaDetails: Marcas): Marcas
+        + delete(id: Integer): void
+    }
+
+    class ModelosService {
+        - modelosRepository: ModelosRepository
+        + findAll(): List
+        + findByMarcaId(marcaId: Integer): List
+        + findActivosByMarcaId(marcaId: Integer): List
+        + findById(id: Integer): Modelos
+        + create(modelo: Modelos): Modelos
+        + update(id: Integer, modelo: Modelos): Modelos
+        + delete(id: Integer): void
+    }
+
+    class TiposTransaccionesService {
+        - tiposTransaccionesRepository: TiposTransaccionesRepository
+        + findAll(): List
+        + findByCategoria(categoria: TiposTransaccionesCategoria): List
+        + findActivos(): List
+        + findById(id: Integer): TiposTransacciones
+        + create(tipoTransaccion: TiposTransacciones): TiposTransacciones
+        + update(id: Integer, tipoTransaccion: TiposTransacciones): TiposTransacciones
+        + delete(id: Integer): void
+    }
+
+    class TransaccionesFinancierasService {
+        - transaccionesRepository: TransaccionesFinancierasRepository
+        - tiposTransaccionesRepository: TiposTransaccionesRepository
+        + findAll(): List
+        + findByFechaBetween(fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + findByTipoTransaccionId(tipoTransaccionId: Integer): List
+        + findByVehiculoId(vehiculoId: Integer): List
+        + findByEmpleadoId(empleadoId: Integer): List
+        + findById(id: Integer): TransaccionesFinancieras
+        + create(transaccion: TransaccionesFinancieras): TransaccionesFinancieras
+        + update(id: Integer, transaccion: TransaccionesFinancieras): TransaccionesFinancieras
+        + delete(id: Integer): void
+        + actualizarEstado(id: Integer, estado: TransaccionesFinancierasEstado): void
+        + getTotalMontoByTipoTransaccionAndPeriodo(tipoId: Integer, inicio: LocalDate, fin: LocalDate): BigDecimal
+        + getTotalMensualByTipoTransaccion(tipoId: Integer, year: int, month: int): BigDecimal
+    }
+
+    class VehiculosService {
+        - vehiculosRepository: VehiculosRepository
+        - generacionesRepository: GeneracionesRepository
+        + findAll(): List
+        + findByEstado(estado: VehiculosEstado): List
+        + findByGeneracionId(generacionId: Integer): List
+        + findByAnio(anio: Integer): List
+        + findActivos(): List
+        + findById(id: Integer): Vehiculos
+        + create(vehiculo: Vehiculos): Vehiculos
+        + update(id: Integer, vehiculo: Vehiculos): Vehiculos
+        + delete(id: Integer): void
+        + updateEstado(id: Integer, nuevoEstado: VehiculosEstado): Vehiculos
+        + getVehiculosHierarchy(): Map
+        + actualizarEstado(id: Integer, estado: VehiculosEstado): void
+        + marcarComoVendido(id: Integer, precioVenta: BigDecimal, fechaVenta: LocalDate): void
+    }
+
+    class VistaAnalisisFinancieroMensualService {
+        - repository: VistaAnalisisFinancieroMensualRepository
+        + findAll(): List
+        + findByAnio(anio: Integer): List
+        + findByAnioAndMes(anio: Integer, mes: Integer): VistaAnalisisFinancieroMensual
+        + getAniosDisponibles(): List
+        + getResumenAnual(anio: Integer): Map
+        - calcularPromedioMensual(total: BigDecimal, meses: int): BigDecimal
+        + getTendencias(): Map
+    }
+
+    class VistaAuditoriaCompletaService {
+        - repository: VistaAuditoriaCompletaRepository
+        + findAll(): List
+        + findByTipoEntidad(tipoEntidad: String): List
+        + findByEntidadId(entidadId: String): List
+        + findByUsuario(usuario: String): List
+        + findByFechaCambioBetween(inicio: LocalDateTime, fin: LocalDateTime): List
+        + findByAccion(accion: String): List
+        + buscarAuditoria(...): List
+        + getFiltrosDisponibles(): Map
+        + getEstadisticasPorTipoEntidad(): Map
+        + getEstadisticasPorAccion(): Map
+        + getEstadisticasPorUsuario(): Map
+        + getResumenAuditoria(): Map
+    }
+
+    class VistaDashboardEjecutivoService {
+        - repository: VistaDashboardEjecutivoRepository
+        + getDashboardData(): List
+        + getDashboardBySeccion(seccion: String): VistaDashboardEjecutivo
+        + getResumenGeneral(): Map
+        - calculateBalanceNeto(): BigDecimal
+        - calculateMargenBeneficio(): BigDecimal
+        - getSafeBigDecimal(value: BigDecimal): BigDecimal
+        + getMetricasPorSeccion(): Map
+    }
+
+    class VistaInventarioCompletoService {
+        - repository: VistaInventarioCompletoRepository
+        + findAll(): List
+        + findById(id: Integer): Optional
+        + findByEstado(estado: VistaInventarioCompletoEstado): List
+        + findByParteVehiculo(parte: VistaInventarioCompletoParteVehiculo): List
+        + findByMarca(marca: String): List
+        + findByModelo(modelo: String): List
+        + findByAnioVehiculo(anioVehiculo: Integer): List
+        + buscarPorCodigoODescripcion(termino: String): List
+        + buscarConFiltros(...): List
+        + getResumenInventario(): Map
+        + getMarcasDisponibles(): List
+        + getModelosDisponibles(): List
+        + getAniosDisponibles(): List
+    }
+
+    class VistaInventarioCriticoService {
+        - repository: VistaInventarioCriticoRepository
+        + findAll(): List
+        + findByEstado(estado: VistaInventarioCriticoEstado): List
+        + findByParteVehiculo(parte: VistaInventarioCriticoParteVehiculo): List
+        + findByClasificacionMargen(clasificacion: String): List
+        + findByClasificacionRotacion(clasificacion: String): List
+        + findByDiasEnInventarioGreaterThan(dias: Integer): List
+        + findByVehiculoOrigen(vehiculoOrigen: String): List
+        + findByAnioVehiculo(anio: Integer): List
+        + buscarConFiltros(...): List
+        + getResumenInventarioCritico(): Map
+        + getClasificacionesMargenDisponibles(): List
+        + getClasificacionesRotacionDisponibles(): List
+        + getAniosVehiculoDisponibles(): List
+    }
+
+    class VistaRentabilidadGeneracionesService {
+        - repository: VistaRentabilidadGeneracionesRepository
+        + findAll(): List
+        + findById(generacionId: Integer): Optional
+        + findByAnioInicio(anioInicio: Integer): List
+        + findByAnioFin(anioFin: Integer): List
+        + findByRangoAnios(anioInicio: Integer, anioFin: Integer): List
+        + findByClasificacionRentabilidad(clasificacion: String): List
+        + getClasificacionesRentabilidadDisponibles(): List
+        + getAniosInicioDisponibles(): List
+        + getAniosFinDisponibles(): List
+        + getEstadisticasGenerales(): Map
+        + getResumenRentabilidad(): Map
+        + getEstadisticasPorAnio(): Map
+    }
+
+    class VistaResumenGeneracionesService {
+        - repository: VistaResumenGeneracionesRepository
+        + VistaResumenGeneracionesService(repository: VistaResumenGeneracionesRepository)
+        + findAll(): List
+        + findById(generacionId: Integer): Optional
+        + findByMarca(marca: String): List
+        + findByModelo(modelo: String): List
+        + findByAnioInicio(anioInicio: Integer): List
+        + findByAnioFin(anioFin: Integer): List
+        + findByRangoAnios(anioInicio: Integer, anioFin: Integer): List
+        + findByMotor(motor: String): List
+        + findByTransmision(transmision: String): List
+        + findByCombustible(combustible: String): List
+        + buscarGeneraciones(...): List
+        + getEstadisticas(): Map
+        + getKpis(): Map
+        + getFiltros(): Map
+        + getResumenPorMarca(): List
+    }
+
+    class VistaTopProductosVendidosService {
+        - repository: VistaTopProductosVendidosRepository
+        - {static} VALID_TIPOS: List
+        - {static} MAX_LIMIT: int
+        + VistaTopProductosVendidosService(repository: VistaTopProductosVendidosRepository)
+        + findAll(): List
+        + findByTipoProducto(tipoProducto: String): List
+        + findTopN(limit: int): List
+        + getDistinctTipoProducto(): List
+        + getEstadisticas(): Map
+        + buscarConFiltros(tipo: String, busqueda: String, limit: Integer): List
+        - normalizeTipoProducto(tipo: String): String
+    }
+
+    class VistaTransaccionesCompletasService {
+        - repository: VistaTransaccionesCompletasRepository
+        + VistaTransaccionesCompletasService(repository: VistaTransaccionesCompletasRepository)
+        + findAll(): List
+        + findByFechaBetween(inicio: LocalDate, fin: LocalDate): List
+        + findByCategoria(categoria: VistaTransaccionesCompletasCategoria): List
+        + findByEstado(estado: VistaTransaccionesCompletasEstado): List
+        + findByEmpleado(empleado: String): List
+        + findByTipoTransaccion(tipo: String): List
+        + findByVehiculo(placa: String): List
+        + findByMontoGreaterThanEqual(montoMinimo: BigDecimal): List
+        + findByMontoLessThanEqual(montoMaximo: BigDecimal): List
+        + getEstadisticas(): Map
+        + getResumenPorRangoFechas(inicio: LocalDate, fin: LocalDate): Map
+        + getEstadisticasPorEmpleado(empleado: String): Map
+        + buscarConFiltros(...): List
+    }
+
+    class VistaVehiculosCompletaService {
+        - repository: VistaVehiculosCompletaRepository
+        + VistaVehiculosCompletaService(repository: VistaVehiculosCompletaRepository)
+        + findAll(): List
+        + findById(id: Integer): Optional
+        + findByEstado(estado: VistaVehiculosCompletaEstado): List
+        + findByMarca(marca: String): List
+        + findByModelo(modelo: String): List
+        + findByAnio(anio: Integer): List
+        + findByPrecioVentaBetween(min: BigDecimal, max: BigDecimal): List
+        + findByRangoFechasIngreso(inicio: LocalDate, fin: LocalDate): List
+        + findVehiculosVendidos(): List
+        + findVehiculosEnInventario(): List
+        + getMarcasDisponibles(): List
+        + getModelosDisponibles(): List
+        + getAniosDisponibles(): List
+        + getEstadisticasVehiculos(): Map
+        + getEstadisticasPorMarca(marca: String): Map
+        + findByTipoVehiculo(tipo: String): List
+        + findByTipoTransmision(transmision: String): List
+    }
+
+    class VistaVentasPorEmpleadoService {
+        - repository: VistaVentasPorEmpleadoRepository
+        + VistaVentasPorEmpleadoService(repository: VistaVentasPorEmpleadoRepository)
+        + findAll(): List
+        + findByEmpleado(empleado: String): VistaVentasPorEmpleado
+        + findTopNVentas(limit: int): List
+        + findAllEmpleados(): List
+        + findByEmpleadoAndRangoFechas(emp: String, inicio: LocalDate, fin: LocalDate): List
+        + findByRangoFechas(inicio: LocalDate, fin: LocalDate): List
+        + getEstadisticasGenerales(): Map
+        + findByTipoProducto(tipo: String): List
+        + getVentasMensualesPorEmpleado(year: int): List
+        + compareVentasEntreEmpleados(emps: List, inicio: LocalDate, fin: LocalDate): List
+        + getEstadisticasPorEmpleado(empleado: String): Map
+        - createErrorMap(message: String): Map
+    }
+
+}
+@enduml
+@startuml
+skinparam class {
+    BackgroundColor White
+    ArrowColor #263238
+    BorderColor #263238
+    HeaderBackgroundColor #ECEFF1
+}
+
+package com.rodiejacontable.rodiejacontable.controller {
+
+    class AuditoriaController {
+        - auditoriaService: AuditoriaService
+        + AuditoriaController(auditoriaService: AuditoriaService)
+        + getActividadAuditoria(fechaInicio: LocalDate, fechaFin: LocalDate): ResponseEntity
+        + getHistorialVehiculo(vehiculoId: Integer): ResponseEntity
+    }
+
+    class EmpleadosController {
+        - empleadoService: EmpleadosService
+        + getAllEmpleados(): List
+        + getEmpleadoById(id: Integer): ResponseEntity
+        + createEmpleado(empleado: Empleados): Empleados
+        + updateEmpleado(id: Integer, empleadoDetails: Empleados): ResponseEntity
+        + deleteEmpleado(id: Integer): ResponseEntity
+    }
+
+    class GeneracionesController {
+        - generacionService: GeneracionesService
+        + getAllGeneraciones(): List
+        + getGeneracionById(id: Integer): ResponseEntity
+        + createGeneracion(generacion: Generaciones): Generaciones
+        + updateGeneracion(id: Integer, generacionDetails: Generaciones): ResponseEntity
+        + deleteGeneracion(id: Integer): ResponseEntity
+        + getGeneracionesByModeloId(modeloId: Integer): List
+        + getGeneracionesActivas(activo: Byte): List
+    }
+
+    class HistorialRepuestosController {
+        - historialService: HistorialRepuestosService
+        + HistorialRepuestosController(historialService: HistorialRepuestosService)
+        + registrarCambio(repuestoId: Integer, accion: HistorialRepuestosAccion, campo: String, anterior: String, nuevo: String, usuario: String, ipUsuario: String, observaciones: String): ResponseEntity
+        + obtenerPorId(id: Integer): ResponseEntity
+        + obtenerPorRepuestoId(repuestoId: Integer): List
+        + obtenerTodoElHistorial(): List
+    }
+
+    class HistorialTransaccionesController {
+        - historialService: HistorialTransaccionesService
+        + HistorialTransaccionesController(historialService: HistorialTransaccionesService)
+        + registrarCambio(transaccionId: Integer, accion: HistorialTransaccionesAccion, campo: String, anterior: String, nuevo: String, usuario: String, ipUsuario: String, observaciones: String): ResponseEntity
+        + obtenerPorId(id: Integer): ResponseEntity
+        + obtenerPorTransaccionId(transaccionId: Integer): List
+        + obtenerTodoElHistorial(): List
+    }
+
+    class HistorialVehiculosController {
+        - historialService: HistorialVehiculosService
+        + HistorialVehiculosController(historialService: HistorialVehiculosService)
+        + registrarCambio(historial: HistorialVehiculos): ResponseEntity
+        + obtenerPorId(id: Integer): ResponseEntity
+        + obtenerPorVehiculoId(vehiculoId: Integer): List
+        + obtenerTodo(): List
+    }
+
+    class InventarioRepuestosController {
+        - inventarioRepuestosService: InventarioRepuestosService
+        + InventarioRepuestosController(inventarioRepuestosService: InventarioRepuestosService)
+        + crearRepuesto(repuesto: InventarioRepuestos): ResponseEntity
+        + crearRepuestoSinVehiculoOrigen(payload: Map): ResponseEntity
+        + actualizarRepuesto(id: Integer, repuestoActualizado: InventarioRepuestos): ResponseEntity
+        + obtenerPorId(id: Integer): ResponseEntity
+        + obtenerPorVehiculoOrigenId(vehiculoId: Integer): ResponseEntity
+        + buscarPorCodigoRepuesto(codigo: String): ResponseEntity
+        + obtenerTodos(): ResponseEntity
+        + eliminarRepuesto(id: Integer): ResponseEntity
+    }
+
+    class MarcasController {
+        - marcasService: MarcasService
+        + getAllMarcas(): ResponseEntity
+        + getMarcasActivas(): ResponseEntity
+        + getMarcaById(id: Integer): ResponseEntity
+        + createMarca(marca: Marcas): ResponseEntity
+        + updateMarca(id: Integer, marcaDetails: Marcas): ResponseEntity
+        + deleteMarca(id: Integer): ResponseEntity
+    }
+
+    class ModelosController {
+        - modelosService: ModelosService
+        + getAll(): ResponseEntity
+        + getByMarcaId(marcaId: Integer): ResponseEntity
+        + getActivosByMarcaId(marcaId: Integer): ResponseEntity
+        + getById(id: Integer): ResponseEntity
+        + create(modelo: Modelos): ResponseEntity
+        + update(id: Integer, modelo: Modelos): ResponseEntity
+        + delete(id: Integer): ResponseEntity
+    }
+
+    class TiposTransaccionesController {
+        - tiposTransaccionesService: TiposTransaccionesService
+        + getAll(): ResponseEntity
+        + getByCategoria(categoria: TiposTransaccionesCategoria): ResponseEntity
+        + getActivos(): ResponseEntity
+        + getById(id: Integer): ResponseEntity
+        + create(tipoTransaccion: TiposTransacciones): ResponseEntity
+        + update(id: Integer, tipoTransaccion: TiposTransacciones): ResponseEntity
+        + delete(id: Integer): ResponseEntity
+    }
+
+    class TransaccionesFinancierasController {
+        - transaccionesService: TransaccionesFinancierasService
+        + getAll(): ResponseEntity
+        + getByFechaBetween(fechaInicio: LocalDate, fechaFin: LocalDate): ResponseEntity
+        + getByTipoTransaccionId(tipoId: Integer): ResponseEntity
+        + getByVehiculoId(vehiculoId: Integer): ResponseEntity
+        + getByEmpleadoId(empleadoId: Integer): ResponseEntity
+        + getById(id: Integer): ResponseEntity
+        + create(transaccion: TransaccionesFinancieras): ResponseEntity
+        + update(id: Integer, transaccion: TransaccionesFinancieras): ResponseEntity
+        + delete(id: Integer): ResponseEntity
+        + updateEstado(id: Integer, estado: TransaccionesFinancierasEstado): ResponseEntity
+        + getTotalMontoByTipoTransaccionAndPeriodo(tipoId: Integer, fechaInicio: LocalDate, fechaFin: LocalDate): ResponseEntity
+        + getTotalMensualByTipoTransaccion(tipoId: Integer, year: int, month: int): ResponseEntity
+    }
+
+    class VehiculosController {
+        - vehiculosService: VehiculosService
+        + getAll(): ResponseEntity
+        + getByEstado(estado: VehiculosEstado): ResponseEntity
+        + getByGeneracionId(id: Integer): ResponseEntity
+        + getByAnio(anio: Integer): ResponseEntity
+        + getActivos(): ResponseEntity
+        + getVehiculosJerarquia(): ResponseEntity
+        + getById(id: Integer): ResponseEntity
+        + create(vehiculoData: Map): ResponseEntity
+        + update(id: Integer, vehiculo: Vehiculos): ResponseEntity
+        + delete(id: Integer): ResponseEntity
+        + updateEstado(id: Integer, estado: VehiculosEstado): ResponseEntity
+        + marcarComoVendido(id: Integer, precio: BigDecimal, fecha: LocalDate): ResponseEntity
+        + getResumenInventario(): ResponseEntity
+    }
+
+    class "VehiculosController.ResumenInventario" as ResumenInventario {
+        - totalVehiculos: int
+        - inversionTotal: BigDecimal
+        - disponibles: int
+        - enReparacion: int
+        - vendidos: int
+        - desarmados: int
+        + getters() / setters()
+    }
+
+    VehiculosController +-- ResumenInventario
+
+    class VistaAnalisisFinancieroMensualController {
+        - analisisFinancieroService: VistaAnalisisFinancieroMensualService
+        + getAll(): ResponseEntity
+        + getByAnio(anio: Integer): ResponseEntity
+        + getByAnioAndMes(anio: Integer, mes: Integer): ResponseEntity
+        + getResumenAnual(anio: Integer): ResponseEntity
+        + getTendencias(): ResponseEntity
+        + getAniosDisponibles(): ResponseEntity
+        + getResumenAnioActual(): ResponseEntity
+        + getMesActual(): ResponseEntity
+        + getUltimosMeses(cantidadMeses: int): ResponseEntity
+    }
+
+    class VistaAuditoriaCompletaController {
+        - auditoriaService: VistaAuditoriaCompletaService
+        + getAll(): ResponseEntity
+        + getByTipoEntidad(tipoEntidad: String): ResponseEntity
+        + getByEntidadId(entidadId: String): ResponseEntity
+        + getByUsuario(usuario: String): ResponseEntity
+        + getByFechaRange(inicio: LocalDateTime, fin: LocalDateTime): ResponseEntity
+        + getByAccion(accion: String): ResponseEntity
+        + buscarAuditoria(...): ResponseEntity
+        + getResumenAuditoria(): ResponseEntity
+        + getEstadisticasPorTipoEntidad(): ResponseEntity
+        + getEstadisticasPorAccion(): ResponseEntity
+        + getEstadisticasPorUsuario(): ResponseEntity
+        + getFiltrosDisponibles(): ResponseEntity
+    }
+
+    class VistaDashboardEjecutivoController {
+        - dashboardService: VistaDashboardEjecutivoService
+        + getDashboardData(): ResponseEntity
+        + getDashboardBySeccion(seccion: String): ResponseEntity
+        + getSeccionesDisponibles(): ResponseEntity
+        - getAvailableSections(): List
+        + getResumenGeneral(): ResponseEntity
+        + getMetricasPorSeccion(): ResponseEntity
+        + getRoiPromedio(): ResponseEntity
+        + getMargenBeneficio(): ResponseEntity
+        + getEstadisticasVehiculos(): ResponseEntity
+        + getEstadisticasRepuestos(): ResponseEntity
+    }
+
+    class VistaInventarioCompletoController {
+        - inventarioService: VistaInventarioCompletoService
+        + getAllInventario(): List
+        + getInventarioById(id: Integer): ResponseEntity
+        + buscarConFiltros(...): List
+        + getByEstado(estado: VistaInventarioCompletoEstado): List
+        + getByParteVehiculo(parte: VistaInventarioCompletoParteVehiculo): List
+        + getByMarca(marca: String): List
+        + getByModelo(modelo: String): List
+        + getByAnioVehiculo(anio: Integer): List
+        + buscarPorCodigoODescripcion(termino: String): List
+        + getResumenInventario(): Map
+        + getMarcasDisponibles(): List
+        + getModelosDisponibles(): List
+        + getAniosDisponibles(): List
+        + getPartesVehiculo(): VistaInventarioCompletoParteVehiculo[]
+        + getEstados(): VistaInventarioCompletoEstado[]
+    }
+
+    class VistaInventarioCriticoController {
+        - inventarioCriticoService: VistaInventarioCriticoService
+        + getAllInventarioCritico(): List
+        + buscarConFiltros(...): List
+        + getByEstado(estado: VistaInventarioCriticoEstado): List
+        + getByParteVehiculo(parte: VistaInventarioCriticoParteVehiculo): List
+        + getByClasificacionMargen(clasificacion: String): List
+        + getByClasificacionRotacion(clasificacion: String): List
+        + getByDiasEnInventarioGreaterThan(dias: Integer): List
+        + getByVehiculoOrigen(vehiculo: String): List
+        + getByAnioVehiculo(anio: Integer): List
+        + getResumenInventarioCritico(): Map
+        + getClasificacionesMargenDisponibles(): List
+        + getClasificacionesRotacionDisponibles(): List
+        + getAniosVehiculoDisponibles(): List
+        + getPartesVehiculo(): VistaInventarioCriticoParteVehiculo[]
+        + getEstados(): VistaInventarioCriticoEstado[]
+    }
+
+    class VistaRentabilidadGeneracionesController {
+        - rentabilidadService: VistaRentabilidadGeneracionesService
+        + getAll(): List
+        + getById(id: Integer): ResponseEntity
+        + getByAnioInicio(anio: Integer): List
+        + getByAnioFin(anio: Integer): List
+        + getByRangoAnios(anioInicio: Integer, anioFin: Integer): List
+        + getByClasificacionRentabilidad(clasificacion: String): List
+        + getClasificacionesRentabilidad(): List
+        + getAniosInicio(): List
+        + getAniosFin(): List
+        + getResumenRentabilidad(): Map
+        + getEstadisticas(): Map
+        + getEstadisticasPorAnio(): Map
+        + getKpis(): Map
+    }
+
+    class VistaResumenGeneracionesController {
+        - service: VistaResumenGeneracionesService
+        + VistaResumenGeneracionesController(service: VistaResumenGeneracionesService)
+        + getAll(): List
+        + getById(id: Integer): ResponseEntity
+        + getByMarca(marca: String): List
+        + getByModelo(modelo: String): List
+        + getByAnioInicio(anio: Integer): List
+        + getByAnioFin(anio: Integer): List
+        + getByRangoAnios(anioInicio: Integer, anioFin: Integer): List
+        + getByMotor(motor: String): List
+        + getByTransmision(transmision: String): List
+        + getByCombustible(combustible: String): List
+        + buscarGeneraciones(...): List
+        + getEstadisticas(): Map
+        + getKpis(): Map
+        + getFiltros(): Map
+        + getResumenPorMarca(): List
+    }
+
+    class VistaTopProductosVendidosController {
+        - service: VistaTopProductosVendidosService
+        + VistaTopProductosVendidosController(service: VistaTopProductosVendidosService)
+        + getAll(): List
+        + getByTipoProducto(tipo: String): List
+        + getTopN(limit: int): List
+        + getTiposProducto(): List
+        + getEstadisticas(): Map
+        + buscarConFiltros(...): ResponseEntity
+        + getByRangoFechas(): ResponseEntity
+        + getByMarca(): ResponseEntity
+        + getByModelo(): ResponseEntity
+        + getByCategoria(): ResponseEntity
+    }
+
+    class VistaTransaccionesCompletasController {
+        - service: VistaTransaccionesCompletasService
+        + VistaTransaccionesCompletasController(service: VistaTransaccionesCompletasService)
+        + getAll(): List
+        + getByFechaBetween(fechaInicio: LocalDate, fechaFin: LocalDate): List
+        + getByCategoria(categoria: String): ResponseEntity
+        + getByEstado(estado: VistaTransaccionesCompletasEstado): List
+        + getByEmpleado(empleado: String): List
+        + getResumen(fechaInicio: LocalDate, fechaFin: LocalDate): Map
+        + getEstadisticasEmpleado(empleado: String): Map
+        + getByCliente(id: Long): ResponseEntity
+        + getByMontoMinimo(monto: BigDecimal): ResponseEntity
+        + getByMontoMaximo(monto: BigDecimal): ResponseEntity
+        + buscarTransacciones(...): ResponseEntity
+        + getEstadisticas(): ResponseEntity
+        + getByTipo(tipo: String): ResponseEntity
+        + getTiposTransaccion(): ResponseEntity
+        + getByVehiculo(placa: String): ResponseEntity
+    }
+
+    class VistaVentasPorEmpleadoController {
+        - service: VistaVentasPorEmpleadoService
+        + VistaVentasPorEmpleadoController(service: VistaVentasPorEmpleadoService)
+        + getAll(): List
+        + getByEmpleado(empleado: String): ResponseEntity
+        + getTopNVentas(limit: int): List
+        + getAllEmpleados(): List
+        + getEstadisticas(): Map
+        + getVentasPorEmpleadoYRangoFechas(...): ResponseEntity
+        + getEstadisticasPorEmpleado(empleado: String): Map
+        + getByTipoProducto(tipo: String): ResponseEntity
+        + getVentasMensualesPorEmpleado(year: int): ResponseEntity
+        + compararVentasEntreEmpleados(...): ResponseEntity
+    }
+
+}
+@enduml
+
+
+flowchart TB
+    %% ESTRUCTURA PRINCIPAL FRONTEND - RODIEJA CONTABLE
+    
+    %% Capa de API
+    subgraph API["API Layer"]
+        AXIOS["axios.js<br/>Configuración Axios"]
+        AUTH["auth.js<br/>Autenticación"]
+        DASH["dashboard.js<br/>Dashboard API"]
+        VEH["vehiculos.js<br/>Vehículos API"]
+        INV["inventario.js<br/>Inventario API"]
+        FIN["finanzas.js<br/>Finanzas API"]
+        REPORTS["reportes.js<br/>Reportes API"]
+        INDEX["index.js<br/>API Central"]
+        
+        INDEX --> AUTH
+        INDEX --> DASH
+        INDEX --> VEH
+        INDEX --> INV
+        INDEX --> FIN
+        INDEX --> REPORTS
+        AXIOS --> INDEX
+    end
+    
+    %% Capa de Hooks
+    subgraph HOOKS_LAYER["Hooks Layer"]
+        USE_VEH["useVehiculos<br/>Hook Vehículos"]
+        USE_INV["useInventario<br/>Hook Inventario"]
+        USE_FIN["useFinanzas<br/>Hook Finanzas"]
+        USE_REP["useReportes<br/>Hook Reportes"]
+        USE_GEN["useGeneraciones<br/>Hook Generaciones"]
+        USE_EMP["useEmpleados<br/>Hook Empleados"]
+        USE_MARC["useMarcas<br/>Hook Marcas"]
+        USE_MOD["useModelos<br/>Hook Modelos"]
+        
+        USE_VEH --> VEH
+        USE_INV --> INV
+        USE_FIN --> FIN
+        USE_REP --> REPORTS
+    end
+    
+    %% Capa de Componentes
+    subgraph COMP["Components Layer"]
+        ERROR["ErrorBoundary<br/>Manejo Errores"]
+        LOADING["Loading<br/>Componente Carga"]
+        PROTECTED["ProtectedRoute<br/>Rutas Protegidas"]
+        SIDEBAR["Sidebar<br/>Menú Lateral"]
+        HEADER["Header<br/>Barra Superior"]
+        MAIN_LAYOUT["MainLayout<br/>Layout Principal"]
+        
+        MAIN_LAYOUT --> SIDEBAR
+        MAIN_LAYOUT --> HEADER
+    end
+    
+    %% Modulo Vehiculos
+    subgraph VEH_MODULE["Módulo Vehículos"]
+        VEH_LIST["Vehiculos<br/>Listado"]
+        VEH_NEW["NuevoVehiculo<br/>Alta"]
+        VEH_EDIT["EditarVehiculo<br/>Edición"]
+        VEH_DETAIL["VehiculoDetalle<br/>Detalles"]
+    end
+    
+    %% Modulo Inventario
+    subgraph INV_MODULE["Módulo Inventario"]
+        INV_LIST["Inventario<br/>Listado"]
+        INV_NEW["NuevoRepuesto<br/>Alta"]
+        INV_EDIT["EditarRepuesto<br/>Edición"]
+        INV_DETAIL["DetalleRepuesto<br/>Detalles"]
+    end
+    
+    %% Modulo Finanzas
+    subgraph FIN_MODULE["Módulo Finanzas"]
+        FIN_LIST["Finanzas<br/>Listado"]
+        FIN_NEW["NuevaTransaccion<br/>Alta"]
+        FIN_EDIT["EditarTransaccion<br/>Edición"]
+        FIN_DETAIL["DetalleTransaccion<br/>Detalles"]
+    end
+    
+    %% Modulo Reportes
+    subgraph REP_MODULE["Módulo Reportes"]
+        REPORT_MAIN["Reportes<br/>Panel"]
+        REPORT_VENTAS["VentasReportes<br/>Ventas"]
+    end
+    
+    %% Modulo Autenticacion
+    subgraph AUTH_MODULE["Módulo Autenticación"]
+        LOGIN["Login<br/>Inicio Sesión"]
+        REGISTER["Register<br/>Registro"]
+        FORGOT["ForgotPassword<br/>Recuperar"]
+        RESET["ResetPassword<br/>Restablecer"]
+    end
+    
+    %% Modulo Configuracion
+    subgraph CONFIG_MODULE["Módulo Configuración"]
+        PERFIL["Perfil<br/>Perfil Usuario"]
+        CONFIG["Configuracion<br/>Sistema"]
+    end
+    
+    %% Dashboard
+    DASH_PAGE["Dashboard<br/>Panel Principal"]
+    
+    %% Context y Providers
+    subgraph CTX["Context & Providers"]
+        AUTH_CONTEXT["AuthContext<br/>Estado Global"]
+        QUERY_PROVIDER["QueryProvider<br/>React Query"]
+    end
+    
+    %% Flujo de Datos
+    USER["Usuario"]
+    BACKEND["Backend<br/>Spring Boot"]
+    
+    %% Conexiones del flujo principal
+    USER --> DASH_PAGE
+    USER --> VEH_MODULE
+    USER --> INV_MODULE
+    USER --> FIN_MODULE
+    USER --> REP_MODULE
+    USER --> AUTH_MODULE
+    USER --> CONFIG_MODULE
+    
+    %% Hooks a API
+    HOOKS_LAYER --> API
+    
+    %% API a Backend
+    API --> BACKEND
+    BACKEND --> API
+    
+    %% Paginas a Hooks
+    VEH_MODULE --> USE_VEH
+    INV_MODULE --> USE_INV
+    FIN_MODULE --> USE_FIN
+    REP_MODULE --> USE_REP
+    DASH_PAGE --> USE_VEH
+    DASH_PAGE --> USE_INV
+    DASH_PAGE --> USE_FIN
+    
+    %% Context
+    AUTH_MODULE --> AUTH_CONTEXT
+    HOOKS_LAYER --> AUTH_CONTEXT
+    HOOKS_LAYER --> QUERY_PROVIDER
+    
+    %% Layout
+    DASH_PAGE --> MAIN_LAYOUT
+    VEH_MODULE --> MAIN_LAYOUT
+    INV_MODULE --> MAIN_LAYOUT
+    FIN_MODULE --> MAIN_LAYOUT
+    REP_MODULE --> MAIN_LAYOUT
+    CONFIG_MODULE --> MAIN_LAYOUT
+    
+    %% Componentes Utilitarios
+    VEH_MODULE --> ERROR
+    INV_MODULE --> ERROR
+    FIN_MODULE --> ERROR
+    VEH_MODULE --> LOADING
+    INV_MODULE --> LOADING
+    FIN_MODULE --> LOADING
+    VEH_MODULE --> PROTECTED
+    INV_MODULE --> PROTECTED
+    FIN_MODULE --> PROTECTED
+    
+    %% Estilos
+    classDef apiStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef hooksStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef compStyle fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef pagesStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef ctxStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef flowStyle fill:#f5f5f5,stroke:#666666,stroke-width:2px
+    
+    class AXIOS,AUTH,DASH,VEH,INV,FIN,REPORTS,INDEX apiStyle
+    class USE_VEH,USE_INV,USE_FIN,USE_REP,USE_GEN,USE_EMP,USE_MARC,USE_MOD hooksStyle
+    class ERROR,LOADING,PROTECTED,SIDEBAR,HEADER,MAIN_LAYOUT compStyle
+    class DASH_PAGE,VEH_LIST,VEH_NEW,VEH_EDIT,VEH_DETAIL pagesStyle
+    class INV_LIST,INV_NEW,INV_EDIT,INV_DETAIL pagesStyle
+    class FIN_LIST,FIN_NEW,FIN_EDIT,FIN_DETAIL pagesStyle
+    class REPORT_MAIN,REPORT_VENTAS pagesStyle
+    class LOGIN,REGISTER,FORGOT,RESET,PERFIL,CONFIG pagesStyle
+    class AUTH_CONTEXT,QUERY_PROVIDER ctxStyle
+    class USER,BACKEND flowStyle

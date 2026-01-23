@@ -121,11 +121,7 @@ class VentasEmpleadosService {
       const params = empleado ? { empleado } : {};
       
       const response = await api.get(`/v1/ventas-empleados/mensual/${anio}`, { 
-        params,
-        validateStatus: function (status) {
-          // Consider 404 as a valid response (no data)
-          return status === 200 || status === 404;
-        }
+        params
       });
       
       console.log(`Respuesta de ventas mensuales (${anio}):`, {
@@ -134,42 +130,20 @@ class VentasEmpleadosService {
         headers: response.headers
       });
       
-      // If the response is 404, return an empty array
-      if (response.status === 404) {
-        console.warn(`No se encontraron ventas para el año ${anio}${empleado ? ` y empleado ${empleado}` : ''}`);
-        // Devolver datos de ejemplo para pruebas
-        return this.generarDatosEjemploMensuales(anio);
-      }
-      
-      // Si la respuesta está vacía pero el estado es 200, también devolver datos de ejemplo
-      if (!response.data || (Array.isArray(response.data) && response.data.length === 0)) {
-        console.warn(`La respuesta para el año ${anio} está vacía, usando datos de ejemplo`);
-        return this.generarDatosEjemploMensuales(anio);
-      }
-      
+      // Return the actual data from backend
       return response.data || [];
     } catch (error) {
       console.error(`Error al obtener ventas mensuales para el año ${anio}:`, error);
-      // Devolver datos de ejemplo en caso de error
-      return this.generarDatosEjemploMensuales(anio);
+      
+      // If it's a 404, return empty array (no data found)
+      if (error.response?.status === 404) {
+        console.warn(`No se encontraron ventas para el año ${anio}${empleado ? ` y empleado ${empleado}` : ''}`);
+        return [];
+      }
+      
+      // For other errors, re-throw to let the component handle it
+      throw error;
     }
-  }
-  
-  // Generar datos de ejemplo para pruebas
-  generarDatosEjemploMensuales(anio) {
-    console.log(`Generando datos de ejemplo para el año ${anio}...`);
-    const meses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    
-    return meses.map((mes, index) => ({
-      mes: index + 1,
-      nombreMes: mes,
-      totalVentas: Math.floor(Math.random() * 50) + 10, // Entre 10 y 60 ventas
-      totalIngresos: Math.floor(Math.random() * 100000) + 50000, // Entre 50,000 y 150,000
-      anio: parseInt(anio)
-    }));
   }
   
   // Comparativa de ventas entre empleados
@@ -204,4 +178,5 @@ class VentasEmpleadosService {
   }
 }
 
-export default new VentasEmpleadosService();
+const ventasEmpleadosService = new VentasEmpleadosService();
+export default ventasEmpleadosService;

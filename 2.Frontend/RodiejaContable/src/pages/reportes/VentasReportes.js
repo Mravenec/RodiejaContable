@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Card, 
   Row, 
@@ -16,7 +16,6 @@ import {
   Empty,
   Modal,
   Form,
-  InputNumber,
   Input
 } from 'antd';
 import { 
@@ -24,18 +23,14 @@ import {
   DownloadOutlined,
   FilterOutlined,
   ReloadOutlined,
-  FileTextOutlined,
   PrinterOutlined,
-  UserOutlined,
   BarChartOutlined,
-  DollarOutlined,
   TeamOutlined,
   CheckCircleOutlined,
   InboxOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import ventasEmpleadosService from '../../api/ventasEmpleados';
-import { formatCurrency } from '../../utils/formatters';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -67,8 +62,6 @@ const VentasReportes = () => {
     pageSize: 10,
     total: 0
   });
-  const [modalVisible, setModalVisible] = useState(false);
-  const [form] = Form.useForm();
 
   // Tipos de productos y estados
   const tiposProducto = [
@@ -178,19 +171,8 @@ const VentasReportes = () => {
     }
   ];
 
-  // Cargar datos iniciales
-  useEffect(() => {
-    cargarDatosIniciales();
-  }, []);
-
-  // Efecto para cargar datos cuando cambian los filtros
-  useEffect(() => {
-    cargarVentas();
-    cargarEstadisticas();
-  }, [filtros, pagination.current, pagination.pageSize]);
-
   // Función para cargar datos iniciales
-  const cargarDatosIniciales = async () => {
+  const cargarDatosIniciales = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, empleados: true }));
       const [empleadosRes] = await Promise.all([
@@ -203,10 +185,10 @@ const VentasReportes = () => {
     } finally {
       setLoading(prev => ({ ...prev, empleados: false }));
     }
-  };
+  }, []);
 
   // Función para cargar ventas por empleado con filtros
-  const cargarVentas = async () => {
+  const cargarVentas = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, ventas: true }));
       
@@ -225,20 +207,20 @@ const VentasReportes = () => {
       const datosFiltrados = response.filter(emp => emp.totalTransacciones > 0);
       
       setVentas(datosFiltrados);
-      setPagination({
-        ...pagination,
+      setPagination(prev => ({
+        ...prev,
         total: datosFiltrados.length
-      });
+      }));
     } catch (error) {
       console.error('Error al cargar ventas:', error);
       message.error('Error al cargar las ventas');
     } finally {
       setLoading(prev => ({ ...prev, ventas: false }));
     }
-  };
+  }, [filtros]);
 
   // Función para cargar estadísticas
-  const cargarEstadisticas = async () => {
+  const cargarEstadisticas = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, estadisticas: true }));
       const params = {};
@@ -260,7 +242,18 @@ const VentasReportes = () => {
     } finally {
       setLoading(prev => ({ ...prev, estadisticas: false }));
     }
-  };
+  }, [filtros]);
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    cargarDatosIniciales();
+  }, [cargarDatosIniciales]);
+
+  // Efecto para cargar datos cuando cambian los filtros
+  useEffect(() => {
+    cargarVentas();
+    cargarEstadisticas();
+  }, [cargarVentas, cargarEstadisticas]);
 
   // Manejador de cambio de página
   const handleTableChange = (pagination, filters, sorter) => {
@@ -359,25 +352,12 @@ const VentasReportes = () => {
     }
   };
 
-  // Ver detalle de venta
-  const verDetalleVenta = (venta) => {
-    form.setFieldsValue({
-      ...venta,
-      fecha: moment(venta.fecha),
-      vendedor: venta.vendedor?.nombreCompleto,
-      cliente: venta.cliente?.nombreCompleto,
-      montoTotal: formatCurrency(venta.montoTotal)
-    });
-    setModalVisible(true);
-  };
 
   // Obtener métricas de las estadísticas
-  const totalVentas = estadisticas?.totalVentas || 0;
-  const totalIngresos = estadisticas?.ingresosTotales || 0;
-  const ventasCompletadas = estadisticas?.ventasCompletadas || 0;
+  const totalVentasCount = estadisticas?.totalVentasCount || estadisticas?.totalTransacciones || 0;
+  const totalIngresos = estadisticas?.totalVentas || 0;
+  const ventasCompletadas = estadisticas?.totalVentasCount || estadisticas?.totalTransacciones || 0;
   const tasaConversion = estadisticas?.tasaConversion || 0;
-  const promedioVenta = estadisticas?.promedioVenta || 0;
-  const totalClientes = estadisticas?.totalClientes || 0;
 
   return (
     <div className="ventas-reportes">
@@ -535,9 +515,9 @@ const VentasReportes = () => {
             <Card>
               <Statistic
                 title="Ventas Totales"
-                value={totalVentas}
+                value={totalVentasCount}
                 prefix={<ShoppingCartOutlined style={{ color: '#1890ff', marginRight: 8 }} />}
-                suffix={totalVentas === 1 ? 'unidad' : 'unidades'}
+                suffix={totalVentasCount === 1 ? 'venta' : 'ventas'}
                 valueStyle={{ color: '#1890ff', fontSize: '1.5rem' }}
                 loading={loading.estadisticas}
                 formatter={value => new Intl.NumberFormat('es-CR').format(value)}
@@ -617,7 +597,7 @@ const VentasReportes = () => {
             </Button>
             <Button 
               icon={<FilterOutlined />} 
-              onClick={() => setModalVisible(true)}
+              onClick={() => {}}
             >
               Filtros
             </Button>
