@@ -27,6 +27,7 @@ const Sidebar = ({ collapsed }) => {
       label: 'Vehículos',
       children: [
         { key: '/vehiculos', label: 'Lista de Vehículos' },
+        { key: '/vehiculos/jerarquia', label: 'Ver por Generaciones' },
         { key: '/vehiculos/nuevo', label: 'Nuevo Vehículo' },
       ]
     },
