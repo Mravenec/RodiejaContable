@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.cache.annotation.Cacheable;
+import org.jooq.DSLContext;
+import static com.rodiejacontable.database.jooq.Tables.VEHICULOS;
 
 @Service
 public class VehiculosService {
@@ -26,6 +28,9 @@ public class VehiculosService {
     
     @Autowired
     private GeneracionesRepository generacionesRepository;
+    
+    @Autowired
+    private DSLContext dsl;
     
     public List<Vehiculos> findAll() {
         return vehiculosRepository.findAll();
@@ -94,50 +99,14 @@ public class VehiculosService {
     
     @Transactional
     public Vehiculos update(Integer id, Vehiculos vehiculo) {
-        // Verificar que el vehículo existe
-        Vehiculos existingVehiculo = findById(id);
-        
-        // Validar que el código de vehículo sea único si se está cambiando
-        if (!existingVehiculo.getCodigoVehiculo().equals(vehiculo.getCodigoVehiculo()) && 
-            vehiculosRepository.existsByCodigoVehiculo(vehiculo.getCodigoVehiculo())) {
-            throw new ResourceAlreadyExistsException("Ya existe un vehículo con el código: " + vehiculo.getCodigoVehiculo());
-        }
-        
-        // Validar que la generación existe si se está cambiando
-        if (!existingVehiculo.getGeneracionId().equals(vehiculo.getGeneracionId())) {
-            generacionesRepository.findById(vehiculo.getGeneracionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Generación no encontrada con ID: " + vehiculo.getGeneracionId()));
-        }
-        
-        // Actualizar los campos modificables
-        existingVehiculo.setCodigoVehiculo(vehiculo.getCodigoVehiculo());
-        existingVehiculo.setGeneracionId(vehiculo.getGeneracionId());
-        existingVehiculo.setAnio(vehiculo.getAnio() != null ? vehiculo.getAnio() : existingVehiculo.getAnio());
-        existingVehiculo.setPrecioCompra(vehiculo.getPrecioCompra() != null ? vehiculo.getPrecioCompra() : existingVehiculo.getPrecioCompra());
-        existingVehiculo.setCostoGrua(vehiculo.getCostoGrua() != null ? vehiculo.getCostoGrua() : existingVehiculo.getCostoGrua());
-        existingVehiculo.setComisiones(vehiculo.getComisiones() != null ? vehiculo.getComisiones() : existingVehiculo.getComisiones());
-        existingVehiculo.setImagenUrl(vehiculo.getImagenUrl() != null ? vehiculo.getImagenUrl() : existingVehiculo.getImagenUrl());
-        
-        // Recalcular inversión total si se modificó algún campo relacionado
-        if (vehiculo.getPrecioCompra() != null || vehiculo.getCostoGrua() != null || vehiculo.getComisiones() != null) {
-            BigDecimal precioCompra = vehiculo.getPrecioCompra() != null ? vehiculo.getPrecioCompra() : existingVehiculo.getPrecioCompra();
-            BigDecimal costoGrua = vehiculo.getCostoGrua() != null ? vehiculo.getCostoGrua() : existingVehiculo.getCostoGrua();
-            BigDecimal comisiones = vehiculo.getComisiones() != null ? vehiculo.getComisiones() : existingVehiculo.getComisiones();
-            
-            existingVehiculo.setInversionTotal(precioCompra.add(costoGrua).add(comisiones));
-        } else if (vehiculo.getInversionTotal() != null) {
-            existingVehiculo.setInversionTotal(vehiculo.getInversionTotal());
-        }
-        
-        existingVehiculo.setFechaIngreso(vehiculo.getFechaIngreso() != null ? vehiculo.getFechaIngreso() : existingVehiculo.getFechaIngreso());
-        existingVehiculo.setEstado(vehiculo.getEstado() != null ? vehiculo.getEstado() : existingVehiculo.getEstado());
-        existingVehiculo.setPrecioVenta(vehiculo.getPrecioVenta() != null ? vehiculo.getPrecioVenta() : existingVehiculo.getPrecioVenta());
-        existingVehiculo.setFechaVenta(vehiculo.getFechaVenta() != null ? vehiculo.getFechaVenta() : existingVehiculo.getFechaVenta());
-        existingVehiculo.setActivo(vehiculo.getActivo() != null ? vehiculo.getActivo() : existingVehiculo.getActivo());
-        existingVehiculo.setNotas(vehiculo.getNotas() != null ? vehiculo.getNotas() : existingVehiculo.getNotas());
-        existingVehiculo.setFechaActualizacion(LocalDateTime.now());
-        
-        return vehiculosRepository.update(existingVehiculo);
+        // Usar DSL directo para actualizar solo las notas
+        dsl.update(VEHICULOS)
+           .set(VEHICULOS.NOTAS, vehiculo.getNotas())
+           .where(VEHICULOS.ID.eq(id))
+           .execute();
+           
+        // Retornar el vehículo actualizado
+        return findById(id);
     }
     
     @Transactional

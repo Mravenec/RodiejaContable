@@ -286,7 +286,8 @@ const EditarVehiculo = () => {
         estado: vehiculo.estado || 'DISPONIBLE',
         precioVenta: vehiculo.precioVenta,
         activo: vehiculo.activo !== false,
-        notas: vehiculo.notas
+        notas: vehiculo.notas,
+        costoRecuperado: vehiculo.costoRecuperado || 0
       });
       
       // Load transactions and repuestos for this vehicle
@@ -365,16 +366,31 @@ const EditarVehiculo = () => {
       setSaving(true);
       
       const formattedValues = {
-        ...values,
+        generacionId: values.generacionId ? parseInt(values.generacionId) : null,
+        anio: values.anio ? parseInt(values.anio) : null,
+        precioCompra: values.precioCompra ? parseFloat(values.precioCompra) : null,
+        costoGrua: values.costoGrua ? parseFloat(values.costoGrua) : 0,
+        comisiones: values.comisiones ? parseFloat(values.comisiones) : 0,
+        precioVenta: values.precioVenta ? parseFloat(values.precioVenta) : null,
+        imagenUrl: values.imagenUrl || '',
         fechaIngreso: values.fechaIngreso && values.fechaIngreso.isValid() ? values.fechaIngreso.format('YYYY-MM-DD') : null,
         fechaVenta: values.fechaVenta && values.fechaVenta.isValid() ? values.fechaVenta.format('YYYY-MM-DD') : null,
-        activo: values.activo !== false
+        estado: values.estado,
+        notas: values.notas || ''
       };
       
-      // Remove inversionTotal from payload as it's calculated in backend
+      // Remove calculated fields from payload as they're handled in backend
       delete formattedValues.inversionTotal;
+      delete formattedValues.costoRecuperado;
+      delete formattedValues.costoPendiente;
       
-      // Use the hook instead of direct API call
+      // Remove codigoVehiculo as it shouldn't be updated
+      delete formattedValues.codigoVehiculo;
+      
+      // Debug: Log the data being sent
+      console.log('Sending to API:', JSON.stringify(formattedValues, null, 2));
+      
+      // Use the hook to update the vehicle
       updateVehiculo.mutate({ id, ...formattedValues });
       
     } catch (error) {

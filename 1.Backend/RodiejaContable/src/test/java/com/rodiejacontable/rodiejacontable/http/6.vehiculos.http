@@ -520,3 +520,40 @@ Content-Type: application/json
   "fechaVenta": null,
   "notas": "Vehículo en buen estado, recuperado de aseguradora, llantas al 80%."
 }
+
+### Actualizar vehículo (PUT test)
+PUT http://localhost:8080/api/vehiculos/2
+Content-Type: application/json
+
+{
+  "generacionId": 2,
+  "anio": 2018,
+  "precioCompra": 6000000.00,
+  "costoGrua": 40000.00,
+  "comisiones": 80000.00,
+  "precioVenta": null,
+  "imagenUrl": "",
+  "fechaIngreso": "2023-01-31",
+  "fechaVenta": null,
+  "estado": "DESARMADO",
+  "notas": "Test de actualización - PUT endpoint funcionando correctamente"
+}
+
+### Actualizar solo notas (PUT test simple)
+PUT http://localhost:8080/api/vehiculos/2
+Content-Type: application/json
+
+{
+  "notas": "Solo actualizando las notas - prueba simple del PUT endpoint"
+}
+
+### Verificar vehículo existe (GET test)
+GET http://localhost:8080/api/vehiculos/2
+
+### Actualizar solo notas (PUT test minimal)
+PUT http://localhost:8080/api/vehiculos/2
+Content-Type: application/json
+
+{
+  "notas": "Test minimal - solo notas"
+}

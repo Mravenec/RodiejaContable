@@ -154,15 +154,15 @@ public class VehiculosController {
     @PutMapping("/{id}")
     public ResponseEntity<Vehiculos> update(
             @PathVariable Integer id, 
-            @RequestBody Vehiculos vehiculo) {
+            @RequestBody Map<String, Object> vehiculoData) {
         
         // Validar que se proporcione un vehículo
-        if (vehiculo == null) {
+        if (vehiculoData == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         
-        // Asegurar que el ID del path coincida con el del body
-        vehiculo.setId(id);
+        // Log para depuración
+        System.out.println("Datos recibidos en la actualización: " + vehiculoData);
         
         // Validar que el vehículo exista
         Vehiculos existente = vehiculosService.findById(id);
@@ -170,57 +170,62 @@ public class VehiculosController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         
-        // Actualizar solo los campos que se hayan proporcionado
-        if (vehiculo.getImagenUrl() != null) {
-            existente.setImagenUrl(vehiculo.getImagenUrl());
+        // Actualizar campos si se proporcionan en el mapa
+        if (vehiculoData.containsKey("generacionId") && vehiculoData.get("generacionId") != null) {
+            existente.setGeneracionId(Integer.valueOf(vehiculoData.get("generacionId").toString()));
         }
         
-        // Actualizar otros campos si se proporcionan
-        if (vehiculo.getCodigoVehiculo() != null) {
-            existente.setCodigoVehiculo(vehiculo.getCodigoVehiculo());
+        if (vehiculoData.containsKey("anio") && vehiculoData.get("anio") != null) {
+            existente.setAnio(Integer.valueOf(vehiculoData.get("anio").toString()));
         }
         
-        if (vehiculo.getGeneracionId() != null) {
-            existente.setGeneracionId(vehiculo.getGeneracionId());
+        if (vehiculoData.containsKey("precioCompra") && vehiculoData.get("precioCompra") != null) {
+            existente.setPrecioCompra(new BigDecimal(vehiculoData.get("precioCompra").toString()));
         }
         
-        if (vehiculo.getAnio() != null) {
-            existente.setAnio(vehiculo.getAnio());
+        if (vehiculoData.containsKey("costoGrua") && vehiculoData.get("costoGrua") != null) {
+            existente.setCostoGrua(new BigDecimal(vehiculoData.get("costoGrua").toString()));
         }
         
-        if (vehiculo.getPrecioCompra() != null) {
-            existente.setPrecioCompra(vehiculo.getPrecioCompra());
+        if (vehiculoData.containsKey("comisiones") && vehiculoData.get("comisiones") != null) {
+            existente.setComisiones(new BigDecimal(vehiculoData.get("comisiones").toString()));
         }
         
-        if (vehiculo.getCostoGrua() != null) {
-            existente.setCostoGrua(vehiculo.getCostoGrua());
+        if (vehiculoData.containsKey("fechaIngreso") && vehiculoData.get("fechaIngreso") != null) {
+            existente.setFechaIngreso(LocalDate.parse(vehiculoData.get("fechaIngreso").toString()));
         }
         
-        if (vehiculo.getComisiones() != null) {
-            existente.setComisiones(vehiculo.getComisiones());
+        if (vehiculoData.containsKey("imagenUrl") && vehiculoData.get("imagenUrl") != null) {
+            existente.setImagenUrl(vehiculoData.get("imagenUrl").toString());
         }
         
-        if (vehiculo.getFechaIngreso() != null) {
-            existente.setFechaIngreso(vehiculo.getFechaIngreso());
+        if (vehiculoData.containsKey("precioVenta") && vehiculoData.get("precioVenta") != null) {
+            existente.setPrecioVenta(new BigDecimal(vehiculoData.get("precioVenta").toString()));
         }
         
-        if (vehiculo.getEstado() != null) {
-            existente.setEstado(vehiculo.getEstado());
+        if (vehiculoData.containsKey("fechaVenta") && vehiculoData.get("fechaVenta") != null) {
+            existente.setFechaVenta(LocalDate.parse(vehiculoData.get("fechaVenta").toString()));
         }
         
-        if (vehiculo.getPrecioVenta() != null) {
-            existente.setPrecioVenta(vehiculo.getPrecioVenta());
+        // Manejar el estado
+        if (vehiculoData.containsKey("estado") && vehiculoData.get("estado") != null) {
+            try {
+                String estadoStr = vehiculoData.get("estado").toString();
+                VehiculosEstado estado = VehiculosEstado.valueOf(estadoStr);
+                existente.setEstado(estado);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error al convertir el estado: " + e.getMessage());
+                // No cambiar el estado si es inválido
+            }
         }
         
-        if (vehiculo.getFechaVenta() != null) {
-            existente.setFechaVenta(vehiculo.getFechaVenta());
+        if (vehiculoData.containsKey("notas") && vehiculoData.get("notas") != null) {
+            existente.setNotas(vehiculoData.get("notas").toString());
         }
         
-        if (vehiculo.getNotas() != null) {
-            existente.setNotas(vehiculo.getNotas());
-        }
-        
+        System.out.println("Vehículo antes de actualizar: " + existente);
         Vehiculos vehiculoActualizado = vehiculosService.update(id, existente);
+        System.out.println("Vehículo después de actualizar: " + vehiculoActualizado);
         return new ResponseEntity<>(vehiculoActualizado, HttpStatus.OK);
     }
     

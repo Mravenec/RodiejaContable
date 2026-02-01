@@ -118,7 +118,7 @@ export function useUpdateVehiculo(options = {}) {
   const { onSuccess, onError, onSettled } = options;
   
   return useMutation(
-    ({ id, ...vehiculoData }) => vehiculoService.updateVehiculo(id, vehiculoData),
+    ({ id, ...vehiculoData }) => vehiculoService.actualizarVehiculo(id, vehiculoData),
     {
       onSuccess: (data, variables, context) => {
         message.success('Vehículo actualizado correctamente');
