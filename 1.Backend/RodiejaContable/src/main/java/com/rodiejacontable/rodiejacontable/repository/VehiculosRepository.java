@@ -109,8 +109,18 @@ public class VehiculosRepository {
     }
     
     public Vehiculos update(Vehiculos vehiculo) {
-        // Usar DSL directo como lo hacía el Service (que funcionaba)
+        // Actualizar todos los campos que el Service configura
         dsl.update(VEHICULOS)
+           .set(VEHICULOS.GENERACION_ID, vehiculo.getGeneracionId())
+           .set(VEHICULOS.ANIO, vehiculo.getAnio())
+           .set(VEHICULOS.PRECIO_COMPRA, vehiculo.getPrecioCompra())
+           .set(VEHICULOS.COSTO_GRUA, vehiculo.getCostoGrua())
+           .set(VEHICULOS.COMISIONES, vehiculo.getComisiones())
+           .set(VEHICULOS.PRECIO_VENTA, vehiculo.getPrecioVenta())
+           .set(VEHICULOS.IMAGEN_URL, vehiculo.getImagenUrl())
+           .set(VEHICULOS.FECHA_INGRESO, vehiculo.getFechaIngreso())
+           .set(VEHICULOS.FECHA_VENTA, vehiculo.getFechaVenta())
+           .set(VEHICULOS.ESTADO, vehiculo.getEstado())
            .set(VEHICULOS.NOTAS, vehiculo.getNotas())
            .where(VEHICULOS.ID.eq(vehiculo.getId()))
            .execute();

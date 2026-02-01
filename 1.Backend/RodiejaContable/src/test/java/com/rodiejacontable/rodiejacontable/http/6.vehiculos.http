@@ -539,6 +539,33 @@ Content-Type: application/json
   "notas": "Test de actualización - PUT endpoint funcionando correctamente"
 }
 
+### Actualizar vehículo con imagen real (PUT test)
+PUT http://localhost:8080/api/vehiculos/2
+Content-Type: application/json
+
+{
+  "generacionId": 2,
+  "anio": 2018,
+  "precioCompra": 6000000.00,
+  "costoGrua": 40000.00,
+  "comisiones": 80000.00,
+  "precioVenta": null,
+  "imagenUrl": "https://www.autosactual.mx/wp-content/uploads/2018/01/honda-civic-sedan-2018-00.jpg",
+  "fechaIngreso": "2023-01-31",
+  "fechaVenta": null,
+  "estado": "DISPONIBLE",
+  "notas": "Test con imagen real de Honda Civic 2018 desde URL externa"
+}
+
+### Actualizar solo imagen (PUT test)
+PUT http://localhost:8080/api/vehiculos/2
+Content-Type: application/json
+
+{
+  "imagenUrl": "https://www.autosactual.mx/wp-content/uploads/2018/01/honda-civic-sedan-2018-00.jpg",
+  "notas": "Actualizando solo la imagen del vehículo con URL real"
+}
+
 ### Actualizar solo notas (PUT test simple)
 PUT http://localhost:8080/api/vehiculos/2
 Content-Type: application/json

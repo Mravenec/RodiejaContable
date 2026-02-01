@@ -97,7 +97,37 @@ public class VehiculosService {
         // Verificar que el vehículo existe
         Vehiculos existingVehiculo = findById(id);
         
-        // Actualizar solo las notas por ahora (como funcionaba antes)
+        // Actualizar los campos que envía el frontend
+        if (vehiculo.getGeneracionId() != null) {
+            existingVehiculo.setGeneracionId(vehiculo.getGeneracionId());
+        }
+        if (vehiculo.getAnio() != null) {
+            existingVehiculo.setAnio(vehiculo.getAnio());
+        }
+        if (vehiculo.getPrecioCompra() != null) {
+            existingVehiculo.setPrecioCompra(vehiculo.getPrecioCompra());
+        }
+        if (vehiculo.getCostoGrua() != null) {
+            existingVehiculo.setCostoGrua(vehiculo.getCostoGrua());
+        }
+        if (vehiculo.getComisiones() != null) {
+            existingVehiculo.setComisiones(vehiculo.getComisiones());
+        }
+        if (vehiculo.getPrecioVenta() != null) {
+            existingVehiculo.setPrecioVenta(vehiculo.getPrecioVenta());
+        }
+        if (vehiculo.getImagenUrl() != null) {
+            existingVehiculo.setImagenUrl(vehiculo.getImagenUrl());
+        }
+        if (vehiculo.getFechaIngreso() != null) {
+            existingVehiculo.setFechaIngreso(vehiculo.getFechaIngreso());
+        }
+        if (vehiculo.getFechaVenta() != null) {
+            existingVehiculo.setFechaVenta(vehiculo.getFechaVenta());
+        }
+        if (vehiculo.getEstado() != null) {
+            existingVehiculo.setEstado(vehiculo.getEstado());
+        }
         if (vehiculo.getNotas() != null) {
             existingVehiculo.setNotas(vehiculo.getNotas());
         }
