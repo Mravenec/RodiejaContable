@@ -61,7 +61,7 @@ export function useVehiculos(params = {}) {
 export function useVehiculo(id) {
   return useQuery(
     ['vehiculo', id],
-    () => vehiculoService.getVehiculoById(id),
+    () => vehiculoService.getVehiculoPorId(id),
     {
       enabled: !!id,
       onError: (error) => {

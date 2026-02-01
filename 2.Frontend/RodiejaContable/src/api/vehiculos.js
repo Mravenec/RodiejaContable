@@ -246,20 +246,29 @@ class VehiculoService {
       const response = await api.get(`/vehiculos/${id}`);
       const vehiculo = response.data;
       
+      // Devolver los datos originales del vehículo según la estructura de la BD
       return {
         id: vehiculo.id,
-        modelo: vehiculo.modeloNombre,
-        año: vehiculo.anio,
-        precio: vehiculo.precioVenta,
+        codigoVehiculo: vehiculo.codigoVehiculo,
+        generacionId: vehiculo.generacionId,
+        imagenUrl: vehiculo.imagenUrl,
+        anio: vehiculo.anio,
+        precioCompra: vehiculo.precioCompra,
+        costoGrua: vehiculo.costoGrua || 0,
+        comisiones: vehiculo.comisiones || 0,
+        inversionTotal: vehiculo.inversionTotal || 0,
+        costoRecuperado: vehiculo.costoRecuperado || 0,
+        costoPendiente: vehiculo.costoPendiente || 0,
+        fechaIngreso: vehiculo.fechaIngreso,
         estado: vehiculo.estado,
-        descripcion: vehiculo.descripcion,
-        color: vehiculo.color,
-        kilometraje: vehiculo.kilometraje,
-        placa: vehiculo.placa,
-        vin: vehiculo.vin,
+        precioVenta: vehiculo.precioVenta,
+        fechaVenta: vehiculo.fechaVenta,
+        activo: vehiculo.activo !== false,
+        notas: vehiculo.notas,
+        // Mantener campos adicionales para compatibilidad
+        modelo: vehiculo.modeloNombre,
         marcaId: vehiculo.marcaId,
         marcaNombre: vehiculo.marcaNombre,
-        generacionId: vehiculo.generacionId,
         generacionNombre: vehiculo.generacionNombre
       };
     } catch (error) {
