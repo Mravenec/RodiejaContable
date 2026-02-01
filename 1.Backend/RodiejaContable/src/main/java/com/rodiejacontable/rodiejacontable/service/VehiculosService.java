@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.cache.annotation.Cacheable;
-import org.jooq.DSLContext;
-import static com.rodiejacontable.database.jooq.Tables.VEHICULOS;
 
 @Service
 public class VehiculosService {
@@ -28,9 +26,6 @@ public class VehiculosService {
     
     @Autowired
     private GeneracionesRepository generacionesRepository;
-    
-    @Autowired
-    private DSLContext dsl;
     
     public List<Vehiculos> findAll() {
         return vehiculosRepository.findAll();
@@ -99,14 +94,16 @@ public class VehiculosService {
     
     @Transactional
     public Vehiculos update(Integer id, Vehiculos vehiculo) {
-        // Usar DSL directo para actualizar solo las notas
-        dsl.update(VEHICULOS)
-           .set(VEHICULOS.NOTAS, vehiculo.getNotas())
-           .where(VEHICULOS.ID.eq(id))
-           .execute();
-           
-        // Retornar el vehículo actualizado
-        return findById(id);
+        // Verificar que el vehículo existe
+        Vehiculos existingVehiculo = findById(id);
+        
+        // Actualizar solo las notas por ahora (como funcionaba antes)
+        if (vehiculo.getNotas() != null) {
+            existingVehiculo.setNotas(vehiculo.getNotas());
+        }
+        
+        // Usar el Repository con la lógica correcta
+        return vehiculosRepository.update(existingVehiculo);
     }
     
     @Transactional

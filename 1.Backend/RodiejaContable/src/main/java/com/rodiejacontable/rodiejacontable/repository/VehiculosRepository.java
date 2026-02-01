@@ -109,12 +109,14 @@ public class VehiculosRepository {
     }
     
     public Vehiculos update(Vehiculos vehiculo) {
-        return dsl.update(VEHICULOS)
-                 .set(VEHICULOS.NOTAS, vehiculo.getNotas())
-                 .where(VEHICULOS.ID.eq(vehiculo.getId()))
-                 .returning()
-                 .fetchOne()
-                 .into(Vehiculos.class);
+        // Usar DSL directo como lo hacía el Service (que funcionaba)
+        dsl.update(VEHICULOS)
+           .set(VEHICULOS.NOTAS, vehiculo.getNotas())
+           .where(VEHICULOS.ID.eq(vehiculo.getId()))
+           .execute();
+           
+        // Retornar el vehículo actualizado
+        return findById(vehiculo.getId()).orElse(null);
     }
     
     public boolean delete(Integer id) {
