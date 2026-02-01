@@ -897,7 +897,7 @@ const VehiculosJerarquicos = () => {
                           <CarOutlined style={{ fontSize: 16, color: '#bfbfbf' }} />
                         </div>
                       }
-                      preview={false}
+                      preview={true}
                     />
                   ) : (
                     <div style={{ 
