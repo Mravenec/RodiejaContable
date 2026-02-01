@@ -14,7 +14,8 @@ import {
   Space,
   message,
   Input,
-  Tabs
+  Tabs,
+  Image
 } from 'antd';
 import {
   CarOutlined,
@@ -266,6 +267,7 @@ const normalizarEOrdenar = (
     const fechaVenta = v.fecha_venta ?? v.fechaVenta;
     const fechaCreacion = v.fecha_creacion ?? v.fechaCreacion;
     const fechaActualizacion = v.fecha_actualizacion ?? v.fechaActualizacion;
+    const imagenUrl = v.imagen_url ?? v.imagenUrl;
 
     return {
       id: v.id,
@@ -285,7 +287,8 @@ const normalizarEOrdenar = (
       activo: toNum(v.activo, 0),
       notas: isNullish(v.notas) ? null : String(v.notas),
       fecha_creacion: fechaCreacion,
-      fecha_actualizacion: fechaActualizacion
+      fecha_actualizacion: fechaActualizacion,
+      imagen_url: imagenUrl
     };
   };
 
@@ -866,6 +869,51 @@ const VehiculosJerarquicos = () => {
               <Row gutter={[8, 8]} align="middle" wrap={false}>
                 <Col flex="none">
                   <CarOutlined style={{ fontSize: '16px' }} />
+                </Col>
+                {/* Imagen miniatura del vehículo */}
+                <Col flex="none" style={{ marginRight: '8px' }}>
+                  {vehiculo.imagen_url ? (
+                    <Image
+                      width={40}
+                      height={40}
+                      src={vehiculo.imagen_url}
+                      alt={`Vehículo ${vehiculo.codigo_vehiculo}`}
+                      style={{ 
+                        objectFit: 'cover',
+                        borderRadius: 4,
+                        border: '1px solid #d9d9d9'
+                      }}
+                      placeholder={
+                        <div style={{ 
+                          width: 40, 
+                          height: 40, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          backgroundColor: '#f5f5f5',
+                          borderRadius: 4,
+                          border: '1px solid #d9d9d9'
+                        }}>
+                          <CarOutlined style={{ fontSize: 16, color: '#bfbfbf' }} />
+                        </div>
+                      }
+                      preview={false}
+                    />
+                  ) : (
+                    <div style={{ 
+                      width: 40, 
+                      height: 40, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      backgroundColor: '#f5f5f5',
+                      borderRadius: 4,
+                      border: '1px solid #d9d9d9',
+                      color: '#bfbfbf'
+                    }}>
+                      <CarOutlined style={{ fontSize: 16 }} />
+                    </div>
+                  )}
                 </Col>
                 <Col flex="auto" style={{ minWidth: 0 }}>
                   <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
