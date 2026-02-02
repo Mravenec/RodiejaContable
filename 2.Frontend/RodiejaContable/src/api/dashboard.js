@@ -1,4 +1,5 @@
 import api from './axios';
+import vehiculoService from './vehiculos'; // Importar el mismo servicio que VehiculoDetalle.js
 
 class DashboardService {
   // Obtener estadísticas generales del dashboard
@@ -25,18 +26,144 @@ class DashboardService {
 
   // Obtener vehículos más vendidos
   async getVehiculosMasVendidos() {
+    console.log('=== INICIANDO getVehiculosMasVendidos ===');
     try {
-      // If the endpoint doesn't exist, return an empty array for now
-      console.log('Endpoint /vehiculos/mas-vendidos no implementado, devolviendo array vacío');
-      return [];
+      // USAR EXACTAMENTE LA MISMA LÓGICA QUE VehiculoDetalle.js
+      console.log('Usando vehiculoService.getVehiculos() como en VehiculoDetalle.js');
+      const vehiculosResponse = await vehiculoService.getVehiculos();
+      console.log('Vehículos response completo:', vehiculosResponse);
       
-      // Uncomment and use this when the endpoint is implemented on the backend
-      /*
-      const response = await api.get('/vehiculos/mas-vendidos', {
-        params: { limit: 5 }
+      // Mostrar estructura específica del primer vehículo
+      if (vehiculosResponse.length > 0) {
+        console.log('Primer vehículo estructura:', {
+          id: vehiculosResponse[0].id,
+          codigo_vehiculo: vehiculosResponse[0].codigo_vehiculo,
+          modelo: vehiculosResponse[0].modelo,
+          anio: vehiculosResponse[0].anio,
+          generacion: vehiculosResponse[0].generacion,
+          estado: vehiculosResponse[0].estado,
+          todos_los_campos: Object.keys(vehiculosResponse[0])
+        });
+      }
+      
+      const vendidos = vehiculosResponse.filter(v => v.estado === 'VENDIDO' || v.estado === 'DISPONIBLE');
+      console.log('Vehículos filtrados (VENDIDOS + DISPONIBLES):', vendidos);
+      
+      // Priorizar vehículos vendidos, pero si no hay, mostrar disponibles
+      const prioritizedVendidos = vehiculosResponse.filter(v => v.estado === 'VENDIDO');
+      const disponibles = vehiculosResponse.filter(v => v.estado === 'DISPONIBLE');
+      
+      const vehiclesToShow = prioritizedVendidos.length > 0 ? prioritizedVendidos : disponibles;
+      console.log('Vehículos a mostrar:', vehiclesToShow);
+      
+      // Enriquecer datos con relaciones completas EXACTAMENTE como en VehiculoDetalle.js
+      const enrichedVehicles = await Promise.all(
+        vehiclesToShow.slice(0, 5).map(async (v) => {
+          console.log(`Procesando vehículo ${v.id}:`, {
+            tiene_generacion: !!v.generacion,
+            generacion_id: v.generacion?.id,
+            modelo_id: v.generacion?.modeloId,
+            generacion_completa: v.generacion
+          });
+          
+          let vehiculoConGeneracion = v;
+          
+          // Si generacion está presente pero le falta nested modelo/marca, fetch them
+          // EXACTAMENTE COMO EN VehiculoDetalle.js LÍNEAS 185-224
+          if (v.generacion && !v.generacion.modelo) {
+            console.log(`Vehículo ${v.id}: Tiene generacion pero缺少 modelo, fetching...`);
+            try {
+              const generacion = v.generacion;
+              
+              // Fetch modelo
+              console.log(`Fetching modelo ${generacion.modeloId}`);
+              const modeloResponse = await api.get(`/modelos/${generacion.modeloId}`);
+              const modelo = modeloResponse.data || { id: generacion.modeloId };
+              console.log(`Modelo obtenido:`, modelo);
+              
+              // Fetch marca
+              console.log(`Fetching marca ${modelo.marcaId}`);
+              const marcaResponse = await api.get(`/marcas/${modelo.marcaId}`);
+              const marca = marcaResponse.data || { id: modelo.marcaId, nombre: 'Marca no disponible' };
+              console.log(`Marca obtenida:`, marca);
+              
+              // Attach nested structure
+              vehiculoConGeneracion = {
+                ...v,
+                generacion: {
+                  ...generacion,
+                  modelo: {
+                    ...modelo,
+                    marca: marca
+                  }
+                }
+              };
+              
+              console.log(`Vehículo ${v.id} enriquecido:`, vehiculoConGeneracion);
+            } catch (nestedError) {
+              console.error('Error fetching nested data (modelo/marca):', nestedError);
+              // Fallback: attach empty objects to avoid crashes
+              vehiculoConGeneracion = {
+                ...v,
+                generacion: {
+                  ...v.generacion,
+                  modelo: {
+                    nombre: 'Modelo no disponible',
+                    marca: { nombre: 'Marca no disponible' }
+                  }
+                }
+              };
+            }
+          } else {
+            console.log(`Vehículo ${v.id}: No necesita enriquecimiento o no tiene generacion`);
+          }
+          
+          return vehiculoConGeneracion;
+        })
+      );
+      
+      const result = enrichedVehicles.map(v => {
+        // Extraer nombres de las relaciones anidadas - estructura correcta
+        const generacion = v.generacion || {};
+        const modelo = generacion.modelo || {};
+        const marca = modelo.marca || {};
+        
+        // Debugging específico para este vehículo
+        console.log(`Vehículo ${v.id} - Campos disponibles:`, {
+          codigo_vehiculo: v.codigo_vehiculo,
+          generacion: !!v.generacion,
+          modelo_nombre: generacion.modelo?.nombre,
+          marca_nombre: generacion.modelo?.marca?.nombre,
+          anio: v.anio,
+          todos_los_campos: Object.keys(v)
+        });
+        
+        // Construir nombre real como en el DOM: "Honda Civic 2018"
+        const nombreReal = v.codigo_vehiculo || 
+          `${marca.nombre || ''} ${modelo.nombre || ''} ${v.anio || ''}`.trim() ||
+          `${v.id} ${modelo.nombre || 'Modelo'} ${v.anio || ''}`.trim() ||
+          `Vehículo ${v.id}`;
+        
+        console.log(`Nombre construido para vehículo ${v.id}:`, nombreReal);
+        
+        return {
+          id: v.id,
+          nombre: nombreReal,
+          codigo_vehiculo: v.codigo_vehiculo,
+          marca: marca.nombre,
+          modelo: modelo.nombre,
+          anio: v.anio,
+          precio_compra: v.precio_compra,
+          precio_venta: v.precio_venta,
+          fecha_venta: v.fecha_venta,
+          estado: v.estado,
+          // Guardar todos los campos para debugging
+          _raw: v
+        };
       });
-      return response.data;
-      */
+      
+      console.log('Vehículos más vendidos mapeados:', result);
+      return result;
     } catch (error) {
       console.error('Error al obtener vehículos más vendidos:', error);
       return [];
@@ -46,17 +173,47 @@ class DashboardService {
   // Obtener repuestos más vendidos
   async getRepuestosMasVendidos() {
     try {
-      // If the endpoint doesn't exist, return an empty array for now
-      console.log('Endpoint /inventario/mas-vendidos no implementado, devolviendo array vacío');
-      return [];
+      // Intentar obtener datos reales filtrando repuestos vendidos
+      const response = await api.get('/inventario-repuestos');
+      console.log('Inventario repuestos response:', response.data);
       
-      // Uncomment and use this when the endpoint is implemented on the backend
-      /*
-      const response = await api.get('/inventario/mas-vendidos', {
-        params: { limit: 5 }
-      });
-      return response.data;
-      */
+      // Mostrar estructura del primer repuesto
+      if (response.data.length > 0) {
+        console.log('Primer repuesto estructura:', {
+          id: response.data[0].id,
+          descripcion: response.data[0].descripcion,
+          parte_vehiculo: response.data[0].parte_vehiculo,
+          codigo_repuesto: response.data[0].codigo_repuesto,
+          estado: response.data[0].estado,
+          todos_los_campos: Object.keys(response.data[0])
+        });
+      }
+      
+      const vendidos = response.data.filter(r => r.estado === 'VENDIDO');
+      const disponibles = response.data.filter(r => r.estado === 'STOCK');
+      
+      // Priorizar vendidos, pero si no hay, mostrar disponibles
+      const partsToShow = vendidos.length > 0 ? vendidos : disponibles;
+      console.log('Repuestos vendidos:', vendidos);
+      console.log('Repuestos disponibles:', disponibles);
+      console.log('Repuestos a mostrar:', partsToShow);
+      
+      const result = partsToShow.slice(0, 5).map(r => ({
+        id: r.id,
+        nombre: r.descripcion || r.parte_vehiculo || `Repuesto ${r.id}`,
+        descripcion: r.descripcion,
+        parte_vehiculo: r.parte_vehiculo,
+        codigo_repuesto: r.codigo_repuesto,
+        codigo_ubicacion: r.codigo_ubicacion,
+        precio_costo: r.precio_costo,
+        precio_venta: r.precio_venta,
+        estado: r.estado,
+        // Guardar todos los campos para debugging
+        _raw: r
+      }));
+      
+      console.log('Repuestos más vendidos mapeados:', result);
+      return result;
     } catch (error) {
       console.error('Error al obtener repuestos más vendidos:', error);
       return [];
@@ -88,7 +245,14 @@ class DashboardService {
   // Obtener alertas de inventario
   async getAlertasInventario() {
     try {
-      const response = await api.get('/inventario/critico');
+      // Corregir endpoint - probablemente es /inventario/criticos o /inventario-repuestos/critico
+      let response;
+      try {
+        response = await api.get('/inventario-repuestos/critico');
+      } catch {
+        // Intentar endpoint alternativo
+        response = await api.get('/inventario/criticos');
+      }
       return response.data;
     } catch (error) {
       console.error('Error al obtener alertas de inventario:', error);
@@ -97,5 +261,7 @@ class DashboardService {
   }
 }
 
+const dashboardService = new DashboardService();
+
 // Export a singleton instance
-export default new DashboardService();
+export default dashboardService;

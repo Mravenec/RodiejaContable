@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Row, Col, Card, Statistic, Typography, Divider, message, Table } from 'antd';
+import { Row, Col, Card, Statistic, Typography, Divider, message } from 'antd';
 import { 
   CarOutlined, 
   DollarOutlined, 
-  ShoppingCartOutlined, 
   UserOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
   BarChartOutlined,
-  ToolOutlined,
-  FileTextOutlined,
-  WalletOutlined
+  ToolOutlined
 } from '@ant-design/icons';
 import { Loading } from '../components/Loading';
 import { dashboardService } from '../api';
+import vehiculoService from '../api/vehiculos';
 import { formatCurrency } from '../utils/formatters';
 
 const { Title, Text } = Typography;
@@ -33,7 +31,9 @@ const Dashboard = () => {
     ventasMensuales: [],
     vehiculosMasVendidos: [],
     repuestosMasVendidos: [],
-    comisiones: []
+    comisiones: [],
+    vehiculosActivos: [],
+    repuestosCriticos: []
   });
   
   // Fetch dashboard data
@@ -50,20 +50,26 @@ const Dashboard = () => {
           ventasMensuales, 
           vehiculosMasVendidos, 
           repuestosMasVendidos,
-          comisiones
+          comisiones,
+          vehiculosActivos,
+          repuestosCriticos
         ] = await Promise.all([
           dashboardService.getVentasMensuales(),
           dashboardService.getVehiculosMasVendidos(),
           dashboardService.getRepuestosMasVendidos(),
-          dashboardService.getComisionesVendedores()
+          dashboardService.getComisionesVendedores(),
+          vehiculoService.getVehiculosActivos(),
+          dashboardService.getAlertasInventario()
         ]);
 
         setDashboardData({
           ...stats,
-          ventasMensuales: ventasMensuales.data || [],
-          vehiculosMasVendidos: vehiculosMasVendidos.data || [],
-          repuestosMasVendidos: repuestosMasVendidos.data || [],
-          comisiones: comisiones.data || []
+          ventasMensuales: Array.isArray(ventasMensuales) ? ventasMensuales : [],
+          vehiculosMasVendidos: Array.isArray(vehiculosMasVendidos) ? vehiculosMasVendidos : [],
+          repuestosMasVendidos: Array.isArray(repuestosMasVendidos) ? repuestosMasVendidos : [],
+          comisiones: Array.isArray(comisiones) ? comisiones : [],
+          vehiculosActivos: Array.isArray(vehiculosActivos) ? vehiculosActivos : [],
+          repuestosCriticos: Array.isArray(repuestosCriticos) ? repuestosCriticos : []
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -82,25 +88,41 @@ const Dashboard = () => {
     totalVehiculos, 
     totalRepuestos, 
     totalVentas: ingresosTotales, 
-    totalClientes,
     totalEgresos: egresosTotales,
-    margenBeneficio,
-    roiPromedio,
     ventasMensuales,
     vehiculosMasVendidos,
     repuestosMasVendidos,
-    comisiones
+    comisiones,
+    vehiculosActivos,
+    repuestosCriticos
   } = dashboardData;
   
   // Calcular valores derivados
   const balance = ingresosTotales - egresosTotales;
-  const vehiculosEnVenta = Math.floor(totalVehiculos * 0.8); // Ejemplo: 80% de vehículos en venta
-  const repuestosBajoStock = Math.floor(totalRepuestos * 0.2); // Ejemplo: 20% de repuestos con stock bajo
+  const vehiculosEnVenta = vehiculosActivos?.filter(v => v.estado === 'DISPONIBLE').length || 0;
+  const repuestosBajoStock = repuestosCriticos?.length || 0;
+  
+  // Calcular estadísticas de ventas reales
+  const mesActual = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const ventasMesActual = ventasMensuales.find(v => {
+    const mesStr = v.mes ? String(v.mes) : '';
+    return mesStr.startsWith(mesActual);
+  });
+  const mesAnterior = ventasMensuales.find(v => {
+    const fecha = new Date();
+    fecha.setMonth(fecha.getMonth() - 1);
+    const mesAnteriorStr = fecha.toISOString().slice(0, 7);
+    const mesStr = v.mes ? String(v.mes) : '';
+    return mesStr.startsWith(mesAnteriorStr);
+  });
+  
   const estadisticasVentas = {
-    total: ingresosTotales,
-    promedioMensual: Math.round(ingresosTotales / 12),
-    crecimiento: 12.5, // Porcentaje de crecimiento
-    meses: ventasMensuales
+    ingresos_mes_actual: ventasMesActual?.ingresos || 0,
+    egresos_mes_actual: ventasMesActual?.egresos || 0,
+    ventas_mes_actual: ventasMesActual?.ventas_mes_actual || 0,
+    vehiculos_vendidos_mes: ventasMesActual?.vehiculos_vendidos_mes || 0,
+    variacion_ventas: mesAnterior ? 
+      ((ventasMesActual?.ingresos || 0) - (mesAnterior?.ingresos || 0)) / (mesAnterior?.ingresos || 1) * 100 : 0
   };
 
 
@@ -218,20 +240,26 @@ const Dashboard = () => {
                     prefix={<CarOutlined style={{ color: '#1890ff' }} />}
                   />
                   <div style={{ marginTop: 8, textAlign: 'left', paddingLeft: 8 }}>
-                    {vehiculosMasVendidos.slice(0, 3).map((item, index) => (
-                      <div key={index} style={{ marginBottom: 4 }}>
-                        <Text 
-                          ellipsis={{ tooltip: `${item.nombre} (${item.cantidad})` }}
-                          style={{ 
-                            maxWidth: '100%', 
-                            display: 'inline-block',
-                            fontSize: { xs: '12px', sm: '14px' }
-                          }}
-                        >
-                          {item.nombre} ({item.cantidad})
-                        </Text>
-                      </div>
-                    ))}
+                    {vehiculosMasVendidos.length > 0 ? (
+                      vehiculosMasVendidos.slice(0, 3).map((item, index) => (
+                        <div key={index} style={{ marginBottom: 4 }}>
+                          <Text 
+                            ellipsis={{ tooltip: `${item.nombre || item.codigo_vehiculo || 'Sin nombre'} (${item.cantidad || 1})` }}
+                            style={{ 
+                              maxWidth: '100%', 
+                              display: 'inline-block',
+                              fontSize: { xs: '12px', sm: '14px' }
+                            }}
+                          >
+                            {item.nombre || item.codigo_vehiculo || 'Sin nombre'} ({item.cantidad || 1})
+                          </Text>
+                        </div>
+                      ))
+                    ) : (
+                      <Text type="secondary" style={{ fontSize: { xs: '12px', sm: '14px' } }}>
+                        No hay vehículos vendidos
+                      </Text>
+                    )}
                   </div>
                 </Col>
                 <Col xs={24} sm={12}>
@@ -242,20 +270,26 @@ const Dashboard = () => {
                     prefix={<ToolOutlined style={{ color: '#722ed1' }} />}
                   />
                   <div style={{ marginTop: 8, textAlign: 'left', paddingLeft: 8 }}>
-                    {repuestosMasVendidos.slice(0, 3).map((item, index) => (
-                      <div key={index} style={{ marginBottom: 4 }}>
-                        <Text 
-                          ellipsis={{ tooltip: `${item.nombre} (${item.cantidad})` }}
-                          style={{ 
-                            maxWidth: '100%', 
-                            display: 'inline-block',
-                            fontSize: { xs: '12px', sm: '14px' }
-                          }}
-                        >
-                          {item.nombre} ({item.cantidad})
-                        </Text>
-                      </div>
-                    ))}
+                    {repuestosMasVendidos.length > 0 ? (
+                      repuestosMasVendidos.slice(0, 3).map((item, index) => (
+                        <div key={index} style={{ marginBottom: 4 }}>
+                          <Text 
+                            ellipsis={{ tooltip: `${item.nombre || item.descripcion || item.parte_vehiculo || 'Sin descripción'} (${item.cantidad || 1})` }}
+                            style={{ 
+                              maxWidth: '100%', 
+                              display: 'inline-block',
+                              fontSize: { xs: '12px', sm: '14px' }
+                            }}
+                          >
+                            {item.nombre || item.descripcion || item.parte_vehiculo || 'Sin descripción'} ({item.cantidad || 1})
+                          </Text>
+                        </div>
+                      ))
+                    ) : (
+                      <Text type="secondary" style={{ fontSize: { xs: '12px', sm: '14px' } }}>
+                        No hay repuestos vendidos
+                      </Text>
+                    )}
                   </div>
                 </Col>
               </Row>
