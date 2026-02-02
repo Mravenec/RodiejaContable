@@ -13,11 +13,13 @@ import {
 import { Loading } from '../components/Loading';
 import { dashboardService } from '../api';
 import vehiculoService from '../api/vehiculos';
+import ventasEmpleadosService from '../api/ventasEmpleados'; // Importar como en VentasReportes.js
 import { formatCurrency } from '../utils/formatters';
 
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
+  console.log('=== DASHBOARD COMPONENT MONTADO ===');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
@@ -40,12 +42,16 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        console.log('=== INICIANDO fetchDashboardData ===');
         setLoading(true);
         
         // Fetch dashboard stats
+        console.log('Fetching dashboard stats...');
         const stats = await dashboardService.getDashboardStats();
+        console.log('Dashboard stats obtenidos:', stats);
         
         // Fetch additional data in parallel
+        console.log('Fetching datos adicionales en paralelo...');
         const [
           ventasMensuales, 
           vehiculosMasVendidos, 
@@ -57,10 +63,28 @@ const Dashboard = () => {
           dashboardService.getVentasMensuales(),
           dashboardService.getVehiculosMasVendidos(),
           dashboardService.getRepuestosMasVendidos(),
-          dashboardService.getComisionesVendedores(),
+          ventasEmpleadosService.getVentasPorEmpleado(), // Usar mismo servicio que VentasReportes.js
           vehiculoService.getVehiculosActivos(),
           dashboardService.getAlertasInventario()
         ]);
+        
+        console.log('Datos adicionales obtenidos:', {
+          ventasMensuales: ventasMensuales?.length || 0,
+          vehiculosMasVendidos: vehiculosMasVendidos?.length || 0,
+          repuestosMasVendidos: repuestosMasVendidos?.length || 0,
+          comisiones: comisiones?.length || 0,
+          vehiculosActivos: vehiculosActivos?.length || 0,
+          repuestosCriticos: repuestosCriticos?.length || 0
+        });
+
+        // Logging detallado de comisiones
+        if (comisiones && comisiones.length > 0) {
+          console.log('=== ESTRUCTURA DE COMISIONES ===');
+          console.log('Primera comisión:', comisiones[0]);
+          console.log('Campos disponibles:', Object.keys(comisiones[0]));
+        } else {
+          console.log('=== NO HAY DATOS DE COMISIONES ===');
+        }
 
         setDashboardData({
           ...stats,
@@ -72,8 +96,8 @@ const Dashboard = () => {
           repuestosCriticos: Array.isArray(repuestosCriticos) ? repuestosCriticos : []
         });
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        message.error('Error al cargar los datos del dashboard');
+        console.error('=== ERROR EN fetchDashboardData ===', error);
+        message.error('Error al cargar datos del dashboard');
       } finally {
         setLoading(false);
       }
@@ -315,22 +339,22 @@ const Dashboard = () => {
                       <Col xs={24} sm={10}>
                         <UserOutlined style={{ marginRight: 8 }} />
                         <Text strong style={{ fontSize: { xs: '13px', sm: '14px' } }}>
-                          {comision.nombre_empleado}
+                          {comision.empleado || comision.nombreEmpleado || comision.nombre_empleado || 'Empleado'}
                         </Text>
                       </Col>
                       <Col xs={12} sm={6}>
                         <Text strong style={{ fontSize: { xs: '12px', sm: '14px' } }}>
-                          {comision.total_transacciones} {window.innerWidth < 576 ? 'trans.' : 'transacciones'}
+                          {comision.totalTransacciones || comision.total_transacciones || 0} {window.innerWidth < 576 ? 'trans.' : 'transacciones'}
                         </Text>
                       </Col>
                       <Col xs={12} sm={8} style={{ textAlign: { xs: 'right', sm: 'left' } }}>
                         <Text type="success" style={{ fontSize: { xs: '13px', sm: '14px' } }}>
-                          {formatCurrency(comision.total_comision)}
+                          {formatCurrency(comision.totalComisiones || comision.total_comision || 0)}
                         </Text>
                       </Col>
                       <Col xs={24}>
                         <Text type="secondary" style={{ fontSize: { xs: '12px', sm: '13px' } }}>
-                          Ventas: {formatCurrency(comision.total_ventas)}
+                          Ventas: {formatCurrency(comision.totalVentas || comision.total_ventas || 0)}
                         </Text>
                       </Col>
                     </Row>

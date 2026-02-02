@@ -233,8 +233,20 @@ class DashboardService {
 
   // Obtener comisiones de vendedores
   async getComisionesVendedores() {
+    console.log('=== INICIANDO getComisionesVendedores ===');
     try {
+      console.log('Fetching comisiones from: /v1/ventas-empleados');
       const response = await api.get('/v1/ventas-empleados');
+      console.log('Comisiones response crudo:', response.data);
+      
+      // Mostrar estructura del primer elemento si hay datos
+      if (response.data && response.data.length > 0) {
+        console.log('Primera comisión estructura:', {
+          todos_los_campos: Object.keys(response.data[0]),
+          datos_completos: response.data[0]
+        });
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error al obtener comisiones por vendedor:', error);
@@ -244,16 +256,47 @@ class DashboardService {
 
   // Obtener alertas de inventario
   async getAlertasInventario() {
+    console.log('=== INICIANDO getAlertasInventario ===');
     try {
-      // Corregir endpoint - probablemente es /inventario/criticos o /inventario-repuestos/critico
+      // Intentar diferentes endpoints para inventario crítico
       let response;
-      try {
-        response = await api.get('/inventario-repuestos/critico');
-      } catch {
-        // Intentar endpoint alternativo
-        response = await api.get('/inventario/criticos');
+      const endpoints = [
+        '/inventario-repuestos',
+        '/inventario/critico',
+        '/inventario/alertas',
+        '/alertas/inventario'
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Intentando endpoint: ${endpoint}`);
+          response = await api.get(endpoint);
+          console.log(`Endpoint ${endpoint} funcionó:`, response.data);
+          break;
+        } catch (err) {
+          console.log(`Endpoint ${endpoint} falló:`, err.message);
+          continue;
+        }
       }
-      return response.data;
+      
+      // Si ningún endpoint funciona, devolver array vacío
+      if (!response) {
+        console.log('Ningún endpoint de inventario crítico funcionó, devolviendo array vacío');
+        return [];
+      }
+      
+      // Filtrar solo items críticos
+      const criticos = Array.isArray(response.data) 
+        ? response.data.filter(item => 
+            item.estado === 'CRITICO' || 
+            item.estado === 'AGOTADO' || 
+            item.cantidad <= 5 ||
+            item.stock_bajo
+          )
+        : [];
+      
+      console.log('Items críticos encontrados:', criticos);
+      return criticos;
     } catch (error) {
       console.error('Error al obtener alertas de inventario:', error);
       return [];

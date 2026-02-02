@@ -1978,7 +1978,7 @@ INSERT INTO transacciones_financieras (
 ) VALUES (
     CURRENT_DATE(), 2,     -- Venta Repuesto
     3, 2, 1,               -- AMAURIS vende repuesto id = 2, generación = Corolla
-    110000.00, 0.00,
+    110000.00, 3300,
     'Venta Bomba de Agua Corolla gen12',
     'VENTA-REP-BA-COR-001'
 );
