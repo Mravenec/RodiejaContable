@@ -16,6 +16,9 @@ import vehiculoService from '../api/vehiculos';
 import ventasEmpleadosService from '../api/ventasEmpleados'; // Importar como en VentasReportes.js
 import { formatCurrency } from '../utils/formatters';
 
+console.log('=== DASHBOARD.JS IMPORTADO ===');
+console.log('Versión Dashboard.js:', '1.0.0');
+
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
@@ -40,6 +43,7 @@ const Dashboard = () => {
   
   // Fetch dashboard data
   useEffect(() => {
+    console.log('=== useEffect INICIADO ===');
     const fetchDashboardData = async () => {
       try {
         console.log('=== INICIANDO fetchDashboardData ===');
@@ -82,23 +86,41 @@ const Dashboard = () => {
           console.log('=== ESTRUCTURA DE COMISIONES ===');
           console.log('Primera comisión:', comisiones[0]);
           console.log('Campos disponibles:', Object.keys(comisiones[0]));
+          
+          // Filtrar solo empleados con ventas reales (transacciones > 0)
+          const comisionesConVentas = comisiones.filter(c => 
+            (c.totalTransacciones || c.total_transacciones || 0) > 0
+          );
+          console.log('Comisiones con ventas reales:', comisionesConVentas.length);
+          
+          // Actualizar el estado con los datos filtrados
+          setDashboardData({
+            ...stats,
+            ventasMensuales: Array.isArray(ventasMensuales) ? ventasMensuales : [],
+            vehiculosMasVendidos: Array.isArray(vehiculosMasVendidos) ? vehiculosMasVendidos : [],
+            repuestosMasVendidos: Array.isArray(repuestosMasVendidos) ? repuestosMasVendidos : [],
+            comisiones: Array.isArray(comisionesConVentas) ? comisionesConVentas : [], // Usar datos filtrados
+            vehiculosActivos: Array.isArray(vehiculosActivos) ? vehiculosActivos : [],
+            repuestosCriticos: Array.isArray(repuestosCriticos) ? repuestosCriticos : []
+          });
         } else {
           console.log('=== NO HAY DATOS DE COMISIONES ===');
+          setDashboardData({
+            ...stats,
+            ventasMensuales: Array.isArray(ventasMensuales) ? ventasMensuales : [],
+            vehiculosMasVendidos: Array.isArray(vehiculosMasVendidos) ? vehiculosMasVendidos : [],
+            repuestosMasVendidos: Array.isArray(repuestosMasVendidos) ? repuestosMasVendidos : [],
+            comisiones: Array.isArray(comisiones) ? comisiones : [],
+            vehiculosActivos: Array.isArray(vehiculosActivos) ? vehiculosActivos : [],
+            repuestosCriticos: Array.isArray(repuestosCriticos) ? repuestosCriticos : []
+          });
         }
-
-        setDashboardData({
-          ...stats,
-          ventasMensuales: Array.isArray(ventasMensuales) ? ventasMensuales : [],
-          vehiculosMasVendidos: Array.isArray(vehiculosMasVendidos) ? vehiculosMasVendidos : [],
-          repuestosMasVendidos: Array.isArray(repuestosMasVendidos) ? repuestosMasVendidos : [],
-          comisiones: Array.isArray(comisiones) ? comisiones : [],
-          vehiculosActivos: Array.isArray(vehiculosActivos) ? vehiculosActivos : [],
-          repuestosCriticos: Array.isArray(repuestosCriticos) ? repuestosCriticos : []
-        });
       } catch (error) {
         console.error('=== ERROR EN fetchDashboardData ===', error);
+        console.error('Error completo:', error);
         message.error('Error al cargar datos del dashboard');
       } finally {
+        console.log('=== fetchDashboardData FINALIZADO ===');
         setLoading(false);
       }
     };
