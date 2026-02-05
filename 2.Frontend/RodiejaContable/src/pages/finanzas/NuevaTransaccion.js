@@ -54,7 +54,24 @@ const NuevaTransaccion = () => {
     },
     onError: (error) => {
       console.error('Error al crear transacción:', error);
-      message.error(error.message || 'Error al guardar la transacción');
+      
+      // Mostrar error más detallado
+      let errorMessage = 'Error al guardar la transacción';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Si es un error de clave foránea, dar una pista más útil
+      if (errorMessage.includes('LLAVE EXTRanjera') || errorMessage.includes('foreign key')) {
+        errorMessage = 'El tipo de transacción seleccionado no es válido. Por favor, recargue la página e intente nuevamente.';
+      }
+      
+      message.error(errorMessage);
     }
   });
 
@@ -73,6 +90,15 @@ const NuevaTransaccion = () => {
     }
   }, [monto, tipoTransaccion, calcularComision]);
 
+  // Efecto para establecer el primer tipo de transacción disponible cuando se cargan los datos
+  useEffect(() => {
+    if (tipoTransaccion === 'INGRESO' && tiposIngreso && tiposIngreso.length > 0) {
+      form.setFieldsValue({ tipo: tiposIngreso[0].id });
+    } else if (tipoTransaccion === 'EGRESO' && tiposEgreso && tiposEgreso.length > 0) {
+      form.setFieldsValue({ tipo: tiposEgreso[0].id });
+    }
+  }, [tiposIngreso, tiposEgreso, tipoTransaccion, form]);
+
   const onFinish = async (values) => {
     try {
       const esEgreso = tipoTransaccion === 'EGRESO';
@@ -80,6 +106,12 @@ const NuevaTransaccion = () => {
       
       if (montoValor <= 0) {
         message.error('El monto debe ser mayor a 0');
+        return;
+      }
+      
+      // Validar que se haya seleccionado un tipo de transacción
+      if (!values.tipo) {
+        message.error('Debe seleccionar un tipo de transacción');
         return;
       }
       
@@ -118,6 +150,16 @@ const NuevaTransaccion = () => {
           comisionEmpleado: parseFloat(comision) || 0
         });
       }
+      
+      console.log('🚀 [FRONTEND] Enviando transacción:', payload);
+      console.log('📋 [FRONTEND] Detalles del payload:', {
+        tipoTransaccionId: payload.tipoTransaccionId,
+        monto: payload.monto,
+        esEgreso: esEgreso,
+        vehiculoId: payload.vehiculoId,
+        repuestoId: payload.repuestoId,
+        empleadoId: payload.empleadoId
+      });
       
       crearTransaccion(payload);
     } catch (error) {
@@ -248,34 +290,14 @@ const NuevaTransaccion = () => {
                       }
                     }]}
                   >
-                    <InputNumber 
-                      style={{ width: '100%' }} 
-                      min={0.01}
-                      step={0.01} 
-                      precision={2}
+                    <InputNumber
+                      style={{ width: '100%' }}
                       formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                       parser={value => value.replace(/₡\s?|(,*)/g, '')}
-                      onChange={handleMontoChange}
-                    />
-                  </Form.Item>
-                  
-                  <Form.Item
-                    name="comision"
-                    label={
-                      <span>
-                        Comisión <Text type="secondary">(5% para ingresos)</Text>
-                      </span>
-                    }
-                  >
-                    <InputNumber 
-                      style={{ width: '100%' }} 
-                      min={0} 
-                      step={0.01} 
-                      precision={2}
-                      formatter={value => `₡ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/₡\s?|(,*)/g, '')}
-                      value={comision}
-                      disabled
+                      placeholder="0.00"
+                      min={0}
+                      step={0.01}
+                      onChange={(value) => setMonto(value)}
                     />
                   </Form.Item>
                 </Col>
@@ -442,7 +464,6 @@ const NuevaTransaccion = () => {
               onFinish={onFinish}
               initialValues={{
                 fecha: moment(),
-                tipo: 5,
                 monto: 0
               }}
             >
