@@ -53,7 +53,8 @@ const NuevaTransaccion = () => {
   const { mutate: crearTransaccion, isLoading: isCreating } = useCreateTransaccion({
     onSuccess: () => {
       message.success('Transacción registrada correctamente');
-      navigate('/finanzas');
+      // Usar goBack para volver a la página anterior
+      navigate(-1);
     },
     onError: (error) => {
       console.error('Error al crear transacción:', error);
@@ -199,6 +200,9 @@ const NuevaTransaccion = () => {
     if (tipoSeleccionado) {
       setTipoTransaccion(tipoSeleccionado.categoria);
       
+      // Generar referencia automáticamente
+      generarReferencia(tipoSeleccionado);
+      
       // Resetear campos específicos cuando cambia entre ingreso/egreso
       if (tipoSeleccionado.categoria === 'INGRESO') {
         form.setFieldsValue({ 
@@ -215,6 +219,24 @@ const NuevaTransaccion = () => {
         });
       }
     }
+  };
+
+  // Función para generar referencia automáticamente
+  const generarReferencia = (tipoSeleccionado) => {
+    const categoria = tipoSeleccionado.categoria; // INGRESO o EGRESO
+    const nombreTipo = tipoSeleccionado.nombre; // "Combustible", "Alquiler Espacio", etc.
+    const fechaHoy = dayjs().format('MMMYY').toUpperCase(); // Formato: JUL25
+    
+    // Limpiar y formatear el nombre del tipo
+    const nombreLimpio = nombreTipo
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '_') // Reemplazar caracteres especiales con guión bajo
+      .substring(0, 15); // Limitar longitud
+    
+    const referenciaGenerada = `${categoria}-${nombreLimpio}-${fechaHoy}`;
+    
+    // Establecer la referencia en el formulario
+    form.setFieldsValue({ referencia: referenciaGenerada });
   };
 
 
@@ -334,7 +356,8 @@ const NuevaTransaccion = () => {
                 <Col xs={24} md={12}>
                   <Form.Item
                     name="empleado_id"
-                    label={tipoTransaccion === 'EGRESO' ? 'Empleado Responsable (opcional)' : 'Empleado (opcional)'}
+                    label={tipoTransaccion === 'EGRESO' ? 'Empleado Responsable (opcional)' : 'Empleado'}
+                    rules={tipoTransaccion === 'INGRESO' ? [{ required: true, message: 'Debe seleccionar un empleado' }] : []}
                   >
                     <Select 
                       placeholder={loadingEmpleados ? 'Cargando empleados...' : 
@@ -561,34 +584,19 @@ const NuevaTransaccion = () => {
                       onChange={handleMontoChange}
                     />
                   </Form.Item>
-                  
-                  <Form.Item
-                    name="proveedor"
-                    label="Proveedor"
-                  >
-                    <Input placeholder="Nombre del proveedor" />
-                  </Form.Item>
                 </Col>
                 
                 <Col xs={24} md={12}>
                   <Form.Item
-                    name="metodo_pago"
-                    label="Método de Pago"
-                  >
-                    <Select placeholder="Seleccione el método de pago">
-                      <Option value="EFECTIVO">Efectivo</Option>
-                      <Option value="TRANSFERENCIA">Transferencia</Option>
-                      <Option value="TARJETA_CREDITO">Tarjeta de Crédito</Option>
-                      <Option value="TARJETA_DEBITO">Tarjeta de Débito</Option>
-                      <Option value="CHEQUE">Cheque</Option>
-                    </Select>
-                  </Form.Item>
-                  
-                  <Form.Item
                     name="referencia"
                     label="Número de Referencia"
+                    rules={[{ required: true, message: 'Debe ingresar una referencia' }]}
                   >
-                    <Input placeholder="Número de factura, transferencia, etc." />
+                    <Input 
+                      placeholder="Se genera automáticamente" 
+                      readOnly 
+                      style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                    />
                   </Form.Item>
                   
                   <Form.Item

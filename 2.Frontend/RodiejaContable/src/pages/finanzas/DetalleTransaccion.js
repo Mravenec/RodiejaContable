@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Typography, Descriptions, Button, Spin, message } from 'antd';
+import { Card, Typography, Descriptions, Button, Spin, message, Tag } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import finanzaService from '../../api/finanzas';
@@ -67,13 +67,17 @@ const DetalleTransaccion = () => {
     );
   }
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-CR', {
+  // Format currency with sign
+  const formatCurrency = (amount, isIncome = false) => {
+    const formattedAmount = new Intl.NumberFormat('es-CR', {
       style: 'currency',
       currency: 'CRC',
       minimumFractionDigits: 2
-    }).format(amount || 0);
+    }).format(Math.abs(amount || 0));
+    
+    return isIncome ? 
+      `<span style="color: #52c41a;">+ ₡${formattedAmount.replace('₡', '').trim()}</span>` : 
+      `<span style="color: #f5222d;">- ₡${formattedAmount.replace('₡', '').trim()}</span>`;
   };
 
   // Format date
@@ -112,12 +116,24 @@ const DetalleTransaccion = () => {
         <Descriptions bordered column={1}>
           <Descriptions.Item label="ID">{transaccion.id}</Descriptions.Item>
           <Descriptions.Item label="Tipo">
-            {transaccion.tipo_transaccion?.nombre || transaccion.tipo || 'No especificado'}
+            <Tag color={
+              transaccion.tipo_transaccion?.categoria === 'INGRESO' || 
+              transaccion.tipo === 'INGRESO' || 
+              transaccion.categoria === 'INGRESO' 
+                ? 'green' : 'red'
+            }>
+              {transaccion.tipo_transaccion?.nombre || transaccion.tipo || 'No especificado'}
+            </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Categoría">
             {transaccion.tipo_transaccion?.categoria || transaccion.categoria || 'No especificado'}
           </Descriptions.Item>
-          <Descriptions.Item label="Monto">{formatCurrency(transaccion.monto)}</Descriptions.Item>
+          <Descriptions.Item label="Monto">
+            {formatCurrency(
+              transaccion.monto, 
+              transaccion.tipo_transaccion?.categoria === 'INGRESO' || transaccion.categoria === 'INGRESO'
+            )}
+          </Descriptions.Item>
           <Descriptions.Item label="Fecha">{formatDate(transaccion.fecha)}</Descriptions.Item>
           <Descriptions.Item label="Descripción">
             {transaccion.descripcion || 'Sin descripción'}

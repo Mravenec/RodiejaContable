@@ -69,7 +69,7 @@ const Finanzas = () => {
       setLoading(prev => ({ ...prev, transacciones: true }));
       setError(null);
       
-      const { tipo, estado, rangoFechas, busqueda, searchFields, categoria } = { ...filtros, ...filtrosAplicados };
+      const { estado, rangoFechas, busqueda, searchFields, categoria } = { ...filtros, ...filtrosAplicados };
       const [fechaInicio, fechaFin] = rangoFechas || [null, null];
       
       let data;
@@ -182,8 +182,9 @@ const Finanzas = () => {
       sorter: (a, b) => {
         const dateA = Array.isArray(a.fecha) ? new Date(a.fecha[0], a.fecha[1] - 1, a.fecha[2]) : new Date(0);
         const dateB = Array.isArray(b.fecha) ? new Date(b.fecha[0], b.fecha[1] - 1, b.fecha[2]) : new Date(0);
-        return dateA - dateB;
+        return dateB - dateA; // Invertido: más reciente primero
       },
+      defaultSortOrder: 'descend', // Ordenar descendente por defecto
     },
     {
       title: 'Descripción',
