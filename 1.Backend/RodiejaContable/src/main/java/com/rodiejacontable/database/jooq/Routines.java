@@ -18,7 +18,7 @@ import org.jooq.Configuration;
  * Convenience access to all stored procedures and functions in
  * sistema_vehicular.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Routines {
 
     /**

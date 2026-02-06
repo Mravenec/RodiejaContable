@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import moment from 'moment';
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
 import { 
   Form, 
   Input, 
@@ -17,6 +18,7 @@ import {
   Tabs,
   Alert
 } from 'antd';
+import locale from 'antd/es/locale/es_ES';
 import { 
   SaveOutlined, 
   ArrowLeftOutlined,
@@ -38,6 +40,7 @@ const NuevaTransaccion = () => {
   const [tipoTransaccion, setTipoTransaccion] = useState('INGRESO');
   const [monto, setMonto] = useState(0);
   const [comision, setComision] = useState(0);
+  const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(null);
   
   // Hooks para cargar datos
   const { data: tiposIngreso, isLoading: loadingTiposIngreso } = useTiposByCategoria('INGRESO');
@@ -99,6 +102,29 @@ const NuevaTransaccion = () => {
     }
   }, [tiposIngreso, tiposEgreso, tipoTransaccion, form]);
 
+  // Función para filtrar repuestos según vehículo seleccionado
+  const getRepuestosFiltrados = useCallback(() => {
+    if (!vehiculoSeleccionado) {
+      // Si no hay vehículo seleccionado, mostrar todos los repuestos
+      return repuestos;
+    }
+    // Si hay vehículo seleccionado, mostrar solo los repuestos de ese vehículo
+    return repuestos.filter(repuesto => repuesto.vehiculoOrigenId === vehiculoSeleccionado);
+  }, [repuestos, vehiculoSeleccionado]);
+
+  // Manejador de cambios en el selector de vehículo
+  const handleVehiculoChange = useCallback((vehiculoId) => {
+    setVehiculoSeleccionado(vehiculoId);
+    // Limpiar el campo de repuesto cuando cambia el vehículo
+    form.setFieldsValue({ repuesto_id: null });
+    
+    // Si se selecciona "-- Seleccione un vehículo --" (null), resetear al estado inicial
+    if (vehiculoId === null) {
+      // Resetear al estado inicial como si no hubiera vehículo seleccionado
+      setVehiculoSeleccionado(null);
+    }
+  }, [form]);
+
   const onFinish = async (values) => {
     try {
       const esEgreso = tipoTransaccion === 'EGRESO';
@@ -136,11 +162,8 @@ const NuevaTransaccion = () => {
           metodoPago: values.metodo_pago || 'EFECTIVO'
         });
       } else {
-        // Para ingresos, validar vehículo
-        if (!values.vehiculo_id) {
-          message.error('Debe seleccionar un vehículo');
-          return;
-        }
+        // Para ingresos, vehículo es opcional
+        // No se requiere validación de vehículo
         
         // Agregar campos específicos de ingresos
         Object.assign(payload, {
@@ -234,7 +257,7 @@ const NuevaTransaccion = () => {
               layout="vertical"
               onFinish={onFinish}
               initialValues={{
-                fecha: moment(),
+                fecha: dayjs(),
                 tipo: 1,
                 monto: 0,
                 comision: 0
@@ -247,7 +270,13 @@ const NuevaTransaccion = () => {
                     label="Fecha"
                     rules={[{ required: true, message: 'Seleccione la fecha' }]}
                   >
-                    <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                    <DatePicker 
+                      style={{ width: '100%' }} 
+                      format="DD/MM/YYYY"
+                      placeholder="Seleccione fecha"
+                      locale={locale.DatePicker}
+                      defaultValue={dayjs()}
+                    />
                   </Form.Item>
                   
                   <Form.Item
@@ -333,11 +362,8 @@ const NuevaTransaccion = () => {
                   
                   <Form.Item
                     name="vehiculo_id"
-                    label="Vehículo"
-                    rules={[{ 
-                      required: tipoTransaccion === 'INGRESO', 
-                      message: 'Para ingresos, debe seleccionar un vehículo' 
-                    }]}
+                    label="Vehículo (opcional)"
+                    rules={[]}
                   >
                     <Select 
                       placeholder={
@@ -352,15 +378,12 @@ const NuevaTransaccion = () => {
                       filterOption={(input, option) =>
                         option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }
-                      notFoundContent={
-                        <div>
-                          {errorVehiculos ? 
-                            'Error al cargar los vehículos' : 
-                            'No se encontraron vehículos disponibles'}
-                        </div>
-                      }
-                      disabled={loadingVehiculos || errorVehiculos || vehiculos.length === 0}
+                      onChange={handleVehiculoChange}
+                      allowClear
                     >
+                      <Option key="todos" value={null}>
+                        Seleccione un vehículo
+                      </Option>
                       {vehiculos.map(vehiculo => {
                         // Formatear la información del vehículo según la estructura del backend
                         const codigo = vehiculo.codigoVehiculo || 'SIN_CODIGO';
@@ -401,15 +424,20 @@ const NuevaTransaccion = () => {
                     label={tipoTransaccion === 'INGRESO' ? 'Repuesto (opcional)' : 'Repuesto'}
                   >
                     <Select 
-                      placeholder="Seleccione el repuesto"
+                      placeholder={
+                        loadingRepuestos ? 'Cargando repuestos...' : 
+                        getRepuestosFiltrados().length === 0 ? 
+                          (vehiculoSeleccionado ? 'No hay repuestos para este vehículo' : 'No hay repuestos disponibles') :
+                          'Seleccione el repuesto'
+                      }
+                      loading={loadingRepuestos}
                       showSearch
                       optionFilterProp="children"
-                      loading={loadingRepuestos}
                       filterOption={(input, option) =>
-                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }
                     >
-                      {repuestos.map(repuesto => (
+                      {getRepuestosFiltrados().map(repuesto => (
                         <Option key={repuesto.id} value={repuesto.id}>
                           {repuesto.descripcion} - {repuesto.codigo} {repuesto.ubicacion ? `(${repuesto.ubicacion})` : ''}
                         </Option>
@@ -463,7 +491,7 @@ const NuevaTransaccion = () => {
               layout="vertical"
               onFinish={onFinish}
               initialValues={{
-                fecha: moment(),
+                fecha: dayjs(),
                 monto: 0
               }}
             >
@@ -474,7 +502,13 @@ const NuevaTransaccion = () => {
                     label="Fecha"
                     rules={[{ required: true, message: 'Seleccione la fecha' }]}
                   >
-                    <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                    <DatePicker 
+                      style={{ width: '100%' }} 
+                      format="DD/MM/YYYY"
+                      placeholder="Seleccione fecha"
+                      locale={locale.DatePicker}
+                      defaultValue={dayjs()}
+                    />
                   </Form.Item>
                   
                   <Form.Item
