@@ -30,12 +30,21 @@ const fetchVehiculosActivos = async () => {
       activo: vehiculo.activo !== false,
       ...vehiculo
     }));
-    
-    console.log(`✅ [API] ${vehiculosMapeados.length} vehículos cargados:`, 
-      vehiculosMapeados.map(v => `${v.id}: ${v.codigoVehiculo} (${v.anio}) - ${v.estado}`).join(', ')
+
+    // Filtrar vehículos para mostrar solo los que están DISPONIBLE, DESARMADO o REPARACION
+    // Estos son los vehículos que se pueden vender o tienen repuestos disponibles
+    const vehiculosFiltrados = vehiculosMapeados.filter(vehiculo => 
+      vehiculo.estado === 'DISPONIBLE' || 
+      vehiculo.estado === 'DESARMADO' ||
+      vehiculo.estado === 'REPARACION'
     );
     
-    return vehiculosMapeados;
+    console.log(`📊 [FILTRO] De ${vehiculosMapeados.length} vehículos totales, ${vehiculosFiltrados.length} cumplen el criterio (DISPONIBLE, DESARMADO o REPARACION)`);
+    console.log(`✅ [API] ${vehiculosFiltrados.length} vehículos cargados:`, 
+      vehiculosFiltrados.map(v => `${v.id}: ${v.codigoVehiculo} (${v.anio}) - ${v.estado}`).join(', ')
+    );
+    
+    return vehiculosFiltrados;
     
   } catch (error) {
     console.error('Error al obtener vehículos:', {

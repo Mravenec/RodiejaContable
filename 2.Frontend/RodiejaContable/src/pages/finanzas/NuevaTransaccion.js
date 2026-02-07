@@ -404,7 +404,7 @@ const NuevaTransaccion = () => {
                       onChange={handleVehiculoChange}
                       allowClear
                     >
-                      <Option key="todos" value={null}>
+                      <Option key="placeholder" value={null} disabled>
                         Seleccione un vehículo
                       </Option>
                       {vehiculos.map(vehiculo => {
