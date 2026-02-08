@@ -149,27 +149,51 @@ const Dashboard = () => {
   const repuestosBajoStock = repuestosCriticos?.length || 0;
   
   // Calcular estadísticas de ventas reales
-  const mesActual = new Date().toISOString().slice(0, 7); // YYYY-MM
-  const ventasMesActual = ventasMensuales.find(v => {
-    const mesStr = v.mes ? String(v.mes) : '';
-    return mesStr.startsWith(mesActual);
-  });
-  const mesAnterior = ventasMensuales.find(v => {
-    const fecha = new Date();
-    fecha.setMonth(fecha.getMonth() - 1);
-    const mesAnteriorStr = fecha.toISOString().slice(0, 7);
-    const mesStr = v.mes ? String(v.mes) : '';
-    return mesStr.startsWith(mesAnteriorStr);
-  });
-  
-  const estadisticasVentas = {
-    ingresos_mes_actual: ventasMesActual?.ingresos || 0,
-    egresos_mes_actual: ventasMesActual?.egresos || 0,
-    ventas_mes_actual: ventasMesActual?.ventas_mes_actual || 0,
-    vehiculos_vendidos_mes: ventasMesActual?.vehiculos_vendidos_mes || 0,
-    variacion_ventas: mesAnterior ? 
-      ((ventasMesActual?.ingresos || 0) - (mesAnterior?.ingresos || 0)) / (mesAnterior?.ingresos || 1) * 100 : 0
-  };
+const ahora = new Date();
+const anioActual = ahora.getFullYear();
+const mesActual = ahora.getMonth() + 1; // Los meses van de 1-12
+console.log('🔥 AÑO/MES ACTUAL BUSCADO:', anioActual, mesActual);
+
+// Buscar el mes actual en los datos - CORREGIDO: buscar por año y mes por separado
+const ventasMesActual = ventasMensuales.find(v => {
+  console.log(`🔥 Verificando registro: anio=${v.anio}, mes=${v.mes} ¿Coincide con ${anioActual}/${mesActual}? ${v.anio === anioActual && v.mes === mesActual}`);
+  return v.anio === anioActual && v.mes === mesActual;
+});
+
+// Buscar el mes anterior en los datos
+let anioAnterior = anioActual;
+let mesAnterior = mesActual - 1;
+if (mesAnterior === 0) {
+  mesAnterior = 12;
+  anioAnterior = anioActual - 1;
+}
+
+const mesAnteriorData = ventasMensuales.find(v => {
+  console.log(`🔥 Verificando mes anterior: anio=${v.anio}, mes=${v.mes} ¿Coincide con ${anioAnterior}/${mesAnterior}? ${v.anio === anioAnterior && v.mes === mesAnterior}`);
+  return v.anio === anioAnterior && v.mes === mesAnterior;
+});
+
+console.log('🔥 VENTAS MENSUALES COMPLETAS:', ventasMensuales);
+console.log('🔥 VENTAS MES ACTUAL ENCONTRADO:', ventasMesActual);
+console.log('🔥 VENTAS MES ANTERIOR ENCONTRADO:', mesAnteriorData);
+
+// ✅ CORRECCIÓN: Usar ingresos en lugar de ventas_mes_actual que no existe
+const estadisticasVentas = {
+  ingresos_mes_actual: ventasMesActual?.totalIngresosNetos || 0,  // ← CAMPO REAL DEL BACKEND
+  egresos_mes_actual: ventasMesActual?.totalEgresos || 0,        // ← CAMPO REAL DEL BACKEND
+  ventas_mes_actual: ventasMesActual?.totalIngresosNetos || 0,  // ← CAMPO REAL DEL BACKEND
+  vehiculos_vendidos_mes: ventasMesActual?.vehiculosVendidos || 0, // ← CAMPO REAL DEL BACKEND
+  variacion_ventas: mesAnteriorData && mesAnteriorData.totalIngresosNetos > 0 ? 
+    ((ventasMesActual?.totalIngresosNetos || 0) - (mesAnteriorData.totalIngresosNetos || 0)) / mesAnteriorData.totalIngresosNetos * 100 : 0
+};
+
+// Log para debugging (opcional - puedes eliminarlo en producción)
+console.log('=== ESTADÍSTICAS DE VENTAS ===');
+console.log('Año/mes actual buscado:', anioActual, mesActual);
+console.log('Año/mes anterior buscado:', anioAnterior, mesAnterior);
+console.log('Datos mes actual encontrados:', ventasMesActual);
+console.log('Datos mes anterior encontrados:', mesAnteriorData);
+console.log('Estadísticas calculadas:', estadisticasVentas);
 
 
   return (
