@@ -178,6 +178,9 @@ const ventasEmpleadosMesActual = ventasPorEmpleado
   .filter(v => v.totalVentas > 0)
   .reduce((total, empleado) => total + empleado.totalVentas, 0);
 
+// Calcular ventas de vehículos específicas (basado en análisis financiero)
+const ventasVehiculosMesActual = ventasMesActual?.vehiculosVendidos * ventasMesActual?.promedioVenta || 0;
+
 // Calcular ventas de empleados del mes anterior (simulado - necesitaríamos datos históricos)
 const ventasEmpleadosMesAnterior = 0; // Por ahora 0 hasta tener datos históricos
 
@@ -186,16 +189,17 @@ console.log('🔥 VENTAS MES ACTUAL ENCONTRADO:', ventasMesActual);
 console.log('🔥 VENTAS MES ANTERIOR ENCONTRADO:', mesAnteriorData);
 console.log('🔥 VENTAS POR EMPLEADO:', ventasPorEmpleado);
 console.log('🔥 SUMA VENTAS EMPLEADOS MES ACTUAL:', ventasEmpleadosMesActual);
+console.log('🔥 VENTAS VEHÍCULOS MES ACTUAL:', ventasVehiculosMesActual);
 
-// ✅ CORRECCIÓN: Usar ventas de empleados en lugar de ingresos totales
+// ✅ CORRECCIÓN: Usar ventas de vehículos en lugar de ingresos totales
 const estadisticasVentas = {
   ingresos_mes_actual: ventasMesActual?.totalIngresosNetos || 0,  // ← Ingresos completos
   egresos_mes_actual: ventasMesActual?.totalEgresos || 0,        // ← Egresos completos
-  ventas_mes_actual: ventasEmpleadosMesActual || 0,              // ← VENTAS REALES DE EMPLEADOS
+  ventas_mes_actual: ventasVehiculosMesActual || 0,              // ← VENTAS DE VEHÍCULOS ESPECÍFICAS
   vehiculos_vendidos_mes: ventasMesActual?.vehiculosVendidos || 0, // ← Vehículos vendidos
   repuestos_vendidos_mes: ventasMesActual?.repuestosVendidos || 0, // ← Repuestos vendidos
   variacion_ventas: ventasEmpleadosMesAnterior > 0 ? 
-    ((ventasEmpleadosMesActual || 0) - ventasEmpleadosMesAnterior) / ventasEmpleadosMesAnterior * 100 : 0
+    ((ventasVehiculosMesActual || 0) - ventasEmpleadosMesAnterior) / ventasEmpleadosMesAnterior * 100 : 0
 };
 
 // Log para debugging (opcional - puedes eliminarlo en producción)
@@ -434,6 +438,7 @@ console.log('Estadísticas calculadas:', estadisticasVentas);
                   <Card size="small" bodyStyle={{ padding: '12px 16px' }}>
                     <Statistic
                       title="Ventas del Mes"
+                      // aqui: Ventas del Mes - muestra las ventas de vehículos específicas (vehiculosVendidos * promedioVenta)
                       value={estadisticasVentas.ventas_mes_actual || 0}
                       prefix={<DollarOutlined style={{ color: '#52c41a' }} />}
                       valueStyle={{ 
