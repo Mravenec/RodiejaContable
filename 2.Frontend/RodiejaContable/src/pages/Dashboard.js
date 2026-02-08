@@ -140,7 +140,8 @@ const Dashboard = () => {
     repuestosMasVendidos,
     comisiones: ventasPorEmpleado,
     vehiculosActivos,
-    repuestosCriticos
+    repuestosCriticos,
+    roiPromedio
   } = dashboardData;
   
   // Calcular valores derivados
@@ -376,6 +377,30 @@ console.log('Estadísticas calculadas:', estadisticasVentas);
                         No hay repuestos vendidos
                       </Text>
                     )}
+                  </div>
+                </Col>
+              </Row>
+              
+              <Divider style={{ margin: { xs: '12px 0', sm: '16px 0' } }} />
+              
+              <Row gutter={[8, 16]}>
+                <Col xs={24} sm={12}>
+                  <Statistic
+                    title="ROI Promedio"
+                    value={roiPromedio || 0}  // ← Dato real del backend: -9.18%
+                    precision={2}
+                    valueStyle={{ 
+                      color: roiPromedio >= 0 ? '#52c41a' : '#f5222d',
+                      fontSize: { xs: '18px', sm: '20px', md: '22px' }
+                    }}
+                    prefix={roiPromedio >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                    suffix="%"
+                    formatter={value => value?.toFixed(2) || '0.00'}
+                  />
+                  <div style={{ marginTop: 8 }}>
+                    <Text type={roiPromedio >= 0 ? 'success' : 'danger'}>
+                      {roiPromedio >= 0 ? 'Rentabilidad positiva' : 'Rentabilidad negativa'}
+                    </Text>
                   </div>
                 </Col>
               </Row>
