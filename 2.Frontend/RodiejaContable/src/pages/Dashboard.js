@@ -130,15 +130,15 @@ const Dashboard = () => {
 
   if (loading) return <Loading />;
 
-  const { 
-    totalVehiculos, 
-    totalRepuestos, 
-    totalVentas: ingresosTotales, 
+  const {
+    totalVentas: ingresosTotales,
     totalEgresos: egresosTotales,
+    totalVehiculos,
+    totalRepuestos,
     ventasMensuales,
     vehiculosMasVendidos,
     repuestosMasVendidos,
-    comisiones,
+    comisiones: ventasPorEmpleado,
     vehiculosActivos,
     repuestosCriticos
   } = dashboardData;
@@ -173,18 +173,29 @@ const mesAnteriorData = ventasMensuales.find(v => {
   return v.anio === anioAnterior && v.mes === mesAnterior;
 });
 
+// Calcular ventas de empleados del mes actual
+const ventasEmpleadosMesActual = ventasPorEmpleado
+  .filter(v => v.totalVentas > 0)
+  .reduce((total, empleado) => total + empleado.totalVentas, 0);
+
+// Calcular ventas de empleados del mes anterior (simulado - necesitaríamos datos históricos)
+const ventasEmpleadosMesAnterior = 0; // Por ahora 0 hasta tener datos históricos
+
 console.log('🔥 VENTAS MENSUALES COMPLETAS:', ventasMensuales);
 console.log('🔥 VENTAS MES ACTUAL ENCONTRADO:', ventasMesActual);
 console.log('🔥 VENTAS MES ANTERIOR ENCONTRADO:', mesAnteriorData);
+console.log('🔥 VENTAS POR EMPLEADO:', ventasPorEmpleado);
+console.log('🔥 SUMA VENTAS EMPLEADOS MES ACTUAL:', ventasEmpleadosMesActual);
 
-// ✅ CORRECCIÓN: Usar ingresos en lugar de ventas_mes_actual que no existe
+// ✅ CORRECCIÓN: Usar ventas de empleados en lugar de ingresos totales
 const estadisticasVentas = {
-  ingresos_mes_actual: ventasMesActual?.totalIngresosNetos || 0,  // ← CAMPO REAL DEL BACKEND
-  egresos_mes_actual: ventasMesActual?.totalEgresos || 0,        // ← CAMPO REAL DEL BACKEND
-  ventas_mes_actual: ventasMesActual?.totalIngresosNetos || 0,  // ← CAMPO REAL DEL BACKEND
-  vehiculos_vendidos_mes: ventasMesActual?.vehiculosVendidos || 0, // ← CAMPO REAL DEL BACKEND
-  variacion_ventas: mesAnteriorData && mesAnteriorData.totalIngresosNetos > 0 ? 
-    ((ventasMesActual?.totalIngresosNetos || 0) - (mesAnteriorData.totalIngresosNetos || 0)) / mesAnteriorData.totalIngresosNetos * 100 : 0
+  ingresos_mes_actual: ventasMesActual?.totalIngresosNetos || 0,  // ← Ingresos completos
+  egresos_mes_actual: ventasMesActual?.totalEgresos || 0,        // ← Egresos completos
+  ventas_mes_actual: ventasEmpleadosMesActual || 0,              // ← VENTAS REALES DE EMPLEADOS
+  vehiculos_vendidos_mes: ventasMesActual?.vehiculosVendidos || 0, // ← Vehículos vendidos
+  repuestos_vendidos_mes: ventasMesActual?.repuestosVendidos || 0, // ← Repuestos vendidos
+  variacion_ventas: ventasEmpleadosMesAnterior > 0 ? 
+    ((ventasEmpleadosMesActual || 0) - ventasEmpleadosMesAnterior) / ventasEmpleadosMesAnterior * 100 : 0
 };
 
 // Log para debugging (opcional - puedes eliminarlo en producción)
@@ -193,6 +204,7 @@ console.log('Año/mes actual buscado:', anioActual, mesActual);
 console.log('Año/mes anterior buscado:', anioAnterior, mesAnterior);
 console.log('Datos mes actual encontrados:', ventasMesActual);
 console.log('Datos mes anterior encontrados:', mesAnteriorData);
+console.log('Ventas empleados mes actual:', ventasEmpleadosMesActual);
 console.log('Estadísticas calculadas:', estadisticasVentas);
 
 
@@ -372,9 +384,9 @@ console.log('Estadísticas calculadas:', estadisticasVentas);
             title="Comisiones del Mes"
             bodyStyle={{ padding: { xs: '12px', sm: '16px', md: '24px' } }}
           >
-            {comisiones && comisiones.length > 0 ? (
+            {ventasPorEmpleado && ventasPorEmpleado.length > 0 ? (
               <div>
-                {comisiones.map((comision, index) => (
+                {ventasPorEmpleado.map((comision, index) => (
                   <div key={index} style={{ 
                     marginBottom: 12,
                     padding: { xs: '8px', sm: '12px' },
@@ -417,8 +429,8 @@ console.log('Estadísticas calculadas:', estadisticasVentas);
               <Title level={5} style={{ marginBottom: 16, fontSize: { xs: '16px', sm: '18px' } }}>
                 Estadísticas de Ventas
               </Title>
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={12}>
+              <Row gutter={16}>
+                <Col xs={24} sm={8}>
                   <Card size="small" bodyStyle={{ padding: '12px 16px' }}>
                     <Statistic
                       title="Ventas del Mes"
@@ -432,12 +444,25 @@ console.log('Estadísticas calculadas:', estadisticasVentas);
                     />
                   </Card>
                 </Col>
-                <Col xs={24} sm={12}>
+                <Col xs={24} sm={8}>
                   <Card size="small" bodyStyle={{ padding: '12px 16px' }}>
                     <Statistic
                       title="Vehículos Vendidos"
                       value={estadisticasVentas.vehiculos_vendidos_mes || 0}
                       prefix={<CarOutlined style={{ color: '#1890ff' }} />}
+                      valueStyle={{ 
+                        fontSize: { xs: '16px', sm: '18px' },
+                        fontWeight: 500
+                      }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <Card size="small" bodyStyle={{ padding: '12px 16px' }}>
+                    <Statistic
+                      title="Repuestos Vendidos"
+                      value={estadisticasVentas.repuestos_vendidos_mes || 0}
+                      prefix={<ToolOutlined style={{ color: '#722ed1' }} />}
                       valueStyle={{ 
                         fontSize: { xs: '16px', sm: '18px' },
                         fontWeight: 500
