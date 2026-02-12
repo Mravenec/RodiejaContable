@@ -162,6 +162,20 @@ const NuevaTransaccion = () => {
           proveedor: values.proveedor || null,
           metodoPago: values.metodo_pago || 'EFECTIVO'
         });
+        
+        // Agregar tipo de transferencia a la descripción si existe
+        if (values.tipoTransferencia) {
+          const nombreTransferencia = {
+            'SINPE': 'SINPE',
+            'TARJETA': 'Tarjeta',
+            'EFECTIVO': 'Efectivo'
+          }[values.tipoTransferencia] || values.tipoTransferencia;
+          
+          // Concatenar a la descripción existente con salto de línea
+          const descripcionBase = payload.descripcion || '';
+          const separador = descripcionBase ? '\n' : '';
+          payload.descripcion = `${descripcionBase}${separador}Transferencia: ${nombreTransferencia}`;
+        }
       } else {
         // Para ingresos, vehículo es opcional
         // No se requiere validación de vehículo
@@ -173,6 +187,20 @@ const NuevaTransaccion = () => {
           repuestoId: values.repuesto_id || null,
           comisionEmpleado: parseFloat(comision) || 0
         });
+        
+        // Agregar tipo de transferencia a la descripción si existe
+        if (values.tipoTransferencia) {
+          const nombreTransferencia = {
+            'SINPE': 'SINPE',
+            'TARJETA': 'Tarjeta',
+            'EFECTIVO': 'Efectivo'
+          }[values.tipoTransferencia] || values.tipoTransferencia;
+          
+          // Concatenar a la descripción existente con salto de línea
+          const descripcionBase = payload.descripcion || '';
+          const separador = descripcionBase ? '\n' : '';
+          payload.descripcion = `${descripcionBase}${separador}Transferencia: ${nombreTransferencia}`;
+        }
       }
       
       console.log('🚀 [FRONTEND] Enviando transacción:', payload);
@@ -321,6 +349,21 @@ const NuevaTransaccion = () => {
                           {tipo.nombre}
                         </Option>
                       ))}
+                    </Select>
+                  </Form.Item>
+                  
+                  {/* Tipo de Transferencia - Justo debajo de Tipo de Transacción */}
+                  <Form.Item
+                    name="tipoTransferencia"
+                    label="Tipo de Transferencia"
+                    rules={[{ required: true, message: 'Debe seleccionar un tipo de transferencia' }]}
+                  >
+                    <Select 
+                      placeholder="Seleccione el tipo de transferencia"
+                    >
+                      <Option value="SINPE">SINPE</Option>
+                      <Option value="TARJETA">Tarjeta</Option>
+                      <Option value="EFECTIVO">Efectivo</Option>
                     </Select>
                   </Form.Item>
                   
@@ -554,6 +597,21 @@ const NuevaTransaccion = () => {
                           {tipo.nombre}
                         </Option>
                       ))}
+                    </Select>
+                  </Form.Item>
+                  
+                  {/* Tipo de Transferencia - Justo debajo de Tipo de Egreso */}
+                  <Form.Item
+                    name="tipoTransferencia"
+                    label="Tipo de Transferencia"
+                    rules={[{ required: true, message: 'Debe seleccionar un tipo de transferencia' }]}
+                  >
+                    <Select 
+                      placeholder="Seleccione el tipo de transferencia"
+                    >
+                      <Option value="SINPE">SINPE</Option>
+                      <Option value="TARJETA">Tarjeta</Option>
+                      <Option value="EFECTIVO">Efectivo</Option>
                     </Select>
                   </Form.Item>
                   
