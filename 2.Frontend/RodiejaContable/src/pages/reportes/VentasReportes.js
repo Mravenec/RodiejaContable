@@ -200,8 +200,17 @@ const VentasReportes = () => {
         params.fechaFin = filtros.fechaFin.format('YYYY-MM-DD');
       }
 
-      // Cargar datos de ventas por empleado
-      const response = await ventasEmpleadosService.getVentasPorEmpleado(params);
+      // Cargar datos de ventas por empleado con rango de fechas si aplica
+      let response;
+      if (filtros.fechaInicio && filtros.fechaFin) {
+        response = await ventasEmpleadosService.getVentasPorRangoFechas(
+          params.fechaInicio, 
+          params.fechaFin, 
+          filtros.vendedor || null
+        );
+      } else {
+        response = await ventasEmpleadosService.getVentasPorEmpleado(params);
+      }
       
       // Filtrar empleados sin ventas si es necesario
       const datosFiltrados = response.filter(emp => emp.totalTransacciones > 0);

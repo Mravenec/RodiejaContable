@@ -182,8 +182,9 @@ const ventasEmpleadosMesActual = ventasPorEmpleado
 // Calcular ventas de vehículos específicas (basado en análisis financiero)
 const ventasVehiculosMesActual = ventasMesActual?.vehiculosVendidos * ventasMesActual?.promedioVenta || 0;
 
-// Calcular ventas de empleados del mes anterior (simulado - necesitaríamos datos históricos)
-const ventasEmpleadosMesAnterior = 0; // Por ahora 0 hasta tener datos históricos
+// Calcular ventas de empleados del mes anterior usando datos reales
+const ventasEmpleadosMesAnterior = mesAnteriorData ? 
+  mesAnteriorData.ventasPorEmpleado?.reduce((total, empleado) => total + empleado.totalVentas, 0) || 0 : 0;
 
 console.log('🔥 VENTAS MENSUALES COMPLETAS:', ventasMensuales);
 console.log('🔥 VENTAS MES ACTUAL ENCONTRADO:', ventasMesActual);
