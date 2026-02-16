@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { message } from 'antd';
 import VentasEmpleadosService from '../../api/ventasEmpleados';
+import { getTransaccionesIngresos } from '../../api/transacciones';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { 
   Card, 
   Tabs, 
@@ -15,10 +15,19 @@ import {
   Typography, 
   Space,
   Statistic,
-  Avatar,
   Progress,
   Tag
 } from 'antd';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
 import { 
   BarChartOutlined, 
   PieChartOutlined, 
@@ -46,8 +55,7 @@ const Reportes = () => {
   const [rangoFechas, setRangoFechas] = useState(null);
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState('todos');
-  // Default to 2023 as that's the year with test data
-  const [anioActual] = useState(2023);
+  const [anioActual] = useState(new Date().getFullYear());
   
   // Estados para los datos de la API
   const [ventasMensuales, setVentasMensuales] = useState([]);
@@ -65,6 +73,7 @@ const Reportes = () => {
   useEffect(() => {
     console.log('Cargando datos iniciales...');
     cargarDatosIniciales();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   const cargarDatosIniciales = async () => {
@@ -98,48 +107,38 @@ const Reportes = () => {
       // Cargar ventas mensuales con manejo de error 404
       setLoading(prev => ({ ...prev, ventasMensuales: true }));
       try {
-        // Usar directamente el año 2023 para las pruebas
-        const ventasMensualesData = await VentasEmpleadosService.getVentasMensuales(2023);
-        console.log('Ventas mensuales cargadas:', ventasMensualesData);
-        setVentasMensuales(Array.isArray(ventasMensualesData) ? ventasMensualesData : []);
+        // Usar el endpoint de transacciones de ingresos para obtener datos más detallados
+        const transaccionesData = await getTransaccionesIngresos();
+        console.log('Transacciones de ingresos crudas:', transaccionesData);
+        
+        // Agrupar transacciones por mes
+        const transaccionesAgrupadasPorMes = agruparTransaccionesPorMes(transaccionesData);
+        console.log('Transacciones agrupadas por mes:', transaccionesAgrupadasPorMes);
+        
+        setVentasMensuales(Array.isArray(transaccionesAgrupadasPorMes) ? transaccionesAgrupadasPorMes : []);
       } catch (error) {
         console.error('Error al cargar ventas mensuales:', error);
         message.warning('No se pudieron cargar los datos de ventas mensuales');
         setVentasMensuales([]);
       }
       
-      // Cargar top empleados con datos de ejemplo si es necesario
+      // Cargar top empleados
       setLoading(prev => ({ ...prev, topEmpleados: true }));
       try {
         const topEmpleadosData = await VentasEmpleadosService.getTopEmpleados(5);
         console.log('Top empleados cargados:', topEmpleadosData);
         
-        // Si no hay datos, usar datos de ejemplo
-        if (!Array.isArray(topEmpleadosData) || topEmpleadosData.length === 0) {
-          console.log('Usando datos de ejemplo para top empleados');
-          setTopEmpleados([
-            { id: 1, nombre: 'Juan Pérez', ventas: 25, monto: 12500000 },
-            { id: 2, nombre: 'María González', ventas: 20, monto: 10000000 },
-            { id: 3, nombre: 'Carlos López', ventas: 18, monto: 9000000 },
-            { id: 4, nombre: 'Ana Rodríguez', ventas: 15, monto: 7500000 },
-            { id: 5, nombre: 'Pedro Sánchez', ventas: 12, monto: 6000000 },
-          ]);
-        } else {
-          setTopEmpleados(topEmpleadosData);
-        }
+        // Calcular porcentajes reales
+        const empleadosConPorcentajes = calcularPorcentajes(topEmpleadosData);
+        console.log('Empleados con porcentajes calculados:', empleadosConPorcentajes);
+        
+        setTopEmpleados(Array.isArray(empleadosConPorcentajes) ? empleadosConPorcentajes : []);
       } catch (error) {
         console.error('Error al cargar top empleados:', error);
-        // Usar datos de ejemplo en caso de error
-        setTopEmpleados([
-          { id: 1, nombre: 'Juan Pérez', ventas: 25, monto: 12500000 },
-          { id: 2, nombre: 'María González', ventas: 20, monto: 10000000 },
-          { id: 3, nombre: 'Carlos López', ventas: 18, monto: 9000000 },
-          { id: 4, nombre: 'Ana Rodríguez', ventas: 15, monto: 7500000 },
-          { id: 5, nombre: 'Pedro Sánchez', ventas: 12, monto: 6000000 },
-        ]);
+        setTopEmpleados([]);
       }
       
-      // Cargar ventas recientes con datos de ejemplo si es necesario
+      // Cargar ventas recientes
       setLoading(prev => ({ ...prev, ventasRecientes: true }));
       try {
         const ventasRecientesData = await VentasEmpleadosService.getVentasPorEmpleado({
@@ -147,114 +146,11 @@ const Reportes = () => {
           ordenarPor: 'fecha',
           orden: 'desc'
         });
-        
         console.log('Ventas recientes cargadas:', ventasRecientesData);
-        
-        // Si no hay datos, usar datos de ejemplo
-        if (!Array.isArray(ventasRecientesData) || ventasRecientesData.length === 0) {
-          console.log('Usando datos de ejemplo para ventas recientes');
-          const now = new Date();
-          setVentasRecientes([
-            { 
-              id: 1, 
-              fecha: format(now, 'yyyy-MM-dd'), 
-              cliente: 'Cliente Ejemplo 1', 
-              vehiculo: 'Toyota Corolla 2023', 
-              vendedor: 'Juan Pérez', 
-              monto: 15000000, 
-              estado: 'completado' 
-            },
-            { 
-              id: 2, 
-              fecha: format(new Date(now.setDate(now.getDate() - 1)), 'yyyy-MM-dd'), 
-              cliente: 'Cliente Ejemplo 2', 
-              vehiculo: 'Honda Civic 2023', 
-              vendedor: 'María González', 
-              monto: 14000000, 
-              estado: 'pendiente' 
-            },
-            { 
-              id: 3, 
-              fecha: format(new Date(now.setDate(now.getDate() - 2)), 'yyyy-MM-dd'), 
-              cliente: 'Cliente Ejemplo 3', 
-              vehiculo: 'Mazda 3 2023', 
-              vendedor: 'Carlos López', 
-              monto: 13500000, 
-              estado: 'completado' 
-            },
-            { 
-              id: 4, 
-              fecha: format(new Date(now.setDate(now.getDate() - 3)), 'yyyy-MM-dd'), 
-              cliente: 'Cliente Ejemplo 4', 
-              vehiculo: 'Nissan Sentra 2023', 
-              vendedor: 'Ana Rodríguez', 
-              monto: 13000000, 
-              estado: 'completado' 
-            },
-            { 
-              id: 5, 
-              fecha: format(new Date(now.setDate(now.getDate() - 4)), 'yyyy-MM-dd'), 
-              cliente: 'Cliente Ejemplo 5', 
-              vehiculo: 'Kia Forte 2023', 
-              vendedor: 'Pedro Sánchez', 
-              monto: 12500000, 
-              estado: 'cancelado' 
-            },
-          ]);
-        } else {
-          setVentasRecientes(ventasRecientesData);
-        }
+        setVentasRecientes(Array.isArray(ventasRecientesData) ? ventasRecientesData : []);
       } catch (error) {
         console.error('Error al cargar ventas recientes:', error);
-        // Usar datos de ejemplo en caso de error
-        const now = new Date();
-        setVentasRecientes([
-          { 
-            id: 1, 
-            fecha: format(now, 'yyyy-MM-dd'), 
-            cliente: 'Cliente Ejemplo 1', 
-            vehiculo: 'Toyota Corolla 2023', 
-            vendedor: 'Juan Pérez', 
-            monto: 15000000, 
-            estado: 'completado' 
-          },
-          { 
-            id: 2, 
-            fecha: format(new Date(now.setDate(now.getDate() - 1)), 'yyyy-MM-dd'), 
-            cliente: 'Cliente Ejemplo 2', 
-            vehiculo: 'Honda Civic 2023', 
-            vendedor: 'María González', 
-            monto: 14000000, 
-            estado: 'pendiente' 
-          },
-          { 
-            id: 3, 
-            fecha: format(new Date(now.setDate(now.getDate() - 2)), 'yyyy-MM-dd'), 
-            cliente: 'Cliente Ejemplo 3', 
-            vehiculo: 'Mazda 3 2023', 
-            vendedor: 'Carlos López', 
-            monto: 13500000, 
-            estado: 'completado' 
-          },
-          { 
-            id: 4, 
-            fecha: format(new Date(now.setDate(now.getDate() - 3)), 'yyyy-MM-dd'), 
-            cliente: 'Cliente Ejemplo 4', 
-            vehiculo: 'Nissan Sentra 2023', 
-            vendedor: 'Ana Rodríguez', 
-            monto: 13000000, 
-            estado: 'completado' 
-          },
-          { 
-            id: 5, 
-            fecha: format(new Date(now.setDate(now.getDate() - 4)), 'yyyy-MM-dd'), 
-            cliente: 'Cliente Ejemplo 5', 
-            vehiculo: 'Kia Forte 2023', 
-            vendedor: 'Pedro Sánchez', 
-            monto: 12500000, 
-            estado: 'cancelado' 
-          },
-        ]);
+        setVentasRecientes([]);
       }
       
     } catch (error) {
@@ -406,13 +302,13 @@ const Reportes = () => {
   
   const exportarReporte = async (formato) => {
     try {
-      const filtros = {
-        formato,
-        fechaInicio: rangoFechas?.[0] ? format(rangoFechas[0], 'yyyy-MM-dd') : null,
-        fechaFin: rangoFechas?.[1] ? format(rangoFechas[1], 'yyyy-MM-dd') : null,
-        tipo: filtroTipo !== 'todos' ? filtroTipo : null,
-        estado: filtroEstado !== 'todos' ? filtroEstado : null
-      };
+      // const filtros = {
+      //   formato,
+      //   fechaInicio: rangoFechas?.[0] ? format(rangoFechas[0], 'yyyy-MM-dd') : null,
+      //   fechaFin: rangoFechas?.[1] ? format(rangoFechas[1], 'yyyy-MM-dd') : null,
+      //   tipo: filtroTipo !== 'todos' ? filtroTipo : null,
+      //   estado: filtroEstado !== 'todos' ? filtroEstado : null
+      // };
       
       // Aquí iría la lógica para generar el reporte
       // Por ahora, solo mostramos un mensaje
@@ -430,6 +326,99 @@ const Reportes = () => {
       console.error('Error al exportar reporte:', error);
       message.error({ content: 'Error al generar el reporte', key: 'exportar' });
     }
+  };
+  
+  // Función para calcular porcentajes de ventas
+  const calcularPorcentajes = (empleados) => {
+    if (!Array.isArray(empleados) || empleados.length === 0) {
+      return empleados;
+    }
+    
+    // Calcular el total de ventas de todos los empleados
+    const totalVentas = empleados.reduce((total, emp) => {
+      return total + (emp.totalTransacciones || emp.transaccionesVenta || 0);
+    }, 0);
+    
+    console.log('Total de ventas para calcular porcentajes:', totalVentas);
+    
+    // Calcular el porcentaje para cada empleado
+    return empleados.map(emp => {
+      const ventasEmpleado = emp.totalTransacciones || emp.transaccionesVenta || 0;
+      const porcentaje = totalVentas > 0 ? Math.round((ventasEmpleado / totalVentas) * 100) : 0;
+      
+      console.log(`Empleado ${emp.empleado || emp.nombre}: ${ventasEmpleado} ventas, ${porcentaje}%`);
+      
+      return {
+        ...emp,
+        porcentaje: porcentaje
+      };
+    });
+  };
+  
+  // Función para agrupar transacciones por mes
+  const agruparTransaccionesPorMes = (transacciones) => {
+    console.log('Agrupando transacciones por mes. Datos recibidos:', transacciones);
+    console.log('Tipo de datos:', typeof transacciones);
+    console.log('Longitud:', transacciones?.length);
+    
+    if (!Array.isArray(transacciones) || transacciones.length === 0) {
+      console.log('No hay transacciones para agrupar');
+      return [];
+    }
+    
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    
+    const agrupado = {};
+    
+    // Agrupar por mes
+    transacciones.forEach((transaccion, index) => {
+      console.log(`Procesando transacción ${index + 1}:`, transaccion);
+      
+      // Extraer mes de la fecha de la transacción
+      const fechaTransaccion = transaccion.fecha || transaccion.createdAt;
+      console.log(`Fecha extraída: ${fechaTransaccion}`);
+      
+      if (fechaTransaccion) {
+        const fecha = new Date(fechaTransaccion);
+        const mesNum = fecha.getMonth() + 1; // getMonth() devuelve 0-11, necesitamos 1-12
+        const mesNombre = meses[mesNum - 1];
+        const anio = fecha.getFullYear();
+        
+        console.log(`Transacción del mes ${mesNum} (${mesNombre}) ${anio}`);
+        
+        if (!agrupado[mesNum]) {
+          agrupado[mesNum] = {
+            mes: mesNum,
+            nombreMes: mesNombre,
+            anio: anio,
+            totalTransacciones: 0,
+            totalVentas: 0,
+            totalIngresos: 0,
+            totalComisiones: 0
+          };
+        }
+        
+        // Sumar valores de la transacción
+        const monto = transaccion.monto || 0;
+        const comision = transaccion.comision || transaccion.comisionEmpleado || 0;
+        
+        agrupado[mesNum].totalTransacciones += 1;
+        agrupado[mesNum].totalVentas += 1; // Cada transacción es una venta
+        agrupado[mesNum].totalIngresos += monto;
+        agrupado[mesNum].totalComisiones += comision;
+        
+        console.log(`Valores sumados - Monto: ${monto}, Comisión: ${comision}`);
+      } else {
+        console.warn(`Transacción ${index + 1} no tiene fecha válida:`, transaccion);
+      }
+    });
+    
+    // Convertir a array y ordenar por mes
+    const resultado = Object.values(agrupado).sort((a, b) => a.mes - b.mes);
+    console.log('Resultado agrupado por mes:', resultado);
+    
+    return resultado;
   };
   
   return (
@@ -569,11 +558,28 @@ const Reportes = () => {
                     onChange={async (value) => {
                       try {
                         setLoading(prev => ({ ...prev, ventasMensuales: true }));
-                        const data = await VentasEmpleadosService.getVentasMensuales(parseInt(value));
-                        setVentasMensuales(Array.isArray(data) ? data : []);
+                        // Usar el endpoint de transacciones de ingresos
+                        const transaccionesData = await getTransaccionesIngresos();
+                        console.log('Transacciones de ingresos para año seleccionado:', transaccionesData);
+                        
+                        // Filtrar por año si es necesario y agrupar por mes
+                        const transaccionesFiltradas = transaccionesData.filter(transaccion => {
+                          const fechaTransaccion = transaccion.fecha || transaccion.createdAt;
+                          if (fechaTransaccion) {
+                            const fecha = new Date(fechaTransaccion);
+                            return fecha.getFullYear() === parseInt(value);
+                          }
+                          return false;
+                        });
+                        
+                        const transaccionesAgrupadasPorMes = agruparTransaccionesPorMes(transaccionesFiltradas);
+                        console.log('Transacciones agrupadas por mes:', transaccionesAgrupadasPorMes);
+                        
+                        setVentasMensuales(Array.isArray(transaccionesAgrupadasPorMes) ? transaccionesAgrupadasPorMes : []);
                       } catch (error) {
                         console.error(`Error al cargar ventas para el año ${value}:`, error);
                         message.warning(`No se pudieron cargar los datos para el año ${value}`);
+                        setVentasMensuales([]);
                       } finally {
                         setLoading(prev => ({ ...prev, ventasMensuales: false }));
                       }
@@ -590,27 +596,93 @@ const Reportes = () => {
               >
                 {ventasMensuales.length > 0 ? (
                   <div>
-                    <div style={{ height: '300px' }}>
-                      <div style={{ textAlign: 'center', color: '#8c8c8c', margin: '20px 0' }}>
-                        <BarChartOutlined style={{ fontSize: 60, opacity: 0.3 }} />
-                        <p>Gráfico de ventas mensuales</p>
-                        {/* Aquí iría el gráfico real con los datos de ventasMensuales */}
-                      </div>
+                    <div style={{ height: '300px', marginBottom: 16 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={ventasMensuales}
+                          margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="nombreMes" 
+                            tick={{ fontSize: 12 }}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => {
+                              if (name === 'totalTransacciones') {
+                                return [`${value} ventas`, 'Ventas'];
+                              }
+                              if (name === 'totalIngresos') {
+                                return [`₡${value.toLocaleString('es-CR')}`, 'Ingresos'];
+                              }
+                              return [value, name];
+                            }}
+                          />
+                          <Legend />
+                          <Bar 
+                            dataKey="totalTransacciones" 
+                            fill="#1890ff" 
+                            name="Ventas"
+                          />
+                          <Bar 
+                            dataKey="totalIngresos" 
+                            fill="#52c41a" 
+                            name="Ingresos"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                     <Table 
                       dataSource={ventasMensuales}
                       columns={[
                         { 
                           title: 'Mes', 
-                          dataIndex: 'nombreMes', 
-                          key: 'nombreMes',
-                          render: (text, record) => text || `Mes ${record.mes}`
+                          dataIndex: 'mes', 
+                          key: 'mes',
+                          render: (text, record) => {
+                            // Intentar obtener el mes desde diferentes campos de fecha
+                            const fechaVenta = record.fecha || record.fechaTransaccion || record.createdAt;
+                            
+                            if (fechaVenta) {
+                              const fecha = new Date(fechaVenta);
+                              const mesNum = fecha.getMonth() + 1;
+                              const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                              return meses[mesNum - 1];
+                            }
+                            
+                            // Fallback a los campos existentes
+                            const nombreMes = record.nombreMes || record.mesNombre || record.mes;
+                            if (nombreMes !== undefined && nombreMes !== null) {
+                              if (typeof nombreMes === 'number') {
+                                const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                                            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                return meses[nombreMes - 1] || `Mes ${nombreMes}`;
+                              }
+                              return nombreMes;
+                            }
+                            
+                            return text ? `Mes ${text}` : 'Sin datos';
+                          }
                         },
                         { 
                           title: 'Total Ventas', 
-                          dataIndex: 'totalVentas', 
-                          key: 'totalVentas',
-                          sorter: (a, b) => (a.totalVentas || 0) - (b.totalVentas || 0),
+                          dataIndex: 'totalTransacciones', 
+                          key: 'totalTransacciones',
+                          render: (value, record) => {
+                            // Usar el mismo campo que funciona en Top Vendedores
+                            const totalVentas = record.totalTransacciones || record.transaccionesVenta || 0;
+                            return totalVentas > 0 ? totalVentas.toLocaleString('es-CR') : '0';
+                          },
+                          sorter: (a, b) => (a.totalTransacciones || 0) - (b.totalTransacciones || 0),
                         },
                         { 
                           title: 'Ingresos Totales', 
@@ -630,7 +702,7 @@ const Reportes = () => {
                       ]}
                       size="small"
                       pagination={false}
-                      rowKey="mes"
+                      rowKey={(record) => `${record.mes}-${record.anio}`}
                     />
                   </div>
                 ) : (
@@ -652,8 +724,8 @@ const Reportes = () => {
                 {topEmpleados.map((empleado, index) => (
                   <div key={empleado.id || index} style={{ marginBottom: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <Text>{empleado.nombre}</Text>
-                      <Text strong>{empleado.totalVentas || 0} ventas</Text>
+                      <Text>{empleado.empleado || empleado.nombre || 'Empleado'}</Text>
+                      <Text strong>{empleado.totalTransacciones || empleado.transaccionesVenta || 0} ventas</Text>
                     </div>
                     <Progress 
                       percent={empleado.porcentaje || 0} 
@@ -662,12 +734,14 @@ const Reportes = () => {
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        ${(empleado.montoTotal || 0).toLocaleString('es-CR', {
+                        ₡{(empleado.totalVentas || empleado.totalIngresos || 0).toLocaleString('es-CR', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2
                         })}
                       </Text>
-                      <Text type="secondary" style={{ fontSize: 12 }}>{empleado.porcentaje || 0}% del total</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {empleado.porcentaje || 0}% del total
+                      </Text>
                     </div>
                   </div>
                 ))}

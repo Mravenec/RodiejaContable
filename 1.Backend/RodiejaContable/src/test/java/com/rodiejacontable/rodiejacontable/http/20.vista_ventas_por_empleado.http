@@ -23,7 +23,7 @@ GET http://localhost:8080/api/v1/ventas-empleados/tipo-producto/REPUESTO
 GET http://localhost:8080/api/v1/ventas-empleados/comisiones
 
 ### Obtener ventas por empleado por mes
-GET http://localhost:8080/api/v1/ventas-empleados/mensual/2023
+GET http://localhost:8080/api/v1/ventas-empleados/mensual/2026
 
 ### Comparativa de ventas entre empleados
 GET http://localhost:8080/api/v1/ventas-empleados/comparativa?empleados=Juan%20Perez,Maria%20Garcia&fechaInicio=2023-01-01&fechaFin=2023-12-31
