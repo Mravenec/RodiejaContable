@@ -579,9 +579,12 @@ const Reportes = () => {
                       }
                     }}
                   >
-                    {[anioActual, anioActual - 1, anioActual - 2].map(anio => (
-                      <Option key={anio} value={anio.toString()}>{anio}</Option>
-                    ))}
+                    {Array.from({length: 6}, (_, i) => {
+                      const anio = new Date().getFullYear() - i;
+                      return (
+                        <Option key={anio} value={anio.toString()}>{anio}</Option>
+                      );
+                    })}
                   </Select>
                 }
               >

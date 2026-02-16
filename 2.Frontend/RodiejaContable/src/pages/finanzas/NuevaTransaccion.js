@@ -81,8 +81,8 @@ const NuevaTransaccion = () => {
 
   // Función para calcular comisión
   const calcularComision = useCallback((monto) => {
-    // 5% de comisión para transacciones de ingreso
-    return tipoTransaccion === 'INGRESO' ? monto * 0.05 : 0;
+    // 3% de comisión para transacciones de ingreso
+    return tipoTransaccion === 'INGRESO' ? monto * 0.03 : 0;
   }, [tipoTransaccion]);
 
   // Efecto para actualizar la comisión cuando cambia el monto o el tipo

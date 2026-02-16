@@ -223,6 +223,9 @@ const VentasReportes = () => {
     } catch (error) {
       console.error('Error al cargar ventas:', error);
       message.error('Error al cargar las ventas');
+      // Vaciar la lista cuando hay error
+      setVentas([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
     } finally {
       setLoading(prev => ({ ...prev, ventas: false }));
     }
