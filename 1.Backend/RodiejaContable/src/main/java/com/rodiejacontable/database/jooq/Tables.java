@@ -18,6 +18,7 @@ import com.rodiejacontable.database.jooq.tables.Vehiculos;
 import com.rodiejacontable.database.jooq.tables.VistaAnalisisFinancieroMensual;
 import com.rodiejacontable.database.jooq.tables.VistaAuditoriaCompleta;
 import com.rodiejacontable.database.jooq.tables.VistaDashboardEjecutivo;
+import com.rodiejacontable.database.jooq.tables.VistaExcelVentasMesCompleta;
 import com.rodiejacontable.database.jooq.tables.VistaInventarioCompleto;
 import com.rodiejacontable.database.jooq.tables.VistaInventarioCritico;
 import com.rodiejacontable.database.jooq.tables.VistaRentabilidadGeneraciones;
@@ -32,7 +33,7 @@ import com.rodiejacontable.database.jooq.tables.VistaVentasPorEmpleado;
 /**
  * Convenience access to all tables in sistema_vehicular.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
 
     /**
@@ -104,6 +105,11 @@ public class Tables {
      * VIEW
      */
     public static final VistaDashboardEjecutivo VISTA_DASHBOARD_EJECUTIVO = VistaDashboardEjecutivo.VISTA_DASHBOARD_EJECUTIVO;
+
+    /**
+     * VIEW
+     */
+    public static final VistaExcelVentasMesCompleta VISTA_EXCEL_VENTAS_MES_COMPLETA = VistaExcelVentasMesCompleta.VISTA_EXCEL_VENTAS_MES_COMPLETA;
 
     /**
      * VIEW

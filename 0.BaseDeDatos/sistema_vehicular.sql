@@ -1379,6 +1379,110 @@ GROUP BY ir.parte_vehiculo, ir.descripcion
 ORDER BY total_ingresos DESC;
 
 -- ========================================
+-- Vista para el Excel (Importante)
+-- ========================================
+CREATE OR REPLACE VIEW vista_excel_ventas_mes_completa AS
+WITH base_ventas AS (
+    SELECT
+        tf.anio,
+        tf.mes,
+        tf.fecha,
+        e.nombre AS vendedor,
+
+        /* N° FACTURA = referencia */
+        tf.referencia AS n_factura,
+
+        /* DESCRIPCIÓN = descripcion */
+        tf.descripcion AS descripcion,
+
+        /* COMISIÓN = comision_empleado */
+        tf.comision_empleado AS comision_linea,
+
+        /* PRECIO UNITARIO / INGRESO = monto */
+        tf.monto AS monto_linea,
+
+        /* ===== FORMA DE PAGO DESDE NOTAS (si existe) ===== */
+        CASE
+            WHEN UPPER(COALESCE(NULLIF(tf.descripcion,''), NULLIF(tf.referencia,''), NULLIF(v.notas,''), '')) REGEXP 'SINPE'
+                THEN 'SINPE'
+            WHEN UPPER(COALESCE(NULLIF(tf.descripcion,''), NULLIF(tf.referencia,''), NULLIF(v.notas,''), '')) REGEXP 'EFECTIVO'
+                THEN 'EFECTIVO'
+            WHEN UPPER(COALESCE(NULLIF(tf.descripcion,''), NULLIF(tf.referencia,''), NULLIF(v.notas,''), '')) REGEXP 'TRANSFER'
+                THEN 'TRANSFERENCIA'
+            WHEN UPPER(COALESCE(NULLIF(tf.descripcion,''), NULLIF(tf.referencia,''), NULLIF(v.notas,''), '')) REGEXP 'TARJ'
+                THEN 'TARJETA'
+            ELSE 'NO DEFINIDO'
+        END AS forma_pago_linea
+
+    FROM transacciones_financieras tf
+    JOIN tipos_transacciones tt ON tf.tipo_transaccion_id = tt.id
+    LEFT JOIN empleados e ON tf.empleado_id = e.id
+    LEFT JOIN vehiculos v ON tf.vehiculo_id = v.id
+    WHERE tf.activo = TRUE
+      AND tt.categoria = 'INGRESO'
+      AND tf.empleado_id IS NOT NULL
+),
+totales_equipo_mes AS (
+    SELECT
+        anio,
+        mes,
+        SUM(monto_linea) AS ingresos_brutos_equipo,
+        SUM(comision_linea) AS comision_equipo_total,
+        SUM(monto_linea) - SUM(comision_linea) AS ingreso_neto_rodieja
+    FROM base_ventas
+    GROUP BY anio, mes
+),
+totales_vendedor_mes AS (
+    SELECT
+        anio,
+        mes,
+        vendedor,
+        SUM(monto_linea) AS ingresos_brutos_vendedor,
+        SUM(comision_linea) AS comision_vendedor,
+        SUM(monto_linea) - SUM(comision_linea) AS ingreso_neto_vendedor
+    FROM base_ventas
+    GROUP BY anio, mes, vendedor
+)
+
+SELECT
+    b.anio,
+    b.mes,
+    CASE b.mes
+        WHEN 1 THEN 'ENERO' WHEN 2 THEN 'FEBRERO' WHEN 3 THEN 'MARZO'
+        WHEN 4 THEN 'ABRIL' WHEN 5 THEN 'MAYO' WHEN 6 THEN 'JUNIO'
+        WHEN 7 THEN 'JULIO' WHEN 8 THEN 'AGOSTO' WHEN 9 THEN 'SETIEMBRE'
+        WHEN 10 THEN 'OCTUBRE' WHEN 11 THEN 'NOVIEMBRE' WHEN 12 THEN 'DICIEMBRE'
+        ELSE 'MES'
+    END AS nombre_mes,
+
+    /* ====== bloque “arriba” tipo excel ====== */
+    tv.vendedor,
+    tv.comision_vendedor        AS comision_acumulada_del_vendedor,
+    tv.ingresos_brutos_vendedor AS ingresos_bruto_acumulados_vendedor,
+    tv.ingreso_neto_vendedor    AS ingreso_neto_vendedor,
+
+    te.comision_equipo_total    AS comision_acumulada_equipo_mes,
+    te.ingresos_brutos_equipo   AS ingresos_bruto_acumulados_equipo_mes,
+    te.ingreso_neto_rodieja     AS ingreso_neto_para_rodieja_mes,
+
+    /* ====== tabla detalle “abajo” ====== */
+    b.fecha,
+    b.vendedor AS nombre_del,
+    b.n_factura AS n_factura,
+    b.descripcion AS descripcion_linea,
+    b.comision_linea AS comision,
+    b.monto_linea AS precio_unitario,
+    b.forma_pago_linea AS forma_de_pago
+
+FROM base_ventas b
+JOIN totales_equipo_mes te
+  ON te.anio = b.anio AND te.mes = b.mes
+JOIN totales_vendedor_mes tv
+  ON tv.anio = b.anio AND tv.mes = b.mes AND tv.vendedor = b.vendedor
+
+ORDER BY b.fecha DESC, b.vendedor;
+
+-- ========================================
 -- MÓDULO DE AUDITORÍA E HISTÓRICO
 -- ========================================
 
@@ -2206,4 +2310,11 @@ SELECT
 FROM vista_analisis_financiero_mensual
 WHERE anio = YEAR(NOW()) AND mes = MONTH(NOW());
 
-
+-- ===============================================
+-- Vista para el Excel (Importante) - Fecha actual
+-- ===============================================
+SELECT *
+FROM vista_excel_ventas_mes_completa
+WHERE anio = YEAR(CURDATE())
+  AND mes  = MONTH(CURDATE())
+ORDER BY fecha DESC, nombre_del;
