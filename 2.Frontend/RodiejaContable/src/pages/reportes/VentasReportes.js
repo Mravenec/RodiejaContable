@@ -27,10 +27,13 @@ import {
   BarChartOutlined,
   TeamOutlined,
   CheckCircleOutlined,
-  InboxOutlined
+  InboxOutlined,
+  FileExcelOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import ventasEmpleadosService from '../../api/ventasEmpleados';
+import { useVistaExcelMesActual, useVistaExcelMesEspecifico, useGenerarReporteVentasExcel } from '../../hooks/useReportes';
+import * as XLSX from 'xlsx';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -43,11 +46,14 @@ const VentasReportes = () => {
   const [estadisticas, setEstadisticas] = useState({});
   const [empleados, setEmpleados] = useState([]);
   const [ventaSeleccionada, setVentaSeleccionada] = useState(null);
+  const [vistaExcelMes, setVistaExcelMes] = useState(null);
+  const [vistaExcelAnio, setVistaExcelAnio] = useState(null);
   const [loading, setLoading] = useState({
     ventas: false,
     estadisticas: false,
     empleados: false,
-    exportar: false
+    exportar: false,
+    exportandoExcel: false
   });
   const [filtros, setFiltros] = useState({
     fechaInicio: null,
@@ -364,12 +370,380 @@ const VentasReportes = () => {
     }
   };
 
+  // // Función para exportar a Excel con múltiples hojas por mes
+  // const exportarVistaExcel = async () => {
+  //   try {
+  //     setLoading(prev => ({ ...prev, exportandoExcel: true }));
+      
+  //     // Obtener datos actuales
+  //     const datosActuales = vistaExcelEspecifico || vistaExcelActual || [];
+      
+  //     if (!datosActuales || datosActuales.length === 0) {
+  //       message.warning('No hay datos para exportar');
+  //       return;
+  //     }
+
+  //     // Agrupar datos por mes
+  //     const datosPorMes = {};
+  //     datosActuales.forEach(item => {
+  //       const claveMes = `${item.nombreMes}_${item.anio}`;
+  //       if (!datosPorMes[claveMes]) {
+  //         datosPorMes[claveMes] = [];
+  //       }
+  //       datosPorMes[claveMes].push(item);
+  //     });
+
+  //     // Crear workbook
+  //     const wb = XLSX.utils.book_new();
+
+  //     // Procesar cada mes como una hoja diferente
+  //     Object.keys(datosPorMes).forEach(claveMes => {
+  //       const datosMes = datosPorMes[claveMes];
+        
+  //       // Preparar datos para la hoja
+  //       const datosHoja = datosMes.map((item, index) => ({
+  //         '#': index + 1,
+  //         'Vendedor': item.nombreDel,
+  //         'Descripción': item.descripcionLinea,
+  //         'Factura': item.nfactura,
+  //         'Precio Unitario': item.precioUnitario,
+  //         'Comisión': item.comision,
+  //         'Forma de Pago': item.formaDePago,
+  //         'Fecha': Array.isArray(item.fecha) 
+  //           ? moment([item.fecha[0], item.fecha[1] - 1, item.fecha[2]]).format('DD/MM/YYYY')
+  //           : moment(item.fecha).format('DD/MM/YYYY'),
+  //         'Ingresos Brutos Vendedor': item.ingresosBrutoAcumuladosVendedor,
+  //         'Comisión Acumulada': item.comisionAcumuladaDelVendedor,
+  //         'Ingreso Neto Vendedor': item.ingresoNetoVendedor,
+  //         'Comisión Acumulada Equipo': item.comisionAcumuladaEquipoMes,
+  //         'Ingresos Brutos Equipo': item.ingresosBrutoAcumuladosEquipoMes,
+  //         'Ingreso Neto Rodieja': item.ingresoNetoParaRodiejaMes
+  //       }));
+
+  //       // Agregar fila de totales al final
+  //       const totales = {
+  //         '#': 'TOTAL',
+  //         'Vendedor': '',
+  //         'Descripción': '',
+  //         'Factura': '',
+  //         'Precio Unitario': datosMes.reduce((sum, item) => sum + item.precioUnitario, 0),
+  //         'Comisión': datosMes.reduce((sum, item) => sum + item.comision, 0),
+  //         'Forma de Pago': '',
+  //         'Fecha': '',
+  //         'Ingresos Brutos Vendedor': datosMes[0]?.ingresosBrutoAcumuladosVendedor || 0,
+  //         'Comisión Acumulada': datosMes[0]?.comisionAcumuladaDelVendedor || 0,
+  //         'Ingreso Neto Vendedor': datosMes[0]?.ingresoNetoVendedor || 0,
+  //         'Comisión Acumulada Equipo': datosMes[0]?.comisionAcumuladaEquipoMes || 0,
+  //         'Ingresos Brutos Equipo': datosMes[0]?.ingresosBrutoAcumuladosEquipoMes || 0,
+  //         'Ingreso Neto Rodieja': datosMes[0]?.ingresoNetoParaRodiejaMes || 0
+  //       };
+  //       datosHoja.push(totales);
+
+  //       // Crear worksheet
+  //       const ws = XLSX.utils.json_to_sheet(datosHoja);
+        
+  //       // Ajustar anchos de columna
+  //       const colWidths = [
+  //         { wch: 5 },  // #
+  //         { wch: 15 }, // Vendedor
+  //         { wch: 30 }, // Descripción
+  //         { wch: 20 }, // Factura
+  //         { wch: 15 }, // Precio Unitario
+  //         { wch: 12 }, // Comisión
+  //         { wch: 15 }, // Forma de Pago
+  //         { wch: 12 }, // Fecha
+  //         { wch: 20 }, // Ingresos Brutos Vendedor
+  //         { wch: 18 }, // Comisión Acumulada
+  //         { wch: 18 }, // Ingreso Neto Vendedor
+  //         { wch: 20 }, // Comisión Acumulada Equipo
+  //         { wch: 20 }, // Ingresos Brutos Equipo
+  //         { wch: 18 }  // Ingreso Neto Rodieja
+  //       ];
+  //       ws['!cols'] = colWidths;
+
+  //       // Agregar hoja al workbook
+  //       XLSX.utils.book_append_sheet(wb, ws, claveMes.substring(0, 31)); // Limitar nombre de hoja
+  //     });
+
+  //     // Generar y descargar archivo
+  //     const nombreArchivo = `vista-excel-ventas-${moment().format('YYYYMMDD-HHmmss')}.xlsx`;
+  //     XLSX.writeFile(wb, nombreArchivo);
+      
+  //     message.success('Archivo Excel exportado correctamente');
+  //   } catch (error) {
+  //     console.error('Error al exportar a Excel:', error);
+  //     message.error('Error al exportar a Excel');
+  //   } finally {
+  //     setLoading(prev => ({ ...prev, exportandoExcel: false }));
+  //   }
+  // };
+
 
   // Obtener métricas de las estadísticas
   const totalVentasCount = estadisticas?.totalVentasCount || estadisticas?.totalTransacciones || 0;
   const totalIngresos = estadisticas?.totalVentas || 0;
   const ventasCompletadas = estadisticas?.totalVentasCount || estadisticas?.totalTransacciones || 0;
   const tasaConversion = estadisticas?.tasaConversion || 0;
+
+  // Hooks para vista Excel
+  const { data: vistaExcelActual, isLoading: loadingVistaExcelActual } = useVistaExcelMesActual();
+  const { data: vistaExcelEspecifico, isLoading: loadingVistaExcelEspecifico } = useVistaExcelMesEspecifico(
+    vistaExcelAnio, 
+    vistaExcelMes
+  );
+  const { mutate: exportarExcel, isLoading: exportandoExcel } = useGenerarReporteVentasExcel();
+
+  // Función para exportar a Excel con múltiples hojas
+  const exportarAExcelCompleto = () => {
+    const datosActuales = vistaExcelEspecifico || vistaExcelActual || [];
+    
+    if (!datosActuales || datosActuales.length === 0) {
+      message.warning('No hay datos para exportar');
+      return;
+    }
+
+    try {
+      // Agrupar datos por mes
+      const datosPorMes = {};
+      datosActuales.forEach(item => {
+        const claveMes = `${item.nombreMes}_${item.anio}`;
+        if (!datosPorMes[claveMes]) {
+          datosPorMes[claveMes] = [];
+        }
+        datosPorMes[claveMes].push(item);
+      });
+
+      // Crear workbook
+      const wb = XLSX.utils.book_new();
+
+      // Crear hojas para cada mes
+      Object.keys(datosPorMes).forEach(claveMes => {
+        const datos = datosPorMes[claveMes];
+        const primerItem = datos[0];
+        
+        // Preparar datos para la hoja
+        const datosHoja = datos.map(item => ({
+          'Fecha': Array.isArray(item.fecha) ? 
+            `${item.fecha[2]}/${item.fecha[1]}/${item.fecha[0]}` : 
+            moment(item.fecha).format('DD/MM/YYYY'),
+          'Vendedor': item.nombreDel || '',
+          'Descripción/Observación': item.descripcionLinea || '',
+          'Transferencia': item.formaDePago || '',
+          'Ingreso': item.precioUnitario || 0,
+          'Comisión Equipo': item.comision || 0
+        }));
+
+        // Crear hoja
+        const ws = XLSX.utils.json_to_sheet(datosHoja);
+        
+        // Agregar título y subtítulo
+        const titulo = `REPORTE DE VENTAS - ${primerItem.nombreMes} ${primerItem.anio}`;
+        const comisionFormateada = new Intl.NumberFormat('es-CR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(primerItem.comisionAcumuladaEquipoMes || 0);
+        const ingresosFormateados = new Intl.NumberFormat('es-CR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(primerItem.ingresosBrutoAcumuladosEquipoMes || 0);
+        const ingresoNetoFormateado = new Intl.NumberFormat('es-CR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(primerItem.ingresoNetoParaRodiejaMes || 0);
+        const subtituloComision = `Comisión Acumulada: ₡${comisionFormateada}`;
+        const subtituloIngresosBrutos = `Ingresos Brutos: ₡${ingresosFormateados}`;
+        const subtituloIngresoNeto = `Ingreso Neto Rodieja: ₡${ingresoNetoFormateado}`;
+        
+        // Crear array con títulos y datos
+        const datosConTitulo = [
+          [titulo],
+          [subtituloComision, '', '', subtituloIngresosBrutos, '', '', subtituloIngresoNeto, ''],
+          [], // Fila vacía
+          ['Fecha', 'Vendedor', 'Descripción/Observación', 'Transferencia', 'Ingreso', 'Comisión Equipo'],
+          ...Object.values(datosHoja).map(row => Object.values(row))
+        ];
+        
+        // Recrear hoja con títulos
+        const wsConTitulo = XLSX.utils.aoa_to_sheet(datosConTitulo);
+        
+        // Agregar colores de fondo a los títulos
+        // Color para el título principal (azul oscuro)
+        wsConTitulo['A1'].s = {
+          fill: { fgColor: { rgb: "FF2E75B6" } },
+          font: { sz: 16, bold: true, color: { rgb: "FFFFFFFF" } },
+          alignment: { horizontal: "center" }
+        };
+        
+        // Color para el subtítulo (verde) - aplicado a grupos de 3 celdas
+        const subtitleStyle = {
+          fill: { fgColor: { rgb: "FF70AD47" } },
+          font: { sz: 12, bold: true, color: { rgb: "FFFFFFFF" } },
+          alignment: { horizontal: "center" }
+        };
+        
+        // Aplicar estilo a las celdas de comisión (A2, B2, C2)
+        wsConTitulo['A2'].s = subtitleStyle;
+        wsConTitulo['B2'].s = subtitleStyle;
+        wsConTitulo['C2'].s = subtitleStyle;
+        
+        // Aplicar estilo a las celdas de ingresos brutos (D2, E2, F2)
+        wsConTitulo['D2'].s = subtitleStyle;
+        wsConTitulo['E2'].s = subtitleStyle;
+        wsConTitulo['F2'].s = subtitleStyle;
+        
+        // Aplicar estilo a las celdas de ingreso neto (G2, H2)
+        wsConTitulo['G2'].s = subtitleStyle;
+        wsConTitulo['H2'].s = subtitleStyle;
+        
+        // Estilo para los títulos de columnas (negrita)
+        const headerStyle = {
+          font: { bold: true, sz: 12 },
+          fill: { fgColor: { rgb: "FFF2CC" } },
+          alignment: { horizontal: "center", vertical: "center" }
+        };
+        
+        // Aplicar estilo de negrita a los títulos de columnas (fila 4)
+        const columnHeaders = ['A4', 'B4', 'C4', 'D4', 'E4', 'F4'];
+        columnHeaders.forEach(cell => {
+          if (wsConTitulo[cell]) {
+            wsConTitulo[cell].s = headerStyle;
+          } else {
+            // Si la celda no existe, crearla con el estilo
+            const col = cell.charCodeAt(0) - 65; // Convertir A=0, B=1, etc.
+            wsConTitulo[cell] = { 
+              v: ['Fecha', 'Vendedor', 'Descripción/Observación', 'Transferencia', 'Ingreso', 'Comisión Equipo'][col],
+              s: headerStyle 
+            };
+          }
+        });
+        
+        // Aplicar el estilo a todas las celdas del título (merge effect)
+        const range = XLSX.utils.decode_range(wsConTitulo['!ref']);
+        for (let col = 0; col <= range.e.c; col++) {
+          const cellTitle = XLSX.utils.encode_cell({ r: 0, c: col });
+          
+          if (col > 0) { // Copiar estilo a otras columnas del título
+            wsConTitulo[cellTitle] = { v: '', s: wsConTitulo['A1'].s };
+          }
+        }
+        
+        // Ajustar ancho de columnas
+        const colWidths = [
+          { wch: 12 },  // Fecha
+          { wch: 15 },  // Vendedor
+          { wch: 40 },  // Descripción/Observación
+          { wch: 15 },  // Transferencia
+          { wch: 15 },  // Ingreso
+          { wch: 15 }   // Comisión Equipo
+        ];
+        wsConTitulo['!cols'] = colWidths;
+
+        // Agregar hoja al workbook
+        XLSX.utils.book_append_sheet(wb, wsConTitulo, claveMes);
+      });
+
+      // Generar y descargar archivo
+      const nombreArchivo = `Reporte_Ventas_Completo_${moment().format('YYYY-MM-DD_HH-mm-ss')}.xlsx`;
+      XLSX.writeFile(wb, nombreArchivo);
+      message.success('Reporte exportado exitosamente');
+    } catch (error) {
+      console.error('Error al exportar a Excel:', error);
+      message.error('Error al exportar el reporte a Excel');
+    }
+  };
+
+  // Columnas para la tabla de vista Excel
+  const columnsVistaExcel = [
+     {
+      title: 'Fecha',
+      dataIndex: 'fecha',
+      key: 'fecha',
+      render: (fecha) => {
+        if (Array.isArray(fecha) && fecha.length >= 3) {
+          return moment([fecha[0], fecha[1] - 1, fecha[2]]).format('DD/MM/YYYY');
+        }
+        return moment(fecha).format('DD/MM/YYYY');
+      },
+      width: 120,
+      sorter: (a, b) => {
+        const dateA = Array.isArray(a.fecha) ? moment([a.fecha[0], a.fecha[1] - 1, a.fecha[2]]) : moment(a.fecha);
+        const dateB = Array.isArray(b.fecha) ? moment([b.fecha[0], b.fecha[1] - 1, b.fecha[2]]) : moment(b.fecha);
+        return dateA - dateB;
+      }
+    },
+    {
+      title: 'Vendedor',
+      dataIndex: 'nombreDel',
+      key: 'nombreDel',
+      width: 120,
+      sorter: (a, b) => a.nombreDel.localeCompare(b.nombreDel)
+    },
+    {
+      title: 'Descripción',
+      dataIndex: 'descripcionLinea',
+      key: 'descripcionLinea',
+      width: 200,
+      sorter: (a, b) => a.descripcionLinea.localeCompare(b.descripcionLinea)
+    },
+        {
+      title: 'Comisión',
+      dataIndex: 'comision',
+      key: 'comision',
+      render: (value) => (
+        <Text type="success">
+          ₡{new Intl.NumberFormat('es-CR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(value)}
+        </Text>
+      ),
+      align: 'right',
+      width: 120,
+      sorter: (a, b) => a.comision - b.comision
+    },
+    {
+      title: 'Forma de Pago',
+      dataIndex: 'formaDePago',
+      key: 'formaDePago',
+      width: 120,
+      render: (text) => (
+        <Tag color={text === 'EFECTIVO' ? 'green' : text === 'TRANSFERENCIA' ? 'blue' : 'default'}>
+          {text}
+        </Tag>
+      ),
+      sorter: (a, b) => a.formaDePago.localeCompare(b.formaDePago)
+    },
+    {
+      title: 'Precio Unitario',
+      dataIndex: 'precioUnitario',
+      key: 'precioUnitario',
+      render: (value) => (
+        <Text strong>
+          ₡{new Intl.NumberFormat('es-CR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(value)}
+        </Text>
+      ),
+      align: 'right',
+      width: 150,
+      sorter: (a, b) => a.precioUnitario - b.precioUnitario
+    },
+
+
+   
+    {
+      title: 'Mes/Año',
+      key: 'periodo',
+      render: (record) => `${record.nombreMes} ${record.anio}`,
+      width: 100,
+      sorter: (a, b) => {
+        if (a.anio !== b.anio) return a.anio - b.anio;
+        return a.mes - b.mes;
+      }
+    },
+    
+  ];
 
   return (
     <div className="ventas-reportes">
@@ -646,6 +1020,101 @@ const VentasReportes = () => {
                   <span>
                     <InboxOutlined style={{ fontSize: 20, color: '#999', marginRight: 8 }} />
                     No hay datos de ventas por empleado
+                  </span>
+                }
+              />
+            )
+          }}
+        />
+      </Card>
+
+      {/* Sección Vista Excel de Ventas Mensuales */}
+      <Card 
+        title={
+          <Space>
+            <BarChartOutlined />
+            <span>Vista Excel de Ventas Mensuales</span>
+          </Space>
+        }
+        extra={
+          <Space>
+            <Button 
+              icon={<FileExcelOutlined />} 
+              onClick={exportarAExcelCompleto}
+              loading={exportandoExcel}
+              type="primary"
+              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+            >
+              Exportar a Excel
+            </Button>
+            <Select
+              style={{ width: 120 }}
+              placeholder="Mes"
+              value={vistaExcelMes}
+              onChange={(value) => setVistaExcelMes(value)}
+              allowClear
+            >
+              <Option value={1}>Enero</Option>
+              <Option value={2}>Febrero</Option>
+              <Option value={3}>Marzo</Option>
+              <Option value={4}>Abril</Option>
+              <Option value={5}>Mayo</Option>
+              <Option value={6}>Junio</Option>
+              <Option value={7}>Julio</Option>
+              <Option value={8}>Agosto</Option>
+              <Option value={9}>Septiembre</Option>
+              <Option value={10}>Octubre</Option>
+              <Option value={11}>Noviembre</Option>
+              <Option value={12}>Diciembre</Option>
+            </Select>
+            <Select
+              style={{ width: 100 }}
+              placeholder="Año"
+              value={vistaExcelAnio}
+              onChange={(value) => setVistaExcelAnio(value)}
+              allowClear
+            >
+              <Option value={2024}>2024</Option>
+              <Option value={2025}>2025</Option>
+              <Option value={2026}>2026</Option>
+            </Select>
+            <Button 
+              type="default" 
+              icon={<ReloadOutlined />} 
+              onClick={() => {
+                setVistaExcelMes(null);
+                setVistaExcelAnio(null);
+              }}
+            >
+              Mes Actual
+            </Button>
+          </Space>
+        }
+        style={{ marginTop: 24 }}
+      >
+        <Table
+          columns={columnsVistaExcel}
+          dataSource={vistaExcelEspecifico || vistaExcelActual || []}
+          rowKey="id"
+          loading={loadingVistaExcelActual || loadingVistaExcelEspecifico}
+          scroll={{ x: 1200 }}
+          bordered
+          size="middle"
+          pagination={{
+            showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50', '100'],
+            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} registros`
+          }}
+          locale={{
+            emptyText: (
+              <Empty 
+                image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                description={
+                  <span>
+                    <InboxOutlined style={{ fontSize: 20, color: '#999', marginRight: 8 }} />
+                    {!vistaExcelMes && !vistaExcelAnio 
+                      ? 'Selecciona un mes y año específicos o usa "Mes Actual"'
+                      : 'No hay datos para el período seleccionado'}
                   </span>
                 }
               />

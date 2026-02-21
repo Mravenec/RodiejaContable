@@ -94,6 +94,26 @@ export const transaccionesCompletasService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Get Excel view for current month sales
+  getVistaExcelMesActual: async () => {
+    try {
+      const response = await api.get('vista-excel-ventas-mes-completa/mes-actual');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Excel view for specific month and year
+  getVistaExcelMesEspecifico: async (anio, mes) => {
+    try {
+      const response = await api.get(`vista-excel-ventas-mes-completa/${anio}/${mes}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };
 

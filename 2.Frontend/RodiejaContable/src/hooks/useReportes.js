@@ -1,6 +1,7 @@
-import { useMutation } from 'react-query';
+import { useMutation, useQuery } from 'react-query';
 import { message } from 'antd';
 import reportesService from '../api/reportes';
+import { transaccionesCompletasService } from '../api/transaccionesCompletas';
 
 export function useGenerarReporteInventario() {
   return useMutation(
@@ -36,6 +37,29 @@ export function useGenerarReporteVentas() {
   );
 }
 
+export function useGenerarReporteVentasExcel() {
+  return useMutation(
+    async ({ anio, mes }) => {
+      if (anio && mes) {
+        return await transaccionesCompletasService.getVistaExcelMesEspecifico(anio, mes);
+      } else {
+        return await transaccionesCompletasService.getVistaExcelMesActual();
+      }
+    },
+    {
+      onSuccess: (data, variables) => {
+        const nombreArchivo = `reporte-ventas-completo-${variables.anio || 'actual'}-${variables.mes || 'actual'}.xlsx`;
+        reportesService.descargarArchivo(data, nombreArchivo);
+        message.success('Reporte de ventas completo generado correctamente');
+      },
+      onError: (error) => {
+        message.error('Error al generar el reporte de ventas completo');
+        console.error('Error en useGenerarReporteVentasExcel:', error);
+      },
+    }
+  );
+}
+
 export function useGenerarReporteFinanciero() {
   return useMutation(
     (params = {}) => reportesService.generarReporteFinanciero(params),
@@ -65,6 +89,33 @@ export function useGenerarReporteVehiculos() {
       onError: (error) => {
         message.error('Error al generar el reporte de vehículos');
         console.error('Error en useGenerarReporteVehiculos:', error);
+      },
+    }
+  );
+}
+
+export function useVistaExcelMesActual() {
+  return useQuery(
+    'vista-excel-mes-actual',
+    () => transaccionesCompletasService.getVistaExcelMesActual(),
+    {
+      onError: (error) => {
+        message.error('Error al cargar la vista Excel del mes actual');
+        console.error('Error en useVistaExcelMesActual:', error);
+      },
+    }
+  );
+}
+
+export function useVistaExcelMesEspecifico(anio, mes) {
+  return useQuery(
+    ['vista-excel-mes-especifico', anio, mes],
+    () => transaccionesCompletasService.getVistaExcelMesEspecifico(anio, mes),
+    {
+      enabled: !!anio && !!mes,
+      onError: (error) => {
+        message.error('Error al cargar la vista Excel del mes específico');
+        console.error('Error en useVistaExcelMesEspecifico:', error);
       },
     }
   );

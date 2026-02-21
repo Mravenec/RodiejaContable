@@ -1,7 +1,7 @@
 // src/api/finanzas.js
 import api from './axios';
 
-export const finanzaService = {
+export const finanzasService = {
   // Get all financial transactions with optional filters
   getTransacciones: async (filters = {}) => {
     try {
@@ -108,4 +108,4 @@ export const finanzaService = {
   }
 };
 
-export default finanzaService;
+export default finanzasService;
