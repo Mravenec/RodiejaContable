@@ -28,7 +28,8 @@ import {
   ArrowDownOutlined,
   PlusOutlined,
   CheckOutlined,
-  CloseOutlined
+  CloseOutlined,
+  EditOutlined
 } from '@ant-design/icons';
 import { useCreateTransaccion } from '../../hooks/useFinanzas';
 import { useTiposByCategoria, useVehiculosParaTransacciones, useEmpleados, useRepuestos } from '../../hooks';
@@ -52,6 +53,12 @@ const NuevaTransaccion = () => {
   const [nuevoEmpleadoModal, setNuevoEmpleadoModal] = useState(false);
   const [nuevoEmpleadoNombre, setNuevoEmpleadoNombre] = useState('');
   const [creandoEmpleado, setCreandoEmpleado] = useState(false);
+  
+  // Estados para manejar edición de empleado inline
+  const [editandoEmpleadoModal, setEditandoEmpleadoModal] = useState(false);
+  const [empleadoEditando, setEmpleadoEditando] = useState(null);
+  const [editandoEmpleadoNombre, setEditandoEmpleadoNombre] = useState('');
+  const [actualizandoEmpleado, setActualizandoEmpleado] = useState(false);
   
   // Hooks para cargar datos
   const { data: tiposIngreso, isLoading: loadingTiposIngreso } = useTiposByCategoria('INGRESO');
@@ -119,6 +126,46 @@ const NuevaTransaccion = () => {
     } finally {
       setCreandoEmpleado(false);
     }
+  };
+
+  // Función para editar empleado existente
+  const handleEditarEmpleado = async () => {
+    if (!editandoEmpleadoNombre.trim()) {
+      message.warning('Por favor ingrese el nombre del empleado');
+      return;
+    }
+
+    setActualizandoEmpleado(true);
+    try {
+      // Llamar a la API real para actualizar el empleado
+      const response = await api.put(`/empleados/${empleadoEditando.id}`, {
+        nombre: editandoEmpleadoNombre.trim()
+      });
+      
+      console.log('Empleado actualizado:', response.data);
+      message.success('Empleado actualizado exitosamente');
+      
+      // Limpiar formulario
+      setEditandoEmpleadoModal(false);
+      setEmpleadoEditando(null);
+      setEditandoEmpleadoNombre('');
+      
+      // Refrescar la lista de empleados inmediatamente
+      queryClient.invalidateQueries('empleados');
+      
+    } catch (error) {
+      console.error('Error al actualizar empleado:', error);
+      message.error('Error al actualizar empleado: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setActualizandoEmpleado(false);
+    }
+  };
+
+  // Función para iniciar edición de empleado
+  const iniciarEdicionEmpleado = (empleado) => {
+    setEmpleadoEditando(empleado);
+    setEditandoEmpleadoNombre(empleado.nombre || empleado.nombres || '');
+    setEditandoEmpleadoModal(true);
   };
 
   // Función para calcular comisión
@@ -461,7 +508,46 @@ const NuevaTransaccion = () => {
                           <div>
                             {menu}
                             <Divider style={{ margin: '8px 0' }} />
-                            { nuevoEmpleadoModal ? (
+                            { editandoEmpleadoModal ? (
+                              <div style={{ padding: '8px', display: 'flex', gap: '8px' }}>
+                                <Input
+                                  autoFocus
+                                  size="small"
+                                  placeholder="Editar nombre del empleado"
+                                  value={editandoEmpleadoNombre}
+                                  onChange={(e) => setEditandoEmpleadoNombre(e.target.value)}
+                                  onPressEnter={handleEditarEmpleado}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                      setEditandoEmpleadoModal(false);
+                                      setEmpleadoEditando(null);
+                                      setEditandoEmpleadoNombre('');
+                                    }
+                                  }}
+                                  style={{ flex: 1 }}
+                                />
+                                <Button
+                                  type="text"
+                                  icon={<CheckOutlined style={{ color: '#52c41a' }} />}
+                                  onClick={handleEditarEmpleado}
+                                  loading={actualizandoEmpleado}
+                                  disabled={!editandoEmpleadoNombre.trim()}
+                                  title="Actualizar"
+                                />
+                                <Button
+                                  type="text"
+                                  danger
+                                  icon={<CloseOutlined />}
+                                  onClick={() => {
+                                    setEditandoEmpleadoModal(false);
+                                    setEmpleadoEditando(null);
+                                    setEditandoEmpleadoNombre('');
+                                  }}
+                                  disabled={actualizandoEmpleado}
+                                  title="Cancelar"
+                                />
+                              </div>
+                            ) : nuevoEmpleadoModal ? (
                               <div style={{ padding: '8px', display: 'flex', gap: '8px' }}>
                                 <Input
                                   autoFocus
@@ -524,7 +610,33 @@ const NuevaTransaccion = () => {
                     >
                       {empleados.map(empleado => (
                         <Option key={empleado.id} value={empleado.id}>
-                          {empleado.nombres} {empleado.apellidos}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                            <span>{empleado.nombre || `${empleado.nombres} ${empleado.apellidos}`}</span>
+                            <EditOutlined 
+                              style={{ 
+                                fontSize: '12px', 
+                                color: '#722ed1', 
+                                cursor: 'pointer',
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                transition: 'all 0.2s'
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                iniciarEdicionEmpleado(empleado);
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f0f0f0';
+                                e.currentTarget.style.color = '#531dab';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.color = '#722ed1';
+                              }}
+                              title="Editar empleado"
+                            />
+                          </div>
                         </Option>
                       ))}
                     </Select>
