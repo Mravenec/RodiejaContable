@@ -31,12 +31,16 @@ public class EmpleadosService {
     }
     
     public Empleados update(Integer id, Empleados empleadoDetails) {
-        Empleados empleado = findById(id);
+        Empleados empleadoExistente = findById(id);
         
-        empleado.setNombre(empleadoDetails.getNombre() != null ? empleadoDetails.getNombre() : empleado.getNombre());
-        empleado.setActivo(empleadoDetails.getActivo() != null ? empleadoDetails.getActivo() : empleado.getActivo());
+        // Crear un nuevo objeto con solo los campos a actualizar
+        Empleados empleadoParaActualizar = new Empleados();
+        empleadoParaActualizar.setId(id);
+        empleadoParaActualizar.setNombre(empleadoDetails.getNombre() != null ? empleadoDetails.getNombre() : empleadoExistente.getNombre());
+        empleadoParaActualizar.setFechaCreacion(empleadoExistente.getFechaCreacion()); // Mantener fecha original
+        empleadoParaActualizar.setActivo(empleadoDetails.getActivo() != null ? empleadoDetails.getActivo() : empleadoExistente.getActivo()); // Mantener activo original si no se especifica
         
-        return empleadoRepository.update(empleado);
+        return empleadoRepository.update(empleadoParaActualizar);
     }
     
     public void delete(Integer id) {

@@ -2,6 +2,7 @@ package com.rodiejacontable.rodiejacontable.repository;
 
 import static com.rodiejacontable.database.jooq.Tables.EMPLEADOS;
 import com.rodiejacontable.database.jooq.tables.pojos.Empleados;
+import com.rodiejacontable.database.jooq.tables.records.EmpleadosRecord;
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -39,13 +40,18 @@ public class EmpleadosRepository {
     }
     
     public Empleados update(Empleados empleado) {
-        return dsl.update(EMPLEADOS)
+        int rowsAffected = dsl.update(EMPLEADOS)
                  .set(EMPLEADOS.NOMBRE, empleado.getNombre())
                  .set(EMPLEADOS.ACTIVO, empleado.getActivo())
                  .where(EMPLEADOS.ID.eq(empleado.getId()))
-                 .returning()
-                 .fetchOne()
-                 .into(Empleados.class);
+                 .execute();
+        
+        if (rowsAffected == 0) {
+            throw new RuntimeException("No se encontró el empleado con id: " + empleado.getId());
+        }
+        
+        return findById(empleado.getId())
+                .orElseThrow(() -> new RuntimeException("No se encontró el empleado con id: " + empleado.getId()));
     }
     
     public void delete(Integer id) {

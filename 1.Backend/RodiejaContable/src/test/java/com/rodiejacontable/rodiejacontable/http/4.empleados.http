@@ -165,3 +165,11 @@ Content-Type: application/json
 {
   "nombre": "DANIELA TORRES"
 }
+
+### Editar empleado (PUT)
+PUT http://localhost:8080/api/empleados/9
+Content-Type: application/json
+
+{
+  "nombre": "DANIELA ACTUALIZADA"
+}

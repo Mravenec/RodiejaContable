@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from 'react-query';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 import { 
@@ -24,10 +25,14 @@ import {
   ArrowLeftOutlined,
   TransactionOutlined,
   ArrowUpOutlined,
-  ArrowDownOutlined
+  ArrowDownOutlined,
+  PlusOutlined,
+  CheckOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import { useCreateTransaccion } from '../../hooks/useFinanzas';
 import { useTiposByCategoria, useVehiculosParaTransacciones, useEmpleados, useRepuestos } from '../../hooks';
+import api from '../../api/axios';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -37,10 +42,16 @@ const { TabPane } = Tabs;
 const NuevaTransaccion = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [tipoTransaccion, setTipoTransaccion] = useState('INGRESO');
   const [monto, setMonto] = useState(0);
   const [comision, setComision] = useState(0);
   const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(null);
+  
+  // Estados para manejar nuevo empleado inline
+  const [nuevoEmpleadoModal, setNuevoEmpleadoModal] = useState(false);
+  const [nuevoEmpleadoNombre, setNuevoEmpleadoNombre] = useState('');
+  const [creandoEmpleado, setCreandoEmpleado] = useState(false);
   
   // Hooks para cargar datos
   const { data: tiposIngreso, isLoading: loadingTiposIngreso } = useTiposByCategoria('INGRESO');
@@ -52,20 +63,19 @@ const NuevaTransaccion = () => {
   // Hook para crear transacción
   const { mutate: crearTransaccion, isLoading: isCreating } = useCreateTransaccion({
     onSuccess: () => {
-      message.success('Transacción registrada correctamente');
-      // Usar goBack para volver a la página anterior
-      navigate(-1);
+      message.success('Transacción creada exitosamente');
+      form.resetFields();
+      setMonto(0);
+      setComision(0);
+      setVehiculoSeleccionado(null);
+      navigate('/finanzas/transacciones');
     },
     onError: (error) => {
       console.error('Error al crear transacción:', error);
-      
-      // Mostrar error más detallado
-      let errorMessage = 'Error al guardar la transacción';
+      let errorMessage = 'Error al crear transacción';
       
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -78,6 +88,38 @@ const NuevaTransaccion = () => {
       message.error(errorMessage);
     }
   });
+
+  // Función para crear nuevo empleado
+  const handleNuevoEmpleado = async () => {
+    if (!nuevoEmpleadoNombre.trim()) {
+      message.warning('Por favor ingrese el nombre del empleado');
+      return;
+    }
+
+    setCreandoEmpleado(true);
+    try {
+      // Llamar a la API real para crear el empleado
+      const response = await api.post('/empleados', {
+        nombre: nuevoEmpleadoNombre.trim()
+      });
+      
+      console.log('Empleado creado:', response.data);
+      message.success('Empleado creado exitosamente');
+      
+      // Limpiar formulario
+      setNuevoEmpleadoModal(false);
+      setNuevoEmpleadoNombre('');
+      
+      // Refrescar la lista de empleados inmediatamente
+      queryClient.invalidateQueries('empleados');
+      
+    } catch (error) {
+      console.error('Error al crear empleado:', error);
+      message.error('Error al crear empleado: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setCreandoEmpleado(false);
+    }
+  };
 
   // Función para calcular comisión
   const calcularComision = useCallback((monto) => {
@@ -410,10 +452,75 @@ const NuevaTransaccion = () => {
                       showSearch
                       optionFilterProp="children"
                       filterOption={(input, option) =>
-                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        option && option.children 
+                          ? option.children.toLowerCase().includes(input.toLowerCase())
+                          : option.props.className === 'add-new-option' // Always show add new option
                       }
-                      notFoundContent={<div>No se encontraron empleados</div>}
-                      disabled={empleados.length === 0}
+                      dropdownRender={(menu) => {
+                        return (
+                          <div>
+                            {menu}
+                            <Divider style={{ margin: '8px 0' }} />
+                            { nuevoEmpleadoModal ? (
+                              <div style={{ padding: '8px', display: 'flex', gap: '8px' }}>
+                                <Input
+                                  autoFocus
+                                  size="small"
+                                  placeholder="Nombre del empleado"
+                                  value={nuevoEmpleadoNombre}
+                                  onChange={(e) => setNuevoEmpleadoNombre(e.target.value)}
+                                  onPressEnter={handleNuevoEmpleado}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                      setNuevoEmpleadoModal(false);
+                                      setNuevoEmpleadoNombre('');
+                                    }
+                                  }}
+                                  style={{ flex: 1 }}
+                                />
+                                <Button
+                                  type="text"
+                                  icon={<CheckOutlined style={{ color: '#52c41a' }} />}
+                                  onClick={handleNuevoEmpleado}
+                                  loading={creandoEmpleado}
+                                  disabled={!nuevoEmpleadoNombre.trim()}
+                                  title="Agregar"
+                                />
+                                <Button
+                                  type="text"
+                                  danger
+                                  icon={<CloseOutlined />}
+                                  onClick={() => {
+                                    setNuevoEmpleadoModal(false);
+                                    setNuevoEmpleadoNombre('');
+                                  }}
+                                  disabled={creandoEmpleado}
+                                  title="Cancelar"
+                                />
+                              </div>
+                            ) : (
+                              <div 
+                                style={{ 
+                                  padding: '4px 8px', 
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: '#1890ff'
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setNuevoEmpleadoModal(true);
+                                  setNuevoEmpleadoNombre('');
+                                }}
+                              >
+                                <PlusOutlined style={{ marginRight: 8 }} />
+                                Agregar nuevo empleado
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }}
                     >
                       {empleados.map(empleado => (
                         <Option key={empleado.id} value={empleado.id}>
