@@ -847,11 +847,10 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   loading={isLoadingMarcas}
                   onChange={handleMarcaChange}
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   filterOption={(input, option) =>
-                    option && option.children 
-                      ? option.children.toLowerCase().includes(input.toLowerCase())
-                      : option.props.className === 'add-new-option' // Always show the add new option
+                    option.props.className === 'add-new-option' ||
+                    (option.label && option.label.toLowerCase().includes(input.toLowerCase()))
                   }
                   dropdownRender={(menu) => {
                     return (
@@ -920,7 +919,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   }}
                 >
                   {marcas.map((marca) => (
-                    <Option key={marca.id} value={marca.id}>
+                    <Option key={marca.id} value={marca.id} label={marca.nombre}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                     {editingMarcaId === marca.id ? (
                       <div style={{ display: 'flex', width: '100%', gap: '8px' }}>
@@ -991,11 +990,10 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   onChange={handleModeloChange}
                   disabled={!marcaId}
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   filterOption={(input, option) =>
-                    option && option.children 
-                      ? option.children.toLowerCase().includes(input.toLowerCase())
-                      : option.props.className === 'add-new-option'
+                    option.props.className === 'add-new-option' ||
+                    (option.label && option.label.toLowerCase().includes(input.toLowerCase()))
                   }
                   dropdownRender={(menu) => {
                     return (
@@ -1066,7 +1064,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   }}
                 >
                   {modelos.map((modelo) => (
-                    <Option key={modelo.id} value={modelo.id}>
+                    <Option key={modelo.id} value={modelo.id} label={modelo.nombre}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         {editingModeloId === modelo.id ? (
                           <div style={{ display: 'flex', width: '100%', gap: '8px' }}>
@@ -1137,11 +1135,10 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   onChange={handleGeneracionChange}
                   disabled={!modeloId}
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   filterOption={(input, option) =>
-                    option && option.children 
-                      ? option.children.toLowerCase().includes(input.toLowerCase())
-                      : option.props.className === 'add-new-option'
+                    option.props.className === 'add-new-option' ||
+                    (option.label && option.label.toLowerCase().includes(input.toLowerCase()))
                   }
                   dropdownRender={(menu) => (
                     <div>
@@ -1237,7 +1234,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
                     const displayText = `${generacion.nombre} (${startYear}-${endYear})`;
                     
                     return (
-                      <Option key={generacion.id} value={generacion.id}>
+                      <Option key={generacion.id} value={generacion.id} label={displayText}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                           {editingGeneracionId === generacion.id ? (
                             <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '8px' }}>
