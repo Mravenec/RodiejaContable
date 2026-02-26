@@ -491,7 +491,7 @@ const VentasReportes = () => {
     vistaExcelAnio, 
     vistaExcelMes
   );
-  const { mutate: exportarExcel, isLoading: exportandoExcel } = useGenerarReporteVentasExcel();
+  const {  isLoading: exportandoExcel } = useGenerarReporteVentasExcel();
 
   // Función para exportar a Excel con múltiples hojas
   const exportarAExcelCompleto = () => {
@@ -538,7 +538,6 @@ const VentasReportes = () => {
         }));
 
         // Crear hoja
-        const ws = XLSX.utils.json_to_sheet(datosHoja);
         
         // Agregar título y subtítulo
         const titulo = `REPORTE DE VENTAS - ${primerItem.nombreMes} ${primerItem.anio}`;
@@ -961,78 +960,7 @@ const VentasReportes = () => {
           </Col>
         </Row>
       </Spin>
-      
-      {/* Tabla de ventas */}
-      <Card 
-        title={
-          <Space>
-            <TeamOutlined />
-            <span>Ventas por Empleado</span>
-            {filtros.vendedor && (
-              <Tag color="blue">
-                Filtrado por: {empleados.find(e => e.id === filtros.vendedor)?.nombreCompleto || 'Vendedor'}
-              </Tag>
-            )}
-          </Space>
-        }
-        extra={
-          <Space>
-            <Button 
-              type="primary" 
-              icon={<DownloadOutlined />} 
-              onClick={exportarAExcel}
-              loading={loading.exportar}
-            >
-              Exportar
-            </Button>
-            <Button 
-              icon={<FilterOutlined />} 
-              onClick={() => {}}
-            >
-              Filtros
-            </Button>
-            <Button 
-              icon={<ReloadOutlined />} 
-              onClick={cargarDatosIniciales}
-              loading={loading.ventas}
-            >
-              Actualizar
-            </Button>
-          </Space>
-        }
-      >
-        <Table
-          columns={columnsVentasEmpleados}
-          dataSource={ventas}
-          rowKey="empleado"
-          pagination={{
-            ...pagination,
-            showSizeChanger: true,
-            pageSizeOptions: ['10', '20', '50', '100'],
-            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} registros`
-          }}
-          onChange={handleTableChange}
-          loading={loading.ventas}
-          scroll={{ x: 1000 }}
-          bordered
-          size="middle"
-          locale={{
-            emptyText: (
-              <Empty 
-                image={Empty.PRESENTED_IMAGE_SIMPLE} 
-                description={
-                  <span>
-                    <InboxOutlined style={{ fontSize: 20, color: '#999', marginRight: 8 }} />
-                    No hay datos de ventas por empleado
-                  </span>
-                }
-              />
-            )
-          }}
-        />
-      </Card>
-
-      {/* Sección Vista Excel de Ventas Mensuales */}
+            {/* Sección Vista Excel de Ventas Mensuales */}
       <Card 
         title={
           <Space>
@@ -1126,6 +1054,78 @@ const VentasReportes = () => {
           }}
         />
       </Card>
+
+      
+      {/* Tabla de ventas */}
+      <Card 
+        title={
+          <Space>
+            <TeamOutlined />
+            <span>Ventas por Empleado</span>
+            {filtros.vendedor && (
+              <Tag color="blue">
+                Filtrado por: {empleados.find(e => e.id === filtros.vendedor)?.nombreCompleto || 'Vendedor'}
+              </Tag>
+            )}
+          </Space>
+        }
+        extra={
+          <Space>
+            <Button 
+              type="primary" 
+              icon={<DownloadOutlined />} 
+              onClick={exportarAExcel}
+              loading={loading.exportar}
+            >
+              Exportar
+            </Button>
+            <Button 
+              icon={<FilterOutlined />} 
+              onClick={() => {}}
+            >
+              Filtros
+            </Button>
+            <Button 
+              icon={<ReloadOutlined />} 
+              onClick={cargarDatosIniciales}
+              loading={loading.ventas}
+            >
+              Actualizar
+            </Button>
+          </Space>
+        }
+      >
+        <Table
+          columns={columnsVentasEmpleados}
+          dataSource={ventas}
+          rowKey="empleado"
+          pagination={{
+            ...pagination,
+            showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50', '100'],
+            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} registros`
+          }}
+          onChange={handleTableChange}
+          loading={loading.ventas}
+          scroll={{ x: 1000 }}
+          bordered
+          size="middle"
+          locale={{
+            emptyText: (
+              <Empty 
+                image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                description={
+                  <span>
+                    <InboxOutlined style={{ fontSize: 20, color: '#999', marginRight: 8 }} />
+                    No hay datos de ventas por empleado
+                  </span>
+                }
+              />
+            )
+          }}
+        />
+      </Card>
+
 
       {/* Modal para ver detalles de venta */}
       <Modal
