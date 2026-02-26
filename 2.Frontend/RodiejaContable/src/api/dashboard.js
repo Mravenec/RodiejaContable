@@ -5,20 +5,42 @@ class DashboardService {
   // Obtener estadísticas generales del dashboard
   async getDashboardStats() {
     try {
-      // Estos son los controles que deben funcionar según el archivo .http:
-      // GET http://localhost:8080/api/dashboard/ejecutivo
-      const response = await api.get('/dashboard/ejecutivo');
-      const data = response.data[0]; // Get first item from array response
+      // Obtener datos del dashboard ejecutivo
+      const dashboardResponse = await api.get('/dashboard/ejecutivo');
+      const dashboardData = dashboardResponse.data[0] || {};
+      
+      // Obtener ingresos y egresos reales desde transacciones financieras
+      const transaccionesResponse = await api.get('/transacciones-financieras');
+      const transacciones = transaccionesResponse.data || [];
+      
+      // Calcular ingresos y egresos desde transacciones reales
+      const ingresosTotales = transacciones
+        .filter(t => {
+          // Asumimos que tipoTransaccionId 1-3 son ingresos, 4-6 son egresos
+          return t.tipoTransaccionId <= 3;
+        })
+        .reduce((sum, t) => sum + (t.monto || 0), 0);
+        
+      const egresosTotales = transacciones
+        .filter(t => {
+          return t.tipoTransaccionId > 3;
+        })
+        .reduce((sum, t) => sum + (t.monto || 0), 0);
+      
+      console.log('=== CÁLCULO DE INGRESOS/EGRESOS ===');
+      console.log('Transacciones totales:', transacciones.length);
+      console.log('Ingresos calculados:', ingresosTotales);
+      console.log('Egresos calculados:', egresosTotales);
       
       // Mapear la respuesta del backend al formato esperado por el frontend
       return {
-        totalVentas: data.ingresosTotales || 0,
-        totalVehiculos: data.totalVehiculos || 0,
-        totalRepuestos: data.totalRepuestos || 0,
+        totalVentas: ingresosTotales || 0,
+        totalVehiculos: dashboardData.totalVehiculos || 0,
+        totalRepuestos: dashboardData.totalRepuestos || 0,
         totalClientes: 0, // This field might need to be fetched separately
-        totalEgresos: data.egresosTotales || 0,
-        margenBeneficio: data.balanceNetoTotal || 0,
-        roiPromedio: data.roiPromedio || 0
+        totalEgresos: egresosTotales || 0,
+        margenBeneficio: (ingresosTotales || 0) - (egresosTotales || 0),
+        roiPromedio: dashboardData.roiPromedio || 0
       };
     } catch (error) {
       console.error('Error al obtener estadísticas del dashboard:', error);

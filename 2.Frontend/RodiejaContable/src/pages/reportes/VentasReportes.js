@@ -46,8 +46,8 @@ const VentasReportes = () => {
   const [estadisticas, setEstadisticas] = useState({});
   const [empleados, setEmpleados] = useState([]);
   const [ventaSeleccionada, setVentaSeleccionada] = useState(null);
-  const [vistaExcelMes, setVistaExcelMes] = useState(null);
-  const [vistaExcelAnio, setVistaExcelAnio] = useState(null);
+  const [vistaExcelMes, setVistaExcelMes] = useState(new Date().getMonth() + 1); // Mes actual (1-12)
+  const [vistaExcelAnio, setVistaExcelAnio] = useState(new Date().getFullYear()); // Año actual
   const [loading, setLoading] = useState({
     ventas: false,
     estadisticas: false,
@@ -513,6 +513,10 @@ const VentasReportes = () => {
         datosPorMes[claveMes].push(item);
       });
 
+      // Debug: Mostrar primeros datos para verificar campos
+      console.log('🔍 [DEBUG] Primer item de datos:', datosActuales[0]);
+      console.log('🔍 [DEBUG] Campos disponibles:', Object.keys(datosActuales[0] || {}));
+
       // Crear workbook
       const wb = XLSX.utils.book_new();
 
@@ -528,7 +532,7 @@ const VentasReportes = () => {
             moment(item.fecha).format('DD/MM/YYYY'),
           'Vendedor': item.nombreDel || '',
           'Descripción/Observación': item.descripcionLinea || '',
-          'Transferencia': item.formaDePago || '',
+          'Forma de Pago': item.formaDePago || '',
           'Ingreso': item.precioUnitario || 0,
           'Comisión Equipo': item.comision || 0
         }));
@@ -559,7 +563,7 @@ const VentasReportes = () => {
           [titulo],
           [subtituloComision, '', '', subtituloIngresosBrutos, '', '', subtituloIngresoNeto, ''],
           [], // Fila vacía
-          ['Fecha', 'Vendedor', 'Descripción/Observación', 'Transferencia', 'Ingreso', 'Comisión Equipo'],
+          ['Fecha', 'Vendedor', 'Descripción/Observación', 'Forma de Pago', 'Ingreso', 'Comisión Equipo'],
           ...Object.values(datosHoja).map(row => Object.values(row))
         ];
         
@@ -611,7 +615,7 @@ const VentasReportes = () => {
             // Si la celda no existe, crearla con el estilo
             const col = cell.charCodeAt(0) - 65; // Convertir A=0, B=1, etc.
             wsConTitulo[cell] = { 
-              v: ['Fecha', 'Vendedor', 'Descripción/Observación', 'Transferencia', 'Ingreso', 'Comisión Equipo'][col],
+              v: ['Fecha', 'Vendedor', 'Descripción/Observación', 'Forma de Pago', 'Ingreso', 'Comisión Equipo'][col],
               s: headerStyle 
             };
           }
@@ -632,7 +636,7 @@ const VentasReportes = () => {
           { wch: 12 },  // Fecha
           { wch: 15 },  // Vendedor
           { wch: 40 },  // Descripción/Observación
-          { wch: 15 },  // Transferencia
+          { wch: 15 },  // Forma de Pago
           { wch: 15 },  // Ingreso
           { wch: 15 }   // Comisión Equipo
         ];
