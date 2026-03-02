@@ -1,4 +1,4 @@
-// src/components/VehiculosJerarquicos.jsx
+  // src/components/VehiculosJerarquicos.jsx
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Card,
@@ -962,11 +962,13 @@ const VehiculosJerarquicos = () => {
                   <Col xs={24} sm={12} md={8}>
                     <div>
                       <Text type="secondary" style={{ fontSize: '0.85em', display: 'block', marginBottom: 2 }}>Monto recuperado</Text>
-                      <div style={{ color: '#52c41a', marginBottom: 4 }}>{formatMonto(vehiculo.costo_recuperado)}</div>
+                      <div style={{ color: vehiculo.costo_recuperado < 0 ? '#722ed1' : '#52c41a', marginBottom: 4 }}>{formatMonto(vehiculo.costo_recuperado)}</div>
                       {vehiculo.inversion_total > 0 && (() => {
                         const porcentaje = ((vehiculo.costo_recuperado || 0) / vehiculo.inversion_total) * 100;
-                        const porcentajeBase = Math.min(100, porcentaje);
-                        const porcentajeExcedente = Math.max(0, porcentaje - 100);
+                        const porcentajeAbsoluto = Math.abs(porcentaje);
+                        const porcentajeBase = Math.min(100, porcentajeAbsoluto);
+                        const porcentajeExcedente = Math.max(0, porcentajeAbsoluto - 100);
+                        const esNegativo = porcentaje < 0;
                         
                         return (
                           <div> 
@@ -980,12 +982,12 @@ const VehiculosJerarquicos = () => {
                               overflow: 'hidden'
                             }}>
                               {/* Barra base (hasta 100%) */}
-                              {porcentajeBase > 0 && (
+                              {porcentajeAbsoluto > 0 && (
                                 <div 
                                   style={{
                                     width: '100%',
                                     height: '100%',
-                                    backgroundColor: '#52c41a',
+                                    backgroundColor: esNegativo ? '#722ed1' : '#52c41a',
                                     position: 'absolute',
                                     left: 0,
                                     top: 0,
@@ -1001,7 +1003,7 @@ const VehiculosJerarquicos = () => {
                                   style={{
                                     width: `${porcentajeExcedente}%`,
                                     height: '100%',
-                                    backgroundColor: '#faad14', // Dorado para el excedente
+                                    backgroundColor: esNegativo ? '#722ed1' : '#faad14', // Dorado para excedente positivo, morado para excedente negativo
                                     position: 'absolute',
                                     right: 0,
                                     top: 0,
