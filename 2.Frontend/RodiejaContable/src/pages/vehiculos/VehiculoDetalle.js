@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Descriptions, Typography, Tabs, Image, Tag, Divider, Spin, message } from 'antd';
+import { Card, Button, Descriptions, Typography, Tabs, Image, Tag, Spin, message } from 'antd';
 import { 
   ArrowLeftOutlined, 
   EditOutlined, 
   DollarOutlined, 
   ToolOutlined, 
   FileTextOutlined,
-  CarOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
 import vehiculoService from '../../api/vehiculos';
@@ -93,17 +92,17 @@ const transaccionesService = {
         vehiculoId: t.vehiculoId,
         repuestoId: t.repuestoId,
         isRepuestoTransaction: repuestoIds.includes(t.repuestoId),
-        matchesVehicle: t.vehiculoId == vehiculoId || t.vehiculoId === parseInt(vehiculoId)
+        matchesVehicle: t.vehiculoId === vehiculoId || t.vehiculoId === parseInt(vehiculoId)
       })));
       
       const filteredTransacciones = allTransacciones.filter(transaccion => {
         // Check if transaction is directly for this vehicle
-        const matchesVehicle = transaccion.vehiculoId != null && 
-                             (transaccion.vehiculoId == vehiculoId || 
+        const matchesVehicle = transaccion.vehiculoId !== null && 
+                             (transaccion.vehiculoId === vehiculoId || 
                               transaccion.vehiculoId === parseInt(vehiculoId));
         
         // Check if transaction is for a repuesto that belongs to this vehicle
-        const matchesRepuesto = transaccion.repuestoId != null && 
+        const matchesRepuesto = transaccion.repuestoId !== null && 
                                repuestoIds.includes(transaccion.repuestoId);
         
         console.log(`Transaction ${transaccion.id}:`, {
@@ -123,14 +122,14 @@ const transaccionesService = {
       // Map transactions with their type information
       const vehiculoTransacciones = filteredTransacciones
         .map(transaccion => {
-          const tipo = tiposMap[transaccion.tipoTransaccionId] || {
+          const tipoInfo = tiposMap[transaccion.tipoTransaccionId] || {
             nombre: 'Tipo desconocido',
             categoria: transaccion.monto > 0 ? 'INGRESO' : 'EGRESO'
           };
           
           return {
             ...transaccion,
-            tipo_transaccion: tipo,
+            tipo_transaccion: tipoInfo,
             // Ensure we have a proper date string for sorting
             fecha: Array.isArray(transaccion.fecha) 
               ? new Date(transaccion.fecha[0], transaccion.fecha[1] - 1, transaccion.fecha[2])
@@ -165,7 +164,7 @@ const VehiculoDetalle = () => {
   const [loadingRepuestos, setLoadingRepuestos] = useState(false);
 
   // Load vehicle data
-  const loadVehicleData = async () => {
+  const loadVehicleData = useCallback(async () => {
     try {
       setIsLoading(true);
       setIsError(false);
@@ -232,7 +231,7 @@ const VehiculoDetalle = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
 
   // Load transactions for the vehicle
   const loadTransactions = async (vehiculoId) => {
@@ -304,7 +303,7 @@ const VehiculoDetalle = () => {
     if (id) {
       loadVehicleData();
     }
-  }, [id]);
+  }, [id, loadVehicleData]);
 
   // Load transactions and repuestos when vehicle is loaded
   useEffect(() => {
@@ -551,43 +550,101 @@ const VehiculoDetalle = () => {
                 <Descriptions.Item label="Monto Recuperado">
                   <div>
                     <div style={{ 
-                      color: '#52c41a', 
+                      color: vehiculo.costoRecuperado < 0 ? '#722ed1' : '#52c41a', 
                       fontWeight: 500,
                       marginBottom: 4
                     }}>
                       {formatCurrency(vehiculo.costoRecuperado || 0)}
                     </div>
-                    {vehiculo.inversionTotal > 0 && (
-                      <div style={{ 
-                        width: '100%', 
-                        backgroundColor: '#f0f0f0', 
-                        borderRadius: 4,
-                        marginTop: 4
-                      }}>
-                        <div 
-                          style={{
-                            width: `${Math.min(100, ((vehiculo.costoRecuperado || 0) / vehiculo.inversionTotal) * 100)}%`,
-                            height: 6,
-                            backgroundColor: '#52c41a',
+                    {vehiculo.inversionTotal > 0 && (() => {
+                      const porcentaje = ((vehiculo.costoRecuperado || 0) / vehiculo.inversionTotal) * 100;
+                      const porcentajeAbsoluto = Math.abs(porcentaje);
+                      const porcentajeBase = Math.min(100, porcentajeAbsoluto);
+                      const porcentajeExcedente = Math.max(0, porcentajeAbsoluto - 100);
+                      const esNegativo = porcentaje < 0;
+                      
+                      return (
+                        <div> 
+                          <div style={{ 
+                            width: '100%', 
+                            backgroundColor: '#f0f0f0', 
                             borderRadius: 4,
-                            transition: 'width 0.3s'
-                          }}
-                        />
-                        <div style={{ 
-                          fontSize: 12, 
-                          color: '#666',
-                          marginTop: 4
-                        }}>
-                          {vehiculo.inversionTotal > 0 ? 
-                            `${((vehiculo.costoRecuperado || 0) / vehiculo.inversionTotal * 100).toLocaleString('es-CR', { 
-                              minimumFractionDigits: 2, 
-                              maximumFractionDigits: 2 
-                            })}% de la inversión` : 
-                            '0.00% de la inversión'
-                          }
+                            marginTop: 4,
+                            height: 6,
+                            position: 'relative',
+                            overflow: 'hidden'
+                          }}>
+                            {/* Barra base (hasta 100%) */}
+                            {porcentajeAbsoluto > 0 && (
+                              <div 
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  backgroundColor: esNegativo ? '#722ed1' : '#52c41a',
+                                  position: 'absolute',
+                                  left: 0,
+                                  top: 0,
+                                  transition: 'width 0.3s',
+                                  maxWidth: `${Math.min(100, porcentajeBase)}%`
+                                }}
+                              />
+                            )}
+                            
+                            {/* Barra de excedente (más del 100%) */}
+                            {porcentajeExcedente > 0 && (
+                              <div 
+                                style={{
+                                  width: `${porcentajeExcedente}%`,
+                                  height: '100%',
+                                  backgroundColor: esNegativo ? '#722ed1' : '#faad14', // Dorado para excedente positivo, morado para excedente negativo
+                                  position: 'absolute',
+                                  right: 0,
+                                  top: 0,
+                                  transition: 'width 0.3s',
+                                  borderTopRightRadius: 4,
+                                  borderBottomRightRadius: 4
+                                }}
+                              />
+                            )}
+                          </div>
+                          
+                          <div style={{ 
+                            fontSize: 12, 
+                            color: '#666',
+                            marginTop: 4,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <span>
+                              {porcentaje.toLocaleString('es-CR', { 
+                                minimumFractionDigits: 2, 
+                                maximumFractionDigits: 2 
+                              })}% de la inversión
+                            </span>
+                            {porcentajeExcedente > 0 && (
+                              <span style={{ 
+                                color: esNegativo ? '#722ed1' : '#d48806', // Color de texto para el excedente
+                                fontWeight: 500,
+                                marginLeft: 8,
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}>
+                                <span style={{ 
+                                  display: 'inline-block',
+                                  width: 8, 
+                                  height: 8, 
+                                  borderRadius: '50%',
+                                  backgroundColor: esNegativo ? '#722ed1' : '#faad14',
+                                  marginRight: 4
+                                }} />
+                                +{porcentajeExcedente.toFixed(2)}% de {esNegativo ? 'pérdida' : 'ganancia'}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </Descriptions.Item>
                 <Descriptions.Item label="Monto Pendiente">
@@ -739,14 +796,6 @@ const VehiculoDetalle = () => {
                         {transacciones.map((transaccion) => {
                           // Determine if it's an income or expense
                           const tipo = transaccion.tipo_transaccion || {};
-                          const esIngreso = tipo.categoria === 'INGRESO' || 
-                                         (tipo.nombre && tipo.nombre.toLowerCase().includes('venta')) ||
-                                         transaccion.monto > 0;
-                          
-                          // Format the date
-                          const fecha = Array.isArray(transaccion.fecha) 
-                            ? new Date(transaccion.fecha[0], transaccion.fecha[1] - 1, transaccion.fecha[2])
-                            : new Date(transaccion.fecha);
                           
                           return (
                             <tr key={transaccion.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
