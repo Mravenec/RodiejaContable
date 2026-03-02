@@ -183,8 +183,8 @@ Content-Type: application/json
   "codigoTransaccion": "GASTO-OPE-001",
   "fecha": "2023-03-05",
   "tipoTransaccionId": 11,
-  "empleadoId": 8,
   "monto": 25000.00,
+  "vehiculoId": 1,
   "descripcion": "Pago servicio grúa",
   "referencia": "GRUA-001",
   "estado": "COMPLETADA"

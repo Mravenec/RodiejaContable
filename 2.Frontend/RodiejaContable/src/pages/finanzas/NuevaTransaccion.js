@@ -208,12 +208,37 @@ const NuevaTransaccion = () => {
     // Limpiar el campo de repuesto cuando cambia el vehículo
     form.setFieldsValue({ repuesto_id: null });
     
+    // Auto-popular monto si es "Costo de Grúa" y hay un vehículo seleccionado
+    const tipoActualId = form.getFieldValue('tipo');
+    if (tipoActualId && vehiculoId) {
+      const tipoSeleccionado = [...(tiposIngreso || []), ...(tiposEgreso || [])]
+        .find(t => t.id === tipoActualId);
+      
+      if (tipoSeleccionado) {
+        const esCostoGrua = tipoSeleccionado.nombre.toLowerCase().includes('grúa') || 
+                           tipoSeleccionado.nombre.toLowerCase().includes('grua') ||
+                           tipoSeleccionado.nombre.toLowerCase().includes('costo grua') ||
+                           tipoSeleccionado.nombre.toLowerCase().includes('costo de grua');
+        
+        if (esCostoGrua) {
+          const vehiculo = vehiculos.find(v => v.id === vehiculoId);
+          if (vehiculo && vehiculo.costoGrua) {
+            const montoGrua = parseFloat(vehiculo.costoGrua) || 0;
+            if (montoGrua > 0) {
+              form.setFieldsValue({ monto: montoGrua });
+              setMonto(montoGrua);
+            }
+          }
+        }
+      }
+    }
+    
     // Si se selecciona "-- Seleccione un vehículo --" (null), resetear al estado inicial
     if (vehiculoId === null) {
       // Resetear al estado inicial como si no hubiera vehículo seleccionado
       setVehiculoSeleccionado(null);
     }
-  }, [form]);
+  }, [form, tiposIngreso, tiposEgreso, vehiculos]);
 
   const onFinish = async (values) => {
     try {
@@ -235,7 +260,7 @@ const NuevaTransaccion = () => {
       const payload = {
         fecha: values.fecha.format('YYYY-MM-DD'),
         tipoTransaccionId: values.tipo,
-        monto: esEgreso ? -Math.abs(montoValor) : montoValor,
+        monto: esEgreso ? Math.abs(montoValor) : montoValor,
         descripcion: values.descripcion || null,
         referencia: values.referencia || null,
         estado: 'COMPLETADA'
@@ -245,8 +270,8 @@ const NuevaTransaccion = () => {
         // Agregar campos específicos de egresos
         Object.assign(payload, {
           empleadoId: values.empleado_id || null,
-          vehiculoId: null,
-          repuestoId: null,
+          vehiculoId: values.vehiculo_id || null,
+          repuestoId: values.repuesto_id || null,
           comisionEmpleado: 0,
           proveedor: values.proveedor || null,
           metodoPago: values.metodo_pago || 'EFECTIVO'
@@ -319,6 +344,23 @@ const NuevaTransaccion = () => {
       
       // Generar referencia automáticamente
       generarReferencia(tipoSeleccionado);
+      
+      // Auto-popular monto si es "Costo de Grúa" y hay un vehículo seleccionado
+      const esCostoGrua = tipoSeleccionado.nombre.toLowerCase().includes('grúa') || 
+                         tipoSeleccionado.nombre.toLowerCase().includes('grua') ||
+                         tipoSeleccionado.nombre.toLowerCase().includes('costo grua') ||
+                         tipoSeleccionado.nombre.toLowerCase().includes('costo de grua');
+      
+      if (esCostoGrua && vehiculoSeleccionado) {
+        const vehiculo = vehiculos.find(v => v.id === vehiculoSeleccionado);
+        if (vehiculo && vehiculo.costoGrua) {
+          const montoGrua = parseFloat(vehiculo.costoGrua) || 0;
+          if (montoGrua > 0) {
+            form.setFieldsValue({ monto: montoGrua });
+            setMonto(montoGrua);
+          }
+        }
+      }
       
       // Resetear campos específicos cuando cambia entre ingreso/egreso
       if (tipoSeleccionado.categoria === 'INGRESO') {
@@ -445,7 +487,6 @@ const NuevaTransaccion = () => {
                   <Form.Item
                     name="tipoTransferencia"
                     label="Tipo de Transferencia"
-                    rules={[{ required: true, message: 'Debe seleccionar un tipo de transferencia' }]}
                   >
                     <Select 
                       placeholder="Seleccione el tipo de transferencia"
@@ -488,8 +529,8 @@ const NuevaTransaccion = () => {
                 <Col xs={24} md={12}>
                   <Form.Item
                     name="empleado_id"
-                    label={tipoTransaccion === 'EGRESO' ? 'Empleado Responsable (opcional)' : 'Empleado'}
-                    rules={tipoTransaccion === 'INGRESO' ? [{ required: true, message: 'Debe seleccionar un empleado' }] : []}
+                    label={tipoTransaccion === 'EGRESO' ? 'Empleado Responsable (opcional)' : 'Empleado (opcional)'}
+                    rules={[]}
                   >
                     <Select 
                       placeholder={loadingEmpleados ? 'Cargando empleados...' : 
@@ -823,7 +864,6 @@ const NuevaTransaccion = () => {
                   <Form.Item
                     name="tipoTransferencia"
                     label="Tipo de Transferencia"
-                    rules={[{ required: true, message: 'Debe seleccionar un tipo de transferencia' }]}
                   >
                     <Select 
                       placeholder="Seleccione el tipo de transferencia"
@@ -874,6 +914,90 @@ const NuevaTransaccion = () => {
                       readOnly 
                       style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
                     />
+                  </Form.Item>
+                  
+                  <Form.Item
+                    name="vehiculo_id"
+                    label="Vehículo (opcional)"
+                    rules={[]}
+                  >
+                    <Select 
+                      placeholder={
+                        loadingVehiculos ? 'Cargando vehículos...' : 
+                        errorVehiculos ? 'Error al cargar vehículos' :
+                        vehiculos.length === 0 ? 'No hay vehículos disponibles' : 
+                        'Seleccione un vehículo'
+                      }
+                      loading={loadingVehiculos}
+                      showSearch
+                      optionFilterProp="children"
+                      filterOption={(input, option) =>
+                        option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                      onChange={handleVehiculoChange}
+                      allowClear
+                    >
+                      <Option key="placeholder" value={null} disabled>
+                        Seleccione un vehículo
+                      </Option>
+                      {vehiculos.map(vehiculo => {
+                        // Formatear la información del vehículo según la estructura del backend
+                        const codigo = vehiculo.codigoVehiculo || 'SIN_CODIGO';
+                        const anio = vehiculo.anio || 'Año N/A';
+                        const estado = vehiculo.estado || 'SIN_ESTADO';
+                        
+                        // Crear el texto de visualización
+                        const displayText = `Vehículo ${codigo} (${anio}) - ${estado}`;
+                        
+                        return (
+                          <Option 
+                            key={vehiculo.id} 
+                            value={vehiculo.id}
+                            title={displayText}
+                          >
+                            {displayText}
+                          </Option>
+                        );
+                      })}
+                    </Select>
+                    {errorVehiculos && (
+                      <Alert 
+                        message="Error" 
+                        description="No se pudieron cargar los vehículos. Por favor, intente nuevamente." 
+                        type="error" 
+                        showIcon 
+                        className="mt-2"
+                      />
+                    )}
+                    {vehiculos.length === 0 && !loadingVehiculos && !errorVehiculos && (
+                      <Text type="warning">No hay vehículos disponibles. Por favor, agregue vehículos primero.</Text>
+                    )}
+                  </Form.Item>
+                  
+                  <Form.Item
+                    name="repuesto_id"
+                    label="Repuesto (opcional)"
+                  >
+                    <Select 
+                      placeholder={
+                        loadingRepuestos ? 'Cargando repuestos...' : 
+                        getRepuestosFiltrados().length === 0 ? 
+                          (vehiculoSeleccionado ? 'No hay repuestos para este vehículo' : 'No hay repuestos disponibles') :
+                          'Seleccione el repuesto'
+                      }
+                      loading={loadingRepuestos}
+                      showSearch
+                      optionFilterProp="children"
+                      filterOption={(input, option) =>
+                        option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                    >
+                      {getRepuestosFiltrados().map(repuesto => (
+                        <Option key={repuesto.id} value={repuesto.id}>
+                          {repuesto.descripcion} - {repuesto.codigo} {repuesto.ubicacion ? `(${repuesto.ubicacion})` : ''}
+                        </Option>
+                      ))}
+                    </Select>
                   </Form.Item>
                   
                   <Form.Item

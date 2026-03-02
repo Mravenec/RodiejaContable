@@ -116,13 +116,13 @@ const transaccionesService = {
         vehiculoId: t.vehiculoId,
         repuestoId: t.repuestoId,
         isRepuestoTransaction: repuestoIds.includes(t.repuestoId),
-        matchesVehicle: t.vehiculoId == vehiculoId || t.vehiculoId === parseInt(vehiculoId)
+        matchesVehicle: t.vehiculoId === vehiculoId || t.vehiculoId === parseInt(vehiculoId)
       })));
       
       const filteredTransacciones = allTransacciones.filter(transaccion => {
         // Check if transaction is directly for this vehicle
         const matchesVehicle = transaccion.vehiculoId != null && 
-                             (transaccion.vehiculoId == vehiculoId || 
+                             (transaccion.vehiculoId === vehiculoId || 
                               transaccion.vehiculoId === parseInt(vehiculoId));
         
         // Check if transaction is for a repuesto that belongs to this vehicle
@@ -184,8 +184,6 @@ const formatMonto = (monto) => {
 
 // Objetos para almacenar los tipos de transacciones
 let categoriaPorTipoId = {};
-let nombreTipoTransaccion = {};
-let tiposTransaccionesCargados = false;
 
 // Helpers para transacciones
 const getCategoriaTransaccion = (record) => {
@@ -202,17 +200,6 @@ const getCategoriaTransaccion = (record) => {
 
 const esIngreso = (record) => getCategoriaTransaccion(record) === 'INGRESO';
 
-const getNombreTipoTransaccion = (record) => {
-  // Primero intenta obtener el nombre del mapeo por ID
-  if (record?.tipoTransaccionId && nombreTipoTransaccion[record.tipoTransaccionId]) {
-    return nombreTipoTransaccion[record.tipoTransaccionId];
-  }
-  // Si no hay ID o no está en el mapeo, intenta obtener el nombre de otros campos
-  return toStr(
-    record?.tipo_transaccion?.nombre ?? record?.tipo_nombre ?? record?.tipo ?? 'Transacción',
-    'Transacción'
-  );
-};
 
 const getMontoTransaccion = (record) => {
   return Math.abs(toNum(record?.monto ?? record?.valor ?? record?.importe, 0));
@@ -388,6 +375,7 @@ const normalizarEOrdenar = (
 const VehiculosJerarquicos = () => {
   const [loading, setLoading] = useState(true);
   const [loadingTipos, setLoadingTipos] = useState(true);
+  const [tiposTransaccionesCargados, setTiposTransaccionesCargados] = useState(false);
   const [marcas, setMarcas] = useState([]);
   const [filteredMarcas, setFilteredMarcas] = useState([]);
   const [expandedKeys, setExpandedKeys] = useState({});
@@ -614,14 +602,6 @@ const VehiculosJerarquicos = () => {
     }
   }, [searchQuery, marcas]);
 
-  // Toggle brand expansion
-  const toggleBrand = useCallback((marcaId) => {
-    setActiveBrandKeys(prev => 
-      prev.includes(`marca-${marcaId}`)
-        ? prev.filter(key => key !== `marca-${marcaId}`)
-        : [...prev, `marca-${marcaId}`]
-    );
-  }, []);
 
   // Toggle model expansion
   const toggleModel = useCallback((marcaId, modeloId) => {
@@ -656,22 +636,22 @@ const VehiculosJerarquicos = () => {
         
         // Actualizar los mapeos de tipos de transacción
         const nuevoCategoriaPorTipoId = {};
-        const nuevoNombreTipoTransaccion = {};
         
         tipos.forEach(tipo => {
           if (tipo.activo) {
             nuevoCategoriaPorTipoId[tipo.id] = tipo.categoria;
-            nuevoNombreTipoTransaccion[tipo.id] = tipo.nombre;
           }
         });
         
         categoriaPorTipoId = nuevoCategoriaPorTipoId;
-        nombreTipoTransaccion = nuevoNombreTipoTransaccion;
-        tiposTransaccionesCargados = true;
+        setTiposTransaccionesCargados(true);
         
       } catch (error) {
         console.error('Error al cargar tipos de transacciones:', error);
         message.error('Error al cargar los tipos de transacciones');
+        
+        // En caso de error, marcar como cargado para evitar bloqueo infinito
+        setTiposTransaccionesCargados(true);
       } finally {
         setLoadingTipos(false);
       }
@@ -680,7 +660,7 @@ const VehiculosJerarquicos = () => {
     if (!tiposTransaccionesCargados) {
       cargarTiposTransacciones();
     }
-  }, []);
+  }, [tiposTransaccionesCargados]);
 
   // Cargar vehículos después de que los tipos de transacciones estén listos
   useEffect(() => {
@@ -1217,7 +1197,6 @@ const VehiculosJerarquicos = () => {
 
   // Render a single vehicle card
   const renderVehiculoCard = (vehiculo, generacion, modelo, marca) => {
-    const estaExpandido = expandedKeys[vehiculo.id];
     const esVehiculoDestacado = vehiculoMatchId === vehiculo.id;
     
     return (
