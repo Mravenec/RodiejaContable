@@ -75,7 +75,7 @@ const NuevaTransaccion = () => {
       setMonto(0);
       setComision(0);
       setVehiculoSeleccionado(null);
-      navigate('/finanzas/transacciones');
+      navigate(-1);
     },
     onError: (error) => {
       console.error('Error al crear transacción:', error);

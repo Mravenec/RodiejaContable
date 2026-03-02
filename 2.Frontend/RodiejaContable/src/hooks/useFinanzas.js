@@ -29,16 +29,25 @@ export function useTransaccion(id) {
   );
 }
 
-export function useCreateTransaccion() {
+export function useCreateTransaccion(options = {}) {
   const queryClient = useQueryClient();
   
   return useMutation(
     (transaccionData) => finanzasService.createTransaccion(transaccionData),
     {
-      onSuccess: () => {
-        message.success('Transacción creada correctamente');
+      onSuccess: (data, variables, context) => {
+        // Invalidar queries
         queryClient.invalidateQueries('transacciones');
         queryClient.invalidateQueries('resumenFinanciero');
+        queryClient.invalidateQueries('vehiculosActivos');
+        
+        // Llamar al onSuccess personalizado si existe
+        if (options.onSuccess) {
+          options.onSuccess(data, variables, context);
+        } else {
+          // Mensaje por defecto si no hay onSuccess personalizado
+          message.success('Transacción creada correctamente');
+        }
       },
       onError: (error) => {
         message.error('Error al crear la transacción');

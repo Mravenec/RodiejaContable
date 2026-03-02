@@ -62,9 +62,9 @@ Content-Type: application/json
 {
   "codigoTransaccion": "COMPRA-VEH-001",
   "fecha": "2023-01-10",
-  "tipoTransaccionId": 6,
+  "tipoTransaccionId": 1,
   "empleadoId": 1,
-  "vehiculoId": 1,
+  "vehiculoId": 2,
   "monto": 3500000.00,
   "descripcion": "Compra Corolla 2015",
   "referencia": "COMPRA-001",
