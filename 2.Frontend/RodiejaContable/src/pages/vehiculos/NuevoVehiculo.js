@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { 
   Form, 
   Input, 
@@ -14,7 +14,6 @@ import {
   Steps,
   Row,
   Col,
-  Upload,
   Alert,
   Divider
 } from 'antd';
@@ -32,7 +31,7 @@ import { useModelos } from '../../hooks/useModelos';
 import { useGeneraciones } from '../../hooks/useGeneraciones';
 import { useCreateVehiculo, useUpdateVehiculo, useVehiculo } from '../../hooks/useVehiculos';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { Step } = Steps;
 const { TextArea } = Input;
 const { Option } = Select;
@@ -42,7 +41,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const [fileList, setFileList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Estados para manejar la selección en cascada
@@ -60,8 +58,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [estadoValue, setEstadoValue] = useState('DISPONIBLE');
   const [notasValue, setNotasValue] = useState('');
   const [precioCompraValue, setPrecioCompraValue] = useState(null);
-  
-  // NUEVOS ESTADOS para costoGrua y comisiones
   const [costoGruaValue, setCostoGruaValue] = useState(0);
   const [comisionesValue, setComisionesValue] = useState(0);
   
@@ -209,7 +205,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
       // Crear objeto con los datos formateados para el formulario
       const datosFormateados = {
         ...data,
-        fechaIngreso: data.fechaIngreso ? moment(data.fechaIngreso) : moment(),
+        fechaIngreso: data.fechaIngreso ? dayjs(data.fechaIngreso) : dayjs(),
         marcaId: data.marcaId,
         modeloId: data.modeloId,
         generacionId: data.generacionId,
@@ -236,7 +232,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
     if (!editMode) {
       const defaultValues = {
         estado: 'DISPONIBLE',
-        fechaIngreso: moment(),
+        fechaIngreso: dayjs(),
         anio: new Date().getFullYear(),
         costoGrua: 0,
         comisiones: 0
@@ -598,7 +594,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
         marcaId: values.marcaId ? parseInt(values.marcaId) : parseInt(marcaId || 0),
         modeloId: values.modeloId ? parseInt(values.modeloId) : parseInt(modeloId || 0),
         // Formatear la fecha correctamente
-        fechaIngreso: values.fechaIngreso ? values.fechaIngreso.format('YYYY-MM-DD') : moment().format('YYYY-MM-DD')
+        fechaIngreso: values.fechaIngreso ? values.fechaIngreso.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')
       };
       
       console.log('📝 Datos del formulario (combinados con estado):', formData);
@@ -1368,7 +1364,6 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   <Option value="DISPONIBLE">Disponible</Option>
                   <Option value="REPARACION">En reparación</Option>
                   <Option value="DESARMADO">Desarmado</Option>
-                  <Option value="VENDIDO">Vendido</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -1480,7 +1475,7 @@ const NuevoVehiculo = ({ editMode = false }) => {
                 style={{ width: '100%' }} 
                 format="DD/MM/YYYY"
                 disabledDate={(current) => {
-                  return current && current > moment().endOf('day');
+                  return current && current > dayjs().endOf('day');
                 }}
               />
             </Form.Item>
@@ -1507,31 +1502,12 @@ const NuevoVehiculo = ({ editMode = false }) => {
             />
           </Form.Item>
           
-          <Form.Item
-            name="imagenesAdicionales"
-            label="Imágenes adicionales"
-          >
-            <div>
-              <Upload
-                action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-                listType="picture-card"
-                fileList={fileList}
-                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-                multiple
-                accept="image/*"
-              >
-                {fileList.length >= 5 ? null : (
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Subir</div>
-                  </div>
-                )}
-              </Upload>
-              <Text type="secondary">Máximo 5 imágenes adicionales</Text>
-            </div>
-          </Form.Item>
+   
         </div>
       ),
+    },
+    {
+      title: 'Confirmar',
     },
   ];
   
