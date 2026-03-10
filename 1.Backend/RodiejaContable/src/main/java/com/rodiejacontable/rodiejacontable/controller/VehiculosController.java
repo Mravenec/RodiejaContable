@@ -1,6 +1,9 @@
 package com.rodiejacontable.rodiejacontable.controller;
 
 import com.rodiejacontable.database.jooq.enums.VehiculosEstado;
+import com.rodiejacontable.database.jooq.enums.VehiculosTraccion;
+import com.rodiejacontable.database.jooq.enums.VehiculosTransmision;
+import com.rodiejacontable.database.jooq.enums.VehiculosCombustible;
 import com.rodiejacontable.database.jooq.tables.pojos.Vehiculos;
 import com.rodiejacontable.rodiejacontable.service.VehiculosService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,6 +113,43 @@ public class VehiculosController {
             }
         }
         
+        // Manejar los nuevos campos enum
+        if (vehiculoData.containsKey("traccion") && vehiculoData.get("traccion") != null) {
+            try {
+                String traccionStr = vehiculoData.get("traccion").toString();
+                System.out.println("Tracción recibida: " + traccionStr);
+                VehiculosTraccion traccion = VehiculosTraccion.lookupLiteral(traccionStr);
+                System.out.println("Tracción convertida a enum: " + traccion);
+                vehiculo.setTraccion(traccion);
+            } catch (Exception e) {
+                System.out.println("Error al convertir la tracción: " + e.getMessage());
+            }
+        }
+        
+        if (vehiculoData.containsKey("transmision") && vehiculoData.get("transmision") != null) {
+            try {
+                String transmisionStr = vehiculoData.get("transmision").toString();
+                System.out.println("Transmisión recibida: " + transmisionStr);
+                VehiculosTransmision transmision = VehiculosTransmision.lookupLiteral(transmisionStr);
+                System.out.println("Transmisión convertida a enum: " + transmision);
+                vehiculo.setTransmision(transmision);
+            } catch (Exception e) {
+                System.out.println("Error al convertir la transmisión: " + e.getMessage());
+            }
+        }
+        
+        if (vehiculoData.containsKey("combustible") && vehiculoData.get("combustible") != null) {
+            try {
+                String combustibleStr = vehiculoData.get("combustible").toString();
+                System.out.println("Combustible recibido: " + combustibleStr);
+                VehiculosCombustible combustible = VehiculosCombustible.lookupLiteral(combustibleStr);
+                System.out.println("Combustible convertido a enum: " + combustible);
+                vehiculo.setCombustible(combustible);
+            } catch (Exception e) {
+                System.out.println("Error al convertir el combustible: " + e.getMessage());
+            }
+        }
+        
         // Establecer valores por defecto para campos opcionales
         if (vehiculoData.containsKey("costoGrua") && vehiculoData.get("costoGrua") != null) {
             vehiculo.setCostoGrua(new BigDecimal(vehiculoData.get("costoGrua").toString()));
@@ -216,6 +256,37 @@ public class VehiculosController {
             } catch (IllegalArgumentException e) {
                 System.out.println("Error al convertir el estado: " + e.getMessage());
                 // No cambiar el estado si es inválido
+            }
+        }
+        
+        // Manejar los nuevos campos enum
+        if (vehiculoData.containsKey("traccion") && vehiculoData.get("traccion") != null) {
+            try {
+                String traccionStr = vehiculoData.get("traccion").toString();
+                VehiculosTraccion traccion = VehiculosTraccion.lookupLiteral(traccionStr);
+                existente.setTraccion(traccion);
+            } catch (Exception e) {
+                System.out.println("Error al convertir la tracción: " + e.getMessage());
+            }
+        }
+        
+        if (vehiculoData.containsKey("transmision") && vehiculoData.get("transmision") != null) {
+            try {
+                String transmisionStr = vehiculoData.get("transmision").toString();
+                VehiculosTransmision transmision = VehiculosTransmision.lookupLiteral(transmisionStr);
+                existente.setTransmision(transmision);
+            } catch (Exception e) {
+                System.out.println("Error al convertir la transmisión: " + e.getMessage());
+            }
+        }
+        
+        if (vehiculoData.containsKey("combustible") && vehiculoData.get("combustible") != null) {
+            try {
+                String combustibleStr = vehiculoData.get("combustible").toString();
+                VehiculosCombustible combustible = VehiculosCombustible.lookupLiteral(combustibleStr);
+                existente.setCombustible(combustible);
+            } catch (Exception e) {
+                System.out.println("Error al convertir el combustible: " + e.getMessage());
             }
         }
         
