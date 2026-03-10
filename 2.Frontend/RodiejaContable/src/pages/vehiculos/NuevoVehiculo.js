@@ -36,6 +36,23 @@ const { Step } = Steps;
 const { TextArea } = Input;
 const { Option } = Select;
 
+// Opciones para los nuevos campos enum
+const TRACCION_OPTIONS = [
+  { value: '4x2', label: '4x2' },
+  { value: '4x4', label: '4x4' }
+];
+
+const TRANSMISION_OPTIONS = [
+  { value: 'Automatico', label: 'Automático' },
+  { value: 'Manual', label: 'Manual' }
+];
+
+const COMBUSTIBLE_OPTIONS = [
+  { value: 'Gasolina', label: 'Gasolina' },
+  { value: 'Diesel', label: 'Diésel' },
+  { value: 'Elécrico', label: 'Eléctrico' }
+];
+
 const NuevoVehiculo = ({ editMode = false }) => {
   const [form] = Form.useForm();
   const { id } = useParams();
@@ -60,6 +77,11 @@ const NuevoVehiculo = ({ editMode = false }) => {
   const [precioCompraValue, setPrecioCompraValue] = useState(null);
   const [costoGruaValue, setCostoGruaValue] = useState(0);
   const [comisionesValue, setComisionesValue] = useState(0);
+  
+  // Estados para los nuevos campos enum
+  const [traccionValue, setTraccionValue] = useState('4x2');
+  const [transmisionValue, setTransmisionValue] = useState('Automatico');
+  const [combustibleValue, setCombustibleValue] = useState('Gasolina');
   
   // Estado para el modal de nueva marca
   const [nuevaMarcaModal, setNuevaMarcaModal] = useState(false);
@@ -202,6 +224,11 @@ const NuevoVehiculo = ({ editMode = false }) => {
       setCostoGruaValue(data.costoGrua || 0);
       setComisionesValue(data.comisiones || 0);
       
+      // Establecer valores de los nuevos campos enum
+      setTraccionValue(data.traccion || '4x2');
+      setTransmisionValue(data.transmision || 'Automatico');
+      setCombustibleValue(data.combustible || 'Gasolina');
+      
       // Crear objeto con los datos formateados para el formulario
       const datosFormateados = {
         ...data,
@@ -242,6 +269,11 @@ const NuevoVehiculo = ({ editMode = false }) => {
       setAnioValue(new Date().getFullYear());
       setCostoGruaValue(0);
       setComisionesValue(0);
+      
+      // Establecer valores por defecto para los nuevos campos enum
+      setTraccionValue('4x2');
+      setTransmisionValue('Automatico');
+      setCombustibleValue('Gasolina');
       
       form.setFieldsValue(defaultValues);
       console.log('🆕 Valores iniciales establecidos para nuevo vehículo');
@@ -655,7 +687,11 @@ const NuevoVehiculo = ({ editMode = false }) => {
         imagenUrl: formData.imagenUrl || null,
         fechaIngreso: formData.fechaIngreso,
         estado: formData.estado,
-        notas: formData.notas
+        notas: formData.notas,
+        // Agregar los nuevos campos enum
+        traccion: traccionValue,
+        transmision: transmisionValue,
+        combustible: combustibleValue
       };
     
       console.log('📤 Datos finales a enviar:', vehiculoData);
@@ -1364,6 +1400,81 @@ const NuevoVehiculo = ({ editMode = false }) => {
                   <Option value="DISPONIBLE">Disponible</Option>
                   <Option value="REPARACION">En reparación</Option>
                   <Option value="DESARMADO">Desarmado</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="traccion"
+                label="Tracción"
+                preserve={true}
+              >
+                <Select 
+                  placeholder="Selecciona la tracción"
+                  style={{ width: '100%' }}
+                  value={traccionValue}
+                  onChange={(value) => {
+                    console.log('🚗 Tracción cambiada:', value);
+                    setTraccionValue(value);
+                    form.setFieldsValue({ traccion: value });
+                  }}
+                >
+                  {TRACCION_OPTIONS.map(option => (
+                    <Option key={option.value} value={option.value}>
+                      {option.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="transmision"
+                label="Transmisión"
+                preserve={true}
+              >
+                <Select 
+                  placeholder="Selecciona la transmisión"
+                  style={{ width: '100%' }}
+                  value={transmisionValue}
+                  onChange={(value) => {
+                    console.log('⚙️ Transmisión cambiada:', value);
+                    setTransmisionValue(value);
+                    form.setFieldsValue({ transmision: value });
+                  }}
+                >
+                  {TRANSMISION_OPTIONS.map(option => (
+                    <Option key={option.value} value={option.value}>
+                      {option.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="combustible"
+                label="Combustible"
+                preserve={true}
+              >
+                <Select 
+                  placeholder="Selecciona el tipo de combustible"
+                  style={{ width: '100%' }}
+                  value={combustibleValue}
+                  onChange={(value) => {
+                    console.log('⛽ Combustible cambiado:', value);
+                    setCombustibleValue(value);
+                    form.setFieldsValue({ combustible: value });
+                  }}
+                >
+                  {COMBUSTIBLE_OPTIONS.map(option => (
+                    <Option key={option.value} value={option.value}>
+                      {option.label}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
