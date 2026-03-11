@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Card, 
@@ -21,19 +21,15 @@ import {
 import { 
   ArrowLeftOutlined, 
   SaveOutlined,
-  EditOutlined,
   DollarOutlined,
   ToolOutlined, 
   FileTextOutlined,
-  CarOutlined,
-  ReloadOutlined
 } from '@ant-design/icons';
-import { useUpdateVehiculo, useVehiculo } from '../../hooks/useVehiculos';
+import { useUpdateVehiculo } from '../../hooks/useVehiculos';
 import vehiculoService from '../../api/vehiculos';
 import finanzaService from '../../api/finanzas';
 import inventarioService from '../../api/inventario';
 import { getTiposTransacciones } from '../../api/transacciones';
-import { generacionesAPI } from '../../api/generaciones';
 import { formatCurrency } from '../../utils/formatters';
 import api from '../../api/axios';
 import moment from 'moment';
@@ -407,9 +403,7 @@ const EditarVehiculo = () => {
       DISPONIBLE: { color: 'success', text: 'Disponible' },
       VENDIDO: { color: 'error', text: 'Vendido' },
       DESARMADO: { color: 'warning', text: 'Desarmado' },
-      REPARACION: { color: 'processing', text: 'En Reparación' },
-      EN_REPARACION: { color: 'processing', text: 'En reparación' },
-      RESERVADO: { color: 'warning', text: 'Reservado' }
+      REPARACION: { color: 'processing', text: 'En Reparación' }
     };
     
     const estadoInfo = estados[estado] || { color: 'default', text: 'Desconocido' };

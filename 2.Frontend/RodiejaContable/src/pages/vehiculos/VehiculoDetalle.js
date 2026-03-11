@@ -406,9 +406,7 @@ const VehiculoDetalle = () => {
       DISPONIBLE: { color: 'success', text: 'Disponible' },
       VENDIDO: { color: 'error', text: 'Vendido' },
       DESARMADO: { color: 'warning', text: 'Desarmado' },
-      REPARACION: { color: 'processing', text: 'En Reparación' },
-      EN_REPARACION: { color: 'processing', text: 'En reparación' },
-      RESERVADO: { color: 'warning', text: 'Reservado' }
+      REPARACION: { color: 'processing', text: 'En Reparación' }
     };
     
     const estadoInfo = estados[estado] || { color: 'default', text: 'Desconocido' };

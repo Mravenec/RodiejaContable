@@ -28,8 +28,27 @@ public class VehiculosController {
     private VehiculosService vehiculosService;
     
     @GetMapping
-    public ResponseEntity<List<Vehiculos>> getAll() {
-        List<Vehiculos> vehiculos = vehiculosService.findAll();
+    public ResponseEntity<List<Vehiculos>> getAll(
+            @RequestParam(required = false) VehiculosEstado estado,
+            @RequestParam(required = false) Integer generacionId,
+            @RequestParam(required = false) Integer anio,
+            @RequestParam(required = false) Boolean activos) {
+        
+        List<Vehiculos> vehiculos;
+        
+        // Apply filters based on provided parameters
+        if (estado != null) {
+            vehiculos = vehiculosService.findByEstado(estado);
+        } else if (generacionId != null) {
+            vehiculos = vehiculosService.findByGeneracionId(generacionId);
+        } else if (anio != null) {
+            vehiculos = vehiculosService.findByAnio(anio);
+        } else if (Boolean.TRUE.equals(activos)) {
+            vehiculos = vehiculosService.findActivos();
+        } else {
+            vehiculos = vehiculosService.findAll();
+        }
+        
         return new ResponseEntity<>(vehiculos, HttpStatus.OK);
     }
     

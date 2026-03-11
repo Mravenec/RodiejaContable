@@ -91,7 +91,8 @@ const Vehiculos = () => {
           color={
             estado === 'DISPONIBLE' ? 'green' : 
             estado === 'VENDIDO' ? 'red' : 
-            estado === 'EN_REPARACION' ? 'orange' : 'default'
+            estado === 'REPARACION' ? 'orange' : 
+            estado === 'DESARMADO' ? 'warning' : 'default'
           }
           style={{ 
             margin: 0,
@@ -146,11 +147,7 @@ const Vehiculos = () => {
     );
   }
 
-  const estados = [
-    { value: 'DISPONIBLE', label: 'Disponible' },
-    { value: 'VENDIDO', label: 'Vendido' },
-    { value: 'EN_REPARACION', label: 'En Reparación' },
-  ];
+
 
   return (
     <div className="vehiculos-container" style={{ padding: '16px' }}>
@@ -211,8 +208,8 @@ const Vehiculos = () => {
               >
                 <Option value="DISPONIBLE">Disponible</Option>
                 <Option value="VENDIDO">Vendido</Option>
-                <Option value="EN_REPARACION">En reparación</Option>
-                <Option value="RESERVADO">Reservado</Option>
+                <Option value="REPARACION">En reparación</Option>
+                <Option value="DESARMADO">Desarmado</Option>
               </Select>
             </Col>
             <Col xs={24} md={8} style={{ textAlign: { xs: 'left', md: 'right' } }}>
@@ -256,14 +253,7 @@ const Vehiculos = () => {
                 }
               }}
               locale={{
-                emptyText: (
-                  <div style={{ 
-                    padding: '40px 0',
-                    color: 'rgba(0, 0, 0, 0.45)'
-                  }}>
-                    No se encontraron vehículos que coincidan con los criterios de búsqueda
-                  </div>
-                )
+                emptyText: null
               }}
               style={{ 
                 minWidth: '800px',

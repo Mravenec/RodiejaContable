@@ -10,7 +10,7 @@ export function useVehiculos(params = {}) {
         const data = await vehiculoService.getVehiculos(params);
         console.log('API Response:', data);
         
-        // Sort vehicles in the specified order: DISPONIBLE > EN_REPARACION > DESARMADO > VENDIDO
+        // Sort vehicles in the specified order: DISPONIBLE > REPARACION > DESARMADO > VENDIDO
         if (Array.isArray(data)) {
           // Debug: Log unique status values
           const uniqueStatuses = [...new Set(data.map(v => v.estado))];
@@ -19,7 +19,7 @@ export function useVehiculos(params = {}) {
           // Normalize status values to uppercase to handle any case sensitivity
           const statusOrder = {
             'DISPONIBLE': 1,
-            'EN_REPARACION': 2,
+            'REPARACION': 2,
             'DESARMADO': 3,
             'VENDIDO': 4
           };
