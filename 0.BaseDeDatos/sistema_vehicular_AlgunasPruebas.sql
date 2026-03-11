@@ -1,3 +1,7 @@
+/* 
+
+ESTE ES UN CODIGO NO FUNCIONAL:
+
 -- ========================================
 -- SCRIPT DE POBLACIÓN - SISTEMA VEHICULAR COSTA RICA
 -- ========================================
@@ -627,7 +631,7 @@ SELECT * FROM vista_transacciones_completas;
 SELECT * FROM vista_vehiculos_completa;
 SELECT * FROM vista_ventas_por_empleado;
 SELECT * FROM vista_ventas_empleado_mensual;
- 
+*/ 
 
 -- ========================================
 -- SCRIPT DE POBLACIÓN - SISTEMA VEHICULAR COSTA RICA
