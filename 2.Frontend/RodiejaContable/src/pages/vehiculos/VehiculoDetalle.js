@@ -4,17 +4,20 @@ import { Card, Button, Descriptions, Typography, Tabs, Image, Tag, Spin, message
 import { 
   ArrowLeftOutlined, 
   EditOutlined, 
-  DollarOutlined, 
+  CheckOutlined,
   ToolOutlined, 
   FileTextOutlined,
-  ReloadOutlined
+  DollarOutlined,
+  ReloadOutlined,
+  HistoryOutlined
 } from '@ant-design/icons';
 import vehiculoService from '../../api/vehiculos';
 import finanzaService from '../../api/finanzas';
 import inventarioService from '../../api/inventario';
 import { getTiposTransacciones } from '../../api/transacciones';
 import { formatCurrency } from '../../utils/formatters';
-import api from '../../api/axios'; // Asegúrate de que esta importación apunte correctamente a tu instancia de axios
+import api from '../../api/axios';
+import HistorialVehiculo from '../../components/vehiculos/HistorialVehiculo';
 
 // Servicio para repuestos
 const repuestosService = {
@@ -45,9 +48,6 @@ const transaccionesService = {
           getTiposTransacciones()
         ]);
         
-        console.log('All transactions from API:', allTransacciones);
-        console.log('Transaction types from API:', tiposTransaccion);
-        
         // Ensure we have arrays to work with
         if (!Array.isArray(allTransacciones)) {
           console.error('Unexpected transactions format:', allTransacciones);
@@ -72,14 +72,12 @@ const transaccionesService = {
         return acc;
       }, {});
       
-      console.log('Tipos map:', tiposMap);
       
       // First, get all repuestos for this vehicle to find their IDs
       let repuestos = [];
       try {
         // Use the repuestosService to get repuestos for this vehicle
         repuestos = await repuestosService.getRepuestosPorVehiculo(vehiculoId);
-        console.log(`Found ${repuestos.length} repuestos for vehicle ${vehiculoId}:`, repuestos.map(r => r.id));
       } catch (repuestoError) {
         console.error('Error fetching repuestos:', repuestoError);
       }
@@ -87,37 +85,18 @@ const transaccionesService = {
       const repuestoIds = repuestos.map(r => r.id);
       
       // Filter transactions for the specific vehicle or its repuestos
-      console.log('All transaction vehicle/repuesto IDs:', allTransacciones.map(t => ({
-        id: t.id,
-        vehiculoId: t.vehiculoId,
-        repuestoId: t.repuestoId,
-        isRepuestoTransaction: repuestoIds.includes(t.repuestoId),
-        matchesVehicle: t.vehiculoId === vehiculoId || t.vehiculoId === parseInt(vehiculoId)
-      })));
-      
       const filteredTransacciones = allTransacciones.filter(transaccion => {
         // Check if transaction is directly for this vehicle
         const matchesVehicle = transaccion.vehiculoId !== null && 
                              (transaccion.vehiculoId === vehiculoId || 
                               transaccion.vehiculoId === parseInt(vehiculoId));
         
-        // Check if transaction is for a repuesto that belongs to this vehicle
         const matchesRepuesto = transaccion.repuestoId !== null && 
                                repuestoIds.includes(transaccion.repuestoId);
-        
-        console.log(`Transaction ${transaccion.id}:`, {
-          transVehiculoId: transaccion.vehiculoId,
-          transRepuestoId: transaccion.repuestoId,
-          targetVehiculoId: vehiculoId,
-          matchesVehicle,
-          matchesRepuesto,
-          matches: matchesVehicle || matchesRepuesto
-        });
         
         return matchesVehicle || matchesRepuesto;
       });
       
-      console.log('Filtered transactions:', filteredTransacciones);
       
       // Map transactions with their type information
       const vehiculoTransacciones = filteredTransacciones
@@ -138,7 +117,6 @@ const transaccionesService = {
         })
         .sort((a, b) => b.fecha - a.fecha); // Sort by date descending
       
-      console.log('Processed transactions:', vehiculoTransacciones);
       return vehiculoTransacciones;
     } catch (error) {
       console.error('Error fetching transacciones:', error);
@@ -205,7 +183,6 @@ const VehiculoDetalle = () => {
             }
           };
 
-          console.log('Vehículo completo con jerarquía:', vehiculoConGeneracion);
         } catch (nestedError) {
           console.error('Error fetching nested data (modelo/marca):', nestedError);
           // Fallback: attach empty objects to avoid crashes
@@ -233,9 +210,21 @@ const VehiculoDetalle = () => {
     }
   }, [id]);
 
+  // Handle marking vehicle as available
+  const handleMarcarComoDisponible = async () => {
+    try {
+      await api.put(`/vehiculos/${id}/estado?estado=DISPONIBLE`);
+      message.success('Vehículo marcado como disponible exitosamente');
+      // Refresh vehicle data
+      refetch();
+    } catch (error) {
+      console.error('Error updating vehicle status:', error);
+      message.error('Error al actualizar el estado del vehículo');
+    }
+  };
+
   // Load transactions for the vehicle
   const loadTransactions = async (vehiculoId) => {
-    console.log('Starting to load transactions for vehicle ID:', vehiculoId);
     
     if (!vehiculoId) {
       console.error('No vehicle ID provided to loadTransactions');
@@ -245,19 +234,15 @@ const VehiculoDetalle = () => {
     
     try {
       setLoadingTransacciones(true);
-      console.log('Calling transaccionesService.getTransaccionesPorVehiculo...');
       
       try {
         const transaccionesData = await transaccionesService.getTransaccionesPorVehiculo(vehiculoId);
-        console.log('Raw transactions data from service:', transaccionesData);
         
         const transactionsToSet = Array.isArray(transaccionesData) ? transaccionesData : [];
-        console.log('Setting transactions:', transactionsToSet);
         
         setTransacciones(transactionsToSet);
         
         if (transactionsToSet.length === 0) {
-          console.log('No transactions found for vehicle ID:', vehiculoId);
           message.info('No se encontraron transacciones para este vehículo');
         }
       } catch (serviceError) {
@@ -287,7 +272,6 @@ const VehiculoDetalle = () => {
     try {
       setLoadingRepuestos(true);
       const repuestosData = await repuestosService.getRepuestosPorVehiculo(vehiculoId);
-      console.log('Repuestos cargados:', repuestosData);
       setRepuestos(Array.isArray(repuestosData) ? repuestosData : []);
     } catch (error) {
       console.error('Error loading repuestos:', error);
@@ -308,11 +292,8 @@ const VehiculoDetalle = () => {
   // Load transactions and repuestos when vehicle is loaded
   useEffect(() => {
     if (vehiculo?.id) {
-      console.log('Vehicle loaded, loading transactions for ID:', vehiculo.id);
       loadTransactions(vehiculo.id);
       loadRepuestos(vehiculo.id);
-    } else {
-      console.log('No vehicle ID available yet');
     }
   }, [vehiculo?.id]);
 
@@ -505,6 +486,16 @@ const VehiculoDetalle = () => {
                     >
                       Editar
                     </Button>
+                    {vehiculo.estado === 'REPARACION' && (
+                      <Button 
+                        type="primary" 
+                        icon={<CheckOutlined />}
+                        style={{ marginRight: '8px', marginBottom: '8px', backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                        onClick={() => handleMarcarComoDisponible()}
+                      >
+                        Hacer Disponible
+                      </Button>
+                    )}
                     {vehiculo.estado !== 'VENDIDO' && (
                       <Button 
                         type="primary" 
@@ -533,6 +524,9 @@ const VehiculoDetalle = () => {
                 <Descriptions.Item label="Estado">
                   {getEstadoTag(vehiculo.estado)}
                 </Descriptions.Item>
+                <Descriptions.Item label="Transmisión">{vehiculo.transmision || 'No especificado'}</Descriptions.Item>
+                <Descriptions.Item label="Tracción">{vehiculo.traccion || 'No especificado'}</Descriptions.Item>
+                <Descriptions.Item label="Combustible">{vehiculo.combustible || 'No especificado'}</Descriptions.Item>
                 <Descriptions.Item label="Precio de Compra">
                   {formatCurrency(vehiculo.precioCompra || 0)}
                 </Descriptions.Item>
@@ -832,6 +826,12 @@ const VehiculoDetalle = () => {
                   </div>
                 )}
               </div>
+            </TabPane>
+            
+            <TabPane tab={
+              <span><HistoryOutlined /> Historial</span>
+            } key="4">
+              <HistorialVehiculo vehiculoId={id} />
             </TabPane>
           </Tabs>
         </div>

@@ -22,6 +22,7 @@ import {
   DownOutlined,
   UpOutlined,
   RightOutlined,
+  CheckOutlined,
   InfoCircleOutlined,
   SearchOutlined,
   ToolOutlined,
@@ -34,6 +35,7 @@ import inventarioService from '../../api/inventario';
 import { getTiposTransacciones } from '../../api/transacciones';
 import generacionesAPI from '../../api/generaciones';
 import { renderEstado } from '../../utils/vehicleUtils';
+import api from '../../api/axios';
 
 const { Panel } = Collapse;
 const { Text } = Typography;
@@ -393,6 +395,19 @@ const VehiculosJerarquicos = () => {
   const [expandedGensByModelo, setExpandedGensByModelo] = useState({});
   const vehiculoRefs = useRef({});
   const [vehiculoMatchId, setVehiculoMatchId] = useState(null);
+
+  // Handle marking vehicle as available
+  const handleMarcarComoDisponible = async (vehiculoId) => {
+    try {
+      await api.put(`/vehiculos/${vehiculoId}/estado?estado=DISPONIBLE`);
+      message.success('Vehículo marcado como disponible exitosamente');
+      // Refresh data
+      cargarDatos();
+    } catch (error) {
+      console.error('Error updating vehicle status:', error);
+      message.error('Error al actualizar el estado del vehículo');
+    }
+  };
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -904,6 +919,17 @@ const VehiculosJerarquicos = () => {
                 </Col>
                 <Col flex="none">
                   <Space wrap size={[8, 8]} style={{ justifyContent: 'flex-end' }}>
+                    {vehiculo.estado === 'REPARACION' && (
+                      <Button 
+                        type="primary" 
+                        size="small"
+                        icon={<CheckOutlined />}
+                        style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                        onClick={() => handleMarcarComoDisponible(vehiculo.id)}
+                      >
+                        Hacer Disponible
+                      </Button>
+                    )}
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '0.8em' }}><Text type="secondary">Inversión</Text></div>
                       <Text strong>{formatMonto(vehiculo.inversion_total)}</Text>

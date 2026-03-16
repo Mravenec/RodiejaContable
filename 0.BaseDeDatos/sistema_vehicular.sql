@@ -1553,22 +1553,32 @@ FOR EACH ROW
 BEGIN
     -- Auditar cambios en precio_compra
     IF OLD.precio_compra != NEW.precio_compra THEN
-        INSERT INTO historial_vehiculos (vehiculo_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario)
-        VALUES (NEW.id, 'UPDATE', 'precio_compra', OLD.precio_compra, NEW.precio_compra, USER());
+        INSERT INTO historial_vehiculos (vehiculo_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario, observaciones)
+        VALUES (NEW.id, 'UPDATE', 'precio_compra', OLD.precio_compra, NEW.precio_compra, USER(), 
+                CONCAT('El precio de compra del vehículo fue actualizado de ₡', OLD.precio_compra, ' a ₡', NEW.precio_compra));
     END IF;
     
     -- Auditar cambios en estado
     IF OLD.estado != NEW.estado THEN
-        INSERT INTO historial_vehiculos (vehiculo_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario)
-        VALUES (NEW.id, 'UPDATE', 'estado', OLD.estado, NEW.estado, USER());
+        INSERT INTO historial_vehiculos (vehiculo_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario, observaciones)
+        VALUES (NEW.id, 'UPDATE', 'estado', OLD.estado, NEW.estado, USER(), 
+                CONCAT('El estado del vehículo cambió de "', OLD.estado, '" a "', NEW.estado, '"'));
     END IF;
     
     -- Auditar cambios en precio_venta
     IF (OLD.precio_venta IS NULL AND NEW.precio_venta IS NOT NULL) OR 
        (OLD.precio_venta IS NOT NULL AND NEW.precio_venta IS NULL) OR
        (OLD.precio_venta != NEW.precio_venta) THEN
-        INSERT INTO historial_vehiculos (vehiculo_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario)
-        VALUES (NEW.id, 'UPDATE', 'precio_venta', OLD.precio_venta, NEW.precio_venta, USER());
+        INSERT INTO historial_vehiculos (vehiculo_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario, observaciones)
+        VALUES (NEW.id, 'UPDATE', 'precio_venta', OLD.precio_venta, NEW.precio_venta, USER(), 
+                CONCAT('El precio de venta fue modificado de ', IFNULL(OLD.precio_venta, 'sin precio'), ' a ₡', NEW.precio_venta));
+    END IF;
+    
+    -- Auditar cambios en descripción (generacion_id)
+    IF OLD.generacion_id != NEW.generacion_id THEN
+        INSERT INTO historial_vehiculos (vehiculo_id, accion, campo_modificado, valor_anterior, valor_nuevo, usuario, observaciones)
+        VALUES (NEW.id, 'UPDATE', 'generacion_id', OLD.generacion_id, NEW.generacion_id, USER(), 
+                CONCAT('La descripción del vehículo fue actualizada (cambio de generación de ', OLD.generacion_id, ' a ', NEW.generacion_id, ')'));
     END IF;
 END//
 

@@ -2,9 +2,12 @@
 GET http://localhost:8080/api/historial-vehiculos
 
 ### Obtener un registro de historial por ID
-GET http://localhost:8080/api/historial-vehiculos/1
+GET http://localhost:8080/api/historial-vehiculos/7
 
 ### Obtener historial por ID de vehículo
+GET http://localhost:8080/api/historial-vehiculos/vehiculo/2
+
+### Obtener historial con observaciones por ID de vehículo
 GET http://localhost:8080/api/historial-vehiculos/vehiculo/1
 
 ### Registrar cambio de estado de vehículo
