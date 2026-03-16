@@ -23,10 +23,7 @@ const HistorialVehiculo = ({ vehiculoId }) => {
   const cargarHistorial = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Cargando historial para vehículo ID:', vehiculoId);
       const response = await api.get(`/historial-vehiculos/vehiculo/${vehiculoId}`);
-      console.log('📥 Respuesta del API:', response.data);
-      console.log('📊 Total registros recibidos:', response.data.length);
       
       const historialConObservaciones = response.data.filter(item => 
         item.observaciones && 
@@ -35,12 +32,9 @@ const HistorialVehiculo = ({ vehiculoId }) => {
         String(item.observaciones).trim() !== ''
       );
       
-      console.log('✅ Registros con observaciones:', historialConObservaciones.length);
-      console.log('📝 Registros filtrados:', historialConObservaciones);
-      
       setHistorial(historialConObservaciones);
     } catch (error) {
-      console.error('❌ Error al cargar historial:', error);
+      console.error('Error al cargar historial:', error);
       setHistorial([]);
     } finally {
       setLoading(false);

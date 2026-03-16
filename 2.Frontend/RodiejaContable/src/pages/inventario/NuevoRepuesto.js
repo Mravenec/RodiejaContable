@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Form, 
   Input, 
@@ -31,8 +31,17 @@ const { Option } = Select;
 const NuevoRepuesto = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Obtener vehiculoId de los query parameters
+  const queryParams = new URLSearchParams(location.search);
+  const vehiculoId = queryParams.get('vehiculoId');
+  
   const [loading, setLoading] = useState(false);
   const [tipoRepuesto, setTipoRepuesto] = useState('con_vehiculo');
+  
+  // Determinar si el selector debe estar deshabilitado (modo lectura)
+  const selectorDeshabilitado = !!vehiculoId;
   
   // Estados para la cadena de selección (solo para repuestos SIN vehículo)
   const [marcaSeleccionada, setMarcaSeleccionada] = useState(null);
@@ -161,6 +170,26 @@ const NuevoRepuesto = () => {
 
   // Separador para ubicaciones según tipo
   const separator = tipoRepuesto === 'con_vehiculo' ? '_' : '-';
+
+  // Efecto para establecer automáticamente el vehículo si viene en la URL
+  useEffect(() => {
+    console.log('🔍 useEffect ejecutado. vehiculoId:', vehiculoId);
+    console.log('🔍 Vehículos desarmados disponibles:', vehiculosDesarmados.map(v => ({ id: v.id, codigo: v.codigoVehiculo, estado: v.estado })));
+    
+    if (vehiculoId && vehiculosDesarmados.length > 0) {
+      const vehiculoExiste = vehiculosDesarmados.find(v => v.id === parseInt(vehiculoId));
+      console.log('🚗 Vehículo encontrado:', vehiculoExiste);
+      
+      if (vehiculoExiste) {
+        form.setFieldsValue({
+          vehiculo_origen_id: parseInt(vehiculoId)
+        });
+        console.log('✅ Vehículo establecido en formulario');
+      } else {
+        console.log('⚠️ El vehículo no está desarmado o no existe');
+      }
+    }
+  }, [vehiculoId, form, vehiculosDesarmados]);
 
   // Handlers para los dropdowns (solo para repuestos sin vehículo)
   const onMarcaChange = (marcaId) => {
@@ -417,7 +446,14 @@ const NuevoRepuesto = () => {
               {/* Selección según el tipo de repuesto */}
               {tipoRepuesto === 'con_vehiculo' ? (
                 <div style={{ backgroundColor: '#f0f8ff', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <h4 style={{ color: '#1890ff', marginBottom: '12px' }}>Seleccionar Vehículo de Origen</h4>
+                  <h4 style={{ color: '#1890ff', marginBottom: '12px' }}>
+                    Seleccionar Vehículo de Origen
+                    {selectorDeshabilitado && (
+                      <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>
+                        (Vehículo preseleccionado - modo lectura)
+                      </span>
+                    )}
+                  </h4>
                   
                   {loadingVehiculos ? (
                     <p>Cargando vehículos...</p>
@@ -432,6 +468,7 @@ const NuevoRepuesto = () => {
                       <Select 
                         placeholder="Buscar por código, marca, modelo o generación"
                         showSearch
+                        disabled={selectorDeshabilitado}
                         filterOption={(input, option) => {
                           const searchText = getVehiculoDisplayText(option.vehiculo);
                           return searchText.toLowerCase().includes(input.toLowerCase());
