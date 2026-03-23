@@ -308,6 +308,34 @@ CREATE TABLE transacciones_financieras (
 );
 
 -- ========================================
+-- TABLA PARA REGISTRAR PAGOS DE COMISIONES A EMPLEADOS
+-- ========================================
+CREATE TABLE pagos_comisiones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    empleado_id INT NOT NULL,
+    anio INT NOT NULL,
+    mes INT NOT NULL,
+    total_comisiones DECIMAL(12,2) NOT NULL,
+    fecha_pago DATE NOT NULL,
+    estado ENUM('PENDIENTE', 'PAGADO', 'CANCELADO') DEFAULT 'PENDIENTE',
+    referencia_pago VARCHAR(100),
+    notas TEXT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ 
+    -- Índices para búsquedas eficientes
+    INDEX idx_empleado_periodo (empleado_id, anio, mes),
+    INDEX idx_fecha_pago (fecha_pago),
+    INDEX idx_estado (estado),
+ 
+    -- Constraint para evitar duplicados de pagos por período
+    UNIQUE KEY unique_pago_periodo (empleado_id, anio, mes),
+ 
+    -- Foreign key
+    FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE RESTRICT
+);
+
+-- ========================================
 -- TRIGGERS PARA AUTOMATIZACIÓN
 -- ========================================
 
@@ -1755,3 +1783,165 @@ BEGIN
 END//
 
 DELIMITER ;
+
+-- ========================================
+-- PROCEDIMIENTO PARA CALCULAR Y REGISTRAR PAGOS DE COMISIONES POR MES
+-- ========================================
+DELIMITER //
+CREATE PROCEDURE registrar_pago_comisiones_empleado(
+    IN p_empleado_id INT,
+    IN p_anio INT,
+    IN p_mes INT,
+    IN p_fecha_pago DATE,
+    IN p_referencia VARCHAR(100),
+    IN p_notas TEXT
+)
+BEGIN
+    DECLARE v_total_comisiones DECIMAL(12,2) DEFAULT 0;
+    DECLARE v_pago_existente INT DEFAULT 0;
+ 
+    -- Verificar si ya existe un pago para este empleado en este período
+    SELECT COUNT(*) INTO v_pago_existente 
+    FROM pagos_comisiones 
+    WHERE empleado_id = p_empleado_id AND anio = p_anio AND mes = p_mes;
+ 
+    IF v_pago_existente > 0 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Ya existe un pago de comisiones registrado para este empleado en este período';
+    END IF;
+ 
+    -- Calcular total de comisiones del empleado en el período
+    SELECT COALESCE(SUM(tf.comision_empleado), 0) INTO v_total_comisiones
+    FROM transacciones_financieras tf
+    WHERE tf.empleado_id = p_empleado_id
+      AND YEAR(tf.fecha) = p_anio
+      AND MONTH(tf.fecha) = p_mes
+      AND tf.estado = 'COMPLETADA';
+ 
+    IF v_total_comisiones = 0 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'No hay comisiones pendientes para este empleado en este período';
+    END IF;
+ 
+    -- Insertar el registro de pago
+    INSERT INTO pagos_comisiones (
+        empleado_id, anio, mes, total_comisiones, fecha_pago, 
+        estado, referencia_pago, notas
+    ) VALUES (
+        p_empleado_id, p_anio, p_mes, v_total_comisiones, p_fecha_pago,
+        'PAGADO', p_referencia, p_notas
+    );
+END //
+DELIMITER ;
+ 
+-- ========================================
+-- PROCEDIMIENTO PARA LISTAR COMISIONES PENDIENTES POR MES
+-- ========================================
+DELIMITER //
+CREATE PROCEDURE listar_comisiones_pendientes(IN p_anio INT, IN p_mes INT)
+BEGIN
+    SELECT 
+        e.id AS empleado_id,
+        e.nombre AS nombre_empleado,
+        COALESCE(SUM(tf.comision_empleado), 0) AS total_comisiones_pendientes,
+        COUNT(DISTINCT tf.id) AS cantidad_transacciones,
+        ROUND(AVG(tf.monto), 2) AS promedio_venta,
+        ROUND(COALESCE(SUM(tf.comision_empleado), 0) / NULLIF(SUM(tf.monto), 0) * 100, 2) AS porcentaje_comision
+    FROM empleados e
+    LEFT JOIN transacciones_financieras tf ON e.id = tf.empleado_id
+        AND YEAR(tf.fecha) = p_anio 
+        AND MONTH(tf.fecha) = p_mes
+        AND tf.estado = 'COMPLETADA'
+        AND tf.comision_empleado > 0
+    LEFT JOIN pagos_comisiones pc ON e.id = pc.empleado_id 
+        AND pc.anio = p_anio 
+        AND pc.mes = p_mes
+    WHERE pc.id IS NULL  -- Solo empleados sin pago registrado en este período
+    GROUP BY e.id, e.nombre
+    HAVING total_comisiones_pendientes > 0
+    ORDER BY total_comisiones_pendientes DESC;
+END //
+DELIMITER ;
+ 
+-- ========================================
+-- TRIGGER PARA REGISTRAR TRANSACCIÓN FINANCIERA AUTOMÁTICA
+-- ========================================
+DELIMITER //
+CREATE TRIGGER tr_pago_comisiones_after_insert
+AFTER INSERT ON pagos_comisiones
+FOR EACH ROW
+BEGIN
+    DECLARE v_tipo_egreso_id INT;
+    DECLARE v_nombre_empleado VARCHAR(100);
+    
+    -- Obtener el nombre del empleado
+    SELECT nombre INTO v_nombre_empleado 
+    FROM empleados 
+    WHERE id = NEW.empleado_id;
+    
+    -- Obtener el ID del tipo de transacción 'EGRESO'
+    SELECT id INTO v_tipo_egreso_id 
+    FROM tipos_transacciones 
+    WHERE categoria = 'EGRESO' 
+    LIMIT 1;
+    
+    -- Insertar transacción financiera automática
+    INSERT INTO transacciones_financieras (
+        codigo_transaccion, fecha, 
+        tipo_transaccion_id, empleado_id, monto, 
+        comision_empleado, descripcion, referencia, 
+        estado, activo, fecha_creacion, fecha_actualizacion
+    ) VALUES (
+        CONCAT('PAGO-COM-', NEW.id, '-', NEW.anio, '-', NEW.mes),
+        NEW.fecha_pago,
+        v_tipo_egreso_id,
+        NEW.empleado_id,
+        NEW.total_comisiones * -1,  -- Negativo porque es un egreso
+        0,  -- No hay comisión sobre el pago
+        CONCAT('Pago de comisiones período ', NEW.anio, '-', NEW.mes, 
+                ' para empleado: ', COALESCE(v_nombre_empleado, 'ID ' + NEW.empleado_id)),
+        NEW.referencia_pago,
+        'COMPLETADA',
+        1,
+        NOW(),
+        NOW()
+    );
+END //
+DELIMITER ;
+
+-- ========================================
+-- VISTA PARA RESUMEN DE PAGOS DE COMISIONES
+-- ========================================
+CREATE VIEW vista_resumen_pagos_comisiones AS
+SELECT 
+    pc.id,
+    pc.anio,
+    pc.mes,
+    e.nombre AS nombre_empleado,
+    pc.total_comisiones,
+    pc.fecha_pago,
+    pc.estado,
+    pc.referencia_pago,
+    pc.notas,
+    pc.fecha_registro,
+ 
+    -- Métricas adicionales
+    (SELECT COUNT(*) 
+     FROM transacciones_financieras tf 
+     WHERE tf.empleado_id = pc.empleado_id 
+       AND YEAR(tf.fecha) = pc.anio 
+       AND MONTH(tf.fecha) = pc.mes 
+       AND tf.estado = 'COMPLETADA'
+    ) AS cantidad_transacciones_pagadas,
+ 
+    ROUND(pc.total_comisiones / NULLIF(
+        (SELECT SUM(tf.monto) 
+         FROM transacciones_financieras tf 
+         WHERE tf.empleado_id = pc.empleado_id 
+           AND YEAR(tf.fecha) = pc.anio 
+           AND MONTH(tf.fecha) = pc.mes 
+           AND tf.estado = 'COMPLETADA'
+        ), 0
+    ) * 100, 2) AS porcentaje_comision_real
+FROM pagos_comisiones pc
+JOIN empleados e ON pc.empleado_id = e.id;

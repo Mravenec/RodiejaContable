@@ -12,6 +12,7 @@ import com.rodiejacontable.database.jooq.tables.HistorialVehiculos;
 import com.rodiejacontable.database.jooq.tables.InventarioRepuestos;
 import com.rodiejacontable.database.jooq.tables.Marcas;
 import com.rodiejacontable.database.jooq.tables.Modelos;
+import com.rodiejacontable.database.jooq.tables.PagosComisiones;
 import com.rodiejacontable.database.jooq.tables.TiposTransacciones;
 import com.rodiejacontable.database.jooq.tables.TransaccionesFinancieras;
 import com.rodiejacontable.database.jooq.tables.Vehiculos;
@@ -23,6 +24,7 @@ import com.rodiejacontable.database.jooq.tables.VistaInventarioCompleto;
 import com.rodiejacontable.database.jooq.tables.VistaInventarioCritico;
 import com.rodiejacontable.database.jooq.tables.VistaRentabilidadGeneraciones;
 import com.rodiejacontable.database.jooq.tables.VistaResumenGeneraciones;
+import com.rodiejacontable.database.jooq.tables.VistaResumenPagosComisiones;
 import com.rodiejacontable.database.jooq.tables.VistaTopProductosVendidos;
 import com.rodiejacontable.database.jooq.tables.VistaTransaccionesCompletas;
 import com.rodiejacontable.database.jooq.tables.VistaVehiculosCompleta;
@@ -91,6 +93,11 @@ public class SistemaVehicular extends SchemaImpl {
     public final Modelos MODELOS = Modelos.MODELOS;
 
     /**
+     * The table <code>sistema_vehicular.pagos_comisiones</code>.
+     */
+    public final PagosComisiones PAGOS_COMISIONES = PagosComisiones.PAGOS_COMISIONES;
+
+    /**
      * The table <code>sistema_vehicular.tipos_transacciones</code>.
      */
     public final TiposTransacciones TIPOS_TRANSACCIONES = TiposTransacciones.TIPOS_TRANSACCIONES;
@@ -148,6 +155,11 @@ public class SistemaVehicular extends SchemaImpl {
     /**
      * VIEW
      */
+    public final VistaResumenPagosComisiones VISTA_RESUMEN_PAGOS_COMISIONES = VistaResumenPagosComisiones.VISTA_RESUMEN_PAGOS_COMISIONES;
+
+    /**
+     * VIEW
+     */
     public final VistaTopProductosVendidos VISTA_TOP_PRODUCTOS_VENDIDOS = VistaTopProductosVendidos.VISTA_TOP_PRODUCTOS_VENDIDOS;
 
     /**
@@ -194,6 +206,7 @@ public class SistemaVehicular extends SchemaImpl {
             InventarioRepuestos.INVENTARIO_REPUESTOS,
             Marcas.MARCAS,
             Modelos.MODELOS,
+            PagosComisiones.PAGOS_COMISIONES,
             TiposTransacciones.TIPOS_TRANSACCIONES,
             TransaccionesFinancieras.TRANSACCIONES_FINANCIERAS,
             Vehiculos.VEHICULOS,
@@ -205,6 +218,7 @@ public class SistemaVehicular extends SchemaImpl {
             VistaInventarioCritico.VISTA_INVENTARIO_CRITICO,
             VistaRentabilidadGeneraciones.VISTA_RENTABILIDAD_GENERACIONES,
             VistaResumenGeneraciones.VISTA_RESUMEN_GENERACIONES,
+            VistaResumenPagosComisiones.VISTA_RESUMEN_PAGOS_COMISIONES,
             VistaTopProductosVendidos.VISTA_TOP_PRODUCTOS_VENDIDOS,
             VistaTransaccionesCompletas.VISTA_TRANSACCIONES_COMPLETAS,
             VistaVehiculosCompleta.VISTA_VEHICULOS_COMPLETA,

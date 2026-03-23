@@ -4,6 +4,8 @@
 package com.rodiejacontable.database.jooq;
 
 
+import com.rodiejacontable.database.jooq.routines.ListarComisionesPendientes;
+import com.rodiejacontable.database.jooq.routines.RegistrarPagoComisionesEmpleado;
 import com.rodiejacontable.database.jooq.routines.SpActividadAuditoriaFecha;
 import com.rodiejacontable.database.jooq.routines.SpHistorialVehiculo;
 import com.rodiejacontable.database.jooq.routines.SpInsertarRepuestoConGeneracionSinVehiculo;
@@ -20,6 +22,44 @@ import org.jooq.Configuration;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Routines {
+
+    /**
+     * Call <code>sistema_vehicular.listar_comisiones_pendientes</code>
+     */
+    public static void listarComisionesPendientes(
+          Configuration configuration
+        , Integer pAnio
+        , Integer pMes
+    ) {
+        ListarComisionesPendientes p = new ListarComisionesPendientes();
+        p.setPAnio(pAnio);
+        p.setPMes(pMes);
+
+        p.execute(configuration);
+    }
+
+    /**
+     * Call <code>sistema_vehicular.registrar_pago_comisiones_empleado</code>
+     */
+    public static void registrarPagoComisionesEmpleado(
+          Configuration configuration
+        , Integer pEmpleadoId
+        , Integer pAnio
+        , Integer pMes
+        , LocalDate pFechaPago
+        , String pReferencia
+        , String pNotas
+    ) {
+        RegistrarPagoComisionesEmpleado p = new RegistrarPagoComisionesEmpleado();
+        p.setPEmpleadoId(pEmpleadoId);
+        p.setPAnio(pAnio);
+        p.setPMes(pMes);
+        p.setPFechaPago(pFechaPago);
+        p.setPReferencia(pReferencia);
+        p.setPNotas(pNotas);
+
+        p.execute(configuration);
+    }
 
     /**
      * Call <code>sistema_vehicular.sp_actividad_auditoria_fecha</code>

@@ -4,6 +4,7 @@ import static com.rodiejacontable.database.jooq.Tables.TRANSACCIONES_FINANCIERAS
 
 import com.rodiejacontable.database.jooq.enums.TransaccionesFinancierasEstado;
 import com.rodiejacontable.database.jooq.tables.pojos.TransaccionesFinancieras;
+import com.rodiejacontable.database.jooq.tables.records.TransaccionesFinancierasRecord;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,5 +144,29 @@ public class TransaccionesFinancierasRepository {
            .set(TRANSACCIONES_FINANCIERAS.FECHA_ACTUALIZACION, java.time.LocalDateTime.now())
            .where(TRANSACCIONES_FINANCIERAS.ID.eq(id))
            .execute();
+    }
+    
+    // Métodos adicionales para comisiones
+    public List<TransaccionesFinancierasRecord> findComisionesByPeriodo(Integer anio, Integer mes) {
+        return dsl.selectFrom(TRANSACCIONES_FINANCIERAS)
+                .where(TRANSACCIONES_FINANCIERAS.ANIO.eq(anio.shortValue()))
+                .and(TRANSACCIONES_FINANCIERAS.MES.eq(mes.byteValue()))
+                .and(TRANSACCIONES_FINANCIERAS.ESTADO.eq(TransaccionesFinancierasEstado.COMPLETADA))
+                .and(TRANSACCIONES_FINANCIERAS.COMISION_EMPLEADO.isNotNull())
+                .and(TRANSACCIONES_FINANCIERAS.COMISION_EMPLEADO.gt(BigDecimal.ZERO))
+                .orderBy(TRANSACCIONES_FINANCIERAS.FECHA.desc())
+                .fetch();
+    }
+    
+    public List<TransaccionesFinancierasRecord> findComisionesByEmpleadoAndPeriodo(Integer empleadoId, Integer anio, Integer mes) {
+        return dsl.selectFrom(TRANSACCIONES_FINANCIERAS)
+                .where(TRANSACCIONES_FINANCIERAS.EMPLEADO_ID.eq(empleadoId))
+                .and(TRANSACCIONES_FINANCIERAS.ANIO.eq(anio.shortValue()))
+                .and(TRANSACCIONES_FINANCIERAS.MES.eq(mes.byteValue()))
+                .and(TRANSACCIONES_FINANCIERAS.ESTADO.eq(TransaccionesFinancierasEstado.COMPLETADA))
+                .and(TRANSACCIONES_FINANCIERAS.COMISION_EMPLEADO.isNotNull())
+                .and(TRANSACCIONES_FINANCIERAS.COMISION_EMPLEADO.gt(BigDecimal.ZERO))
+                .orderBy(TRANSACCIONES_FINANCIERAS.FECHA.desc())
+                .fetch();
     }
 }

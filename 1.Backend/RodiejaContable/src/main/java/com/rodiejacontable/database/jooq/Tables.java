@@ -12,6 +12,7 @@ import com.rodiejacontable.database.jooq.tables.HistorialVehiculos;
 import com.rodiejacontable.database.jooq.tables.InventarioRepuestos;
 import com.rodiejacontable.database.jooq.tables.Marcas;
 import com.rodiejacontable.database.jooq.tables.Modelos;
+import com.rodiejacontable.database.jooq.tables.PagosComisiones;
 import com.rodiejacontable.database.jooq.tables.TiposTransacciones;
 import com.rodiejacontable.database.jooq.tables.TransaccionesFinancieras;
 import com.rodiejacontable.database.jooq.tables.Vehiculos;
@@ -23,6 +24,7 @@ import com.rodiejacontable.database.jooq.tables.VistaInventarioCompleto;
 import com.rodiejacontable.database.jooq.tables.VistaInventarioCritico;
 import com.rodiejacontable.database.jooq.tables.VistaRentabilidadGeneraciones;
 import com.rodiejacontable.database.jooq.tables.VistaResumenGeneraciones;
+import com.rodiejacontable.database.jooq.tables.VistaResumenPagosComisiones;
 import com.rodiejacontable.database.jooq.tables.VistaTopProductosVendidos;
 import com.rodiejacontable.database.jooq.tables.VistaTransaccionesCompletas;
 import com.rodiejacontable.database.jooq.tables.VistaVehiculosCompleta;
@@ -75,6 +77,11 @@ public class Tables {
      * The table <code>sistema_vehicular.modelos</code>.
      */
     public static final Modelos MODELOS = Modelos.MODELOS;
+
+    /**
+     * The table <code>sistema_vehicular.pagos_comisiones</code>.
+     */
+    public static final PagosComisiones PAGOS_COMISIONES = PagosComisiones.PAGOS_COMISIONES;
 
     /**
      * The table <code>sistema_vehicular.tipos_transacciones</code>.
@@ -130,6 +137,11 @@ public class Tables {
      * VIEW
      */
     public static final VistaResumenGeneraciones VISTA_RESUMEN_GENERACIONES = VistaResumenGeneraciones.VISTA_RESUMEN_GENERACIONES;
+
+    /**
+     * VIEW
+     */
+    public static final VistaResumenPagosComisiones VISTA_RESUMEN_PAGOS_COMISIONES = VistaResumenPagosComisiones.VISTA_RESUMEN_PAGOS_COMISIONES;
 
     /**
      * VIEW
