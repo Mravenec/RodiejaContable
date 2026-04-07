@@ -34,6 +34,7 @@ import moment from 'moment';
 import ventasEmpleadosService from '../../api/ventasEmpleados';
 import { useVistaExcelMesActual, useVistaExcelMesEspecifico, useGenerarReporteVentasExcel } from '../../hooks/useReportes';
 import * as XLSX from 'xlsx';
+import ComisionesPendientes from '../../components/finanzas/ComisionesPendientes';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -206,13 +207,32 @@ const VentasReportes = () => {
         params.fechaFin = filtros.fechaFin.format('YYYY-MM-DD');
       }
 
+      // Agregar parámetro de búsqueda si existe
+      if (filtros.busqueda && filtros.busqueda.trim()) {
+        params.busqueda = filtros.busqueda.trim();
+      }
+
+      // Agregar otros filtros
+      if (filtros.vendedor) {
+        params.vendedorId = filtros.vendedor;
+      }
+      
+      if (filtros.estado && filtros.estado !== 'todos') {
+        params.estado = filtros.estado;
+      }
+      
+      if (filtros.tipoProducto) {
+        params.tipoProducto = filtros.tipoProducto;
+      }
+
       // Cargar datos de ventas por empleado con rango de fechas si aplica
       let response;
       if (filtros.fechaInicio && filtros.fechaFin) {
         response = await ventasEmpleadosService.getVentasPorRangoFechas(
           params.fechaInicio, 
           params.fechaFin, 
-          filtros.vendedor || null
+          params.vendedorId || null,
+          params.busqueda || null
         );
       } else {
         response = await ventasEmpleadosService.getVentasPorEmpleado(params);
@@ -1126,6 +1146,8 @@ const VentasReportes = () => {
         />
       </Card>
 
+      {/* Sección de Comisiones Pendientes */}
+      <ComisionesPendientes />
 
       {/* Modal para ver detalles de venta */}
       <Modal

@@ -1,0 +1,295 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  Table,
+  Button,
+  Space,
+  Tag,
+  message,
+  Spin,
+  Empty,
+  Select,
+  DatePicker,
+  Typography,
+  Modal,
+  Descriptions
+} from 'antd';
+import {
+  DollarOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CalendarOutlined
+} from '@ant-design/icons';
+import moment from 'moment';
+import usePagosComisiones from '../../hooks/usePagosComisiones';
+import pagosComisionesService from '../../api/pagosComisiones';
+
+const { Title } = Typography;
+const { Option } = Select;
+const { MonthPicker } = DatePicker;
+
+const ComisionesPendientes = () => {
+  const [anio, setAnio] = useState(moment().year());
+  const [mes, setMes] = useState(moment().month() + 1);
+  const [loading, setLoading] = useState(false);
+  const [comisionesPendientes, setComisionesPendientes] = useState([]);
+  const [empleados, setEmpleados] = useState([]);
+
+  // Hook para manejar pagos
+  const {
+    procesarPago,
+    loadingPagos,
+    pagoModalVisible,
+    empleadoSeleccionado,
+    mostrarDialogoPago,
+    cancelarPago
+  } = usePagosComisiones(empleados);
+
+  // Cargar comisiones pendientes
+  const cargarComisionesPendientes = async () => {
+    try {
+      setLoading(true);
+      const data = await pagosComisionesService.getComisionesPendientes(anio, mes);
+      setComisionesPendientes(data);
+    } catch (error) {
+      console.error('Error al cargar comisiones pendientes:', error);
+      message.error('Error al cargar las comisiones pendientes');
+      setComisionesPendientes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar empleados
+  const cargarEmpleados = async () => {
+    try {
+      // Aquí podrías cargar empleados desde tu API
+      // Por ahora usaremos los datos de comisiones pendientes
+      const empleadosUnicos = comisionesPendientes.map(c => ({
+        id: c.empleadoId,
+        nombre: c.nombreEmpleado
+      }));
+      setEmpleados(empleadosUnicos);
+    } catch (error) {
+      console.error('Error al cargar empleados:', error);
+    }
+  };
+
+  useEffect(() => {
+    cargarComisionesPendientes();
+  }, [anio, mes]);
+
+  useEffect(() => {
+    cargarEmpleados();
+  }, [comisionesPendientes]);
+
+  // Manejar pago
+  const handlePagar = async (empleado) => {
+    const exito = await procesarPago(empleado, anio, mes);
+    if (exito) {
+      // Recargar comisiones pendientes
+      await cargarComisionesPendientes();
+    }
+  };
+
+  // Columnas de la tabla
+  const columns = [
+    {
+      title: 'Empleado',
+      dataIndex: 'nombreEmpleado',
+      key: 'nombreEmpleado',
+      render: (text) => <span style={{ fontWeight: 'bold' }}>{text}</span>,
+      sorter: (a, b) => a.nombreEmpleado.localeCompare(b.nombreEmpleado)
+    },
+    {
+      title: 'Total Comisiones',
+      dataIndex: 'totalComisionesPendientes',
+      key: 'totalComisionesPendientes',
+      render: (value) => (
+        <span style={{ color: '#52c41a', fontWeight: 'bold' }}>
+          ₡{new Intl.NumberFormat('es-CR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(value)}
+        </span>
+      ),
+      align: 'right',
+      sorter: (a, b) => a.totalComisionesPendientes - b.totalComisionesPendientes
+    },
+    {
+      title: 'Cantidad Transacciones',
+      dataIndex: 'cantidadTransacciones',
+      key: 'cantidadTransacciones',
+      align: 'center',
+      sorter: (a, b) => a.cantidadTransacciones - b.cantidadTransacciones
+    },
+    {
+      title: 'Promedio Venta',
+      dataIndex: 'promedioVenta',
+      key: 'promedioVenta',
+      render: (value) => (
+        <span>
+          ₡{new Intl.NumberFormat('es-CR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(value)}
+        </span>
+      ),
+      align: 'right',
+      sorter: (a, b) => a.promedioVenta - b.promedioVenta
+    },
+    {
+      title: '% Comisión',
+      dataIndex: 'porcentajeComision',
+      key: 'porcentajeComision',
+      render: (value) => (
+        <Tag color="blue">
+          {value}%
+        </Tag>
+      ),
+      align: 'center',
+      sorter: (a, b) => a.porcentajeComision - b.porcentajeComision
+    },
+    {
+      title: 'Acciones',
+      key: 'acciones',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="primary"
+            icon={<DollarOutlined />}
+            onClick={() => handlePagar({
+              empleado: record.nombreEmpleado,
+              empleadoId: record.empleadoId,
+              totalComisiones: record.totalComisionesPendientes
+            })}
+            loading={loadingPagos}
+            size="small"
+          >
+            Pagar
+          </Button>
+        </Space>
+      ),
+      width: 120
+    }
+  ];
+
+  // Generar años disponibles (últimos 5 años y próximos 2)
+  const añoActual = moment().year();
+  const añosDisponibles = [];
+  for (let i = 5; i >= 0; i--) {
+    añosDisponibles.push(añoActual - i);
+  }
+  añosDisponibles.push(añoActual + 1, añoActual + 2);
+
+  // Generar meses disponibles
+  const mesesDisponibles = [
+    { value: 1, label: 'Enero' },
+    { value: 2, label: 'Febrero' },
+    { value: 3, label: 'Marzo' },
+    { value: 4, label: 'Abril' },
+    { value: 5, label: 'Mayo' },
+    { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' },
+    { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Septiembre' },
+    { value: 10, label: 'Octubre' },
+    { value: 11, label: 'Noviembre' },
+    { value: 12, label: 'Diciembre' }
+  ];
+
+  return (
+    <div className="comisiones-pendientes">
+      <Card
+        title={
+          <Space>
+            <ClockCircleOutlined />
+            <span>Comisiones Pendientes de Pago</span>
+          </Space>
+        }
+        extra={
+          <Space>
+            <Select
+              value={anio}
+              onChange={setAnio}
+              style={{ width: 100 }}
+              placeholder="Año"
+            >
+              {añosDisponibles.map(año => (
+                <Option key={año} value={año}>{año}</Option>
+              ))}
+            </Select>
+            <Select
+              value={mes}
+              onChange={setMes}
+              style={{ width: 120 }}
+              placeholder="Mes"
+            >
+              {mesesDisponibles.map(mes => (
+                <Option key={mes.value} value={mes.value}>
+                  {mes.label}
+                </Option>
+              ))}
+            </Select>
+          </Space>
+        }
+      >
+        <Spin spinning={loading}>
+          {comisionesPendientes.length === 0 ? (
+            <Empty
+              description="No hay comisiones pendientes para este período"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={comisionesPendientes}
+              rowKey="empleadoId"
+              pagination={{
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} de ${total} empleados`,
+                pageSizeOptions: ['10', '20', '50', '100']
+              }}
+              size="small"
+              scroll={{ x: 800 }}
+            />
+          )}
+        </Spin>
+      </Card>
+
+      {/* Modal de confirmación de pago */}
+      <Modal
+        title="Confirmar Pago de Comisiones"
+        visible={pagoModalVisible}
+        onOk={() => handlePagar(empleadoSeleccionado)}
+        onCancel={cancelarPago}
+        confirmLoading={loadingPagos}
+        okText="Confirmar Pago"
+        cancelText="Cancelar"
+      >
+        {empleadoSeleccionado && (
+          <Descriptions column={1} size="small">
+            <Descriptions.Item label="Empleado">
+              {empleadoSeleccionado.empleado}
+            </Descriptions.Item>
+            <Descriptions.Item label="Período">
+              {moment([anio, mes - 1]).format('MMMM YYYY')}
+            </Descriptions.Item>
+            <Descriptions.Item label="Monto a Pagar">
+              <span style={{ color: '#52c41a', fontWeight: 'bold' }}>
+                ₡{new Intl.NumberFormat('es-CR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                }).format(empleadoSeleccionado.totalComisiones)}
+              </span>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
+    </div>
+  );
+};
+
+export default ComisionesPendientes;

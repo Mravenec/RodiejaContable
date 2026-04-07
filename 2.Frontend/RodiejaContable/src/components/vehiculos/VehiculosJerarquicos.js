@@ -505,6 +505,8 @@ const VehiculosJerarquicos = () => {
       }
       setMarcas(datos);
       setFilteredMarcas(datos); // Initialize filtered list with all brands
+      console.log('Data loaded successfully:', datos);
+      console.log('Sample marca structure:', datos[0]);
     } catch (error) {
       console.error('Error al cargar los vehículos/generaciones:', error);
       message.error(`Error al cargar los datos: ${error.message || 'Error desconocido'}`);
@@ -536,20 +538,28 @@ const VehiculosJerarquicos = () => {
 
   // Handle search input changes
   const handleSearch = useCallback((value) => {
-    if (!value) {
-      setFilteredMarcas(marcas);
-      setSearchQuery('');
-      return;
-    }
-
+    console.log('Search called with value:', value);
+    console.log('Current marcas:', marcas);
+    
     const query = value.trim().toLowerCase();
     setSearchQuery(query);
 
+    if (!query) {
+      console.log('Empty query, showing all marcas');
+      setFilteredMarcas(marcas);
+      setActiveBrandKeys([]);
+      return;
+    }
+
+    console.log('Searching for:', query);
+
     // If it looks like a vehicle code (e.g., TOYA-001)
     if (/^[a-z]{2,4}-\d{2,4}$/i.test(query)) {
+      console.log('Detected vehicle code pattern');
       const match = findVehiclePath(query, marcas);
       if (match) {
         const { marca, modelo, generacion, vehiculo } = match;
+        console.log('Found vehicle:', match);
         
         // Set active brand and expand the hierarchy
         setActiveBrandKeys([`marca-${marca.id}`]);
@@ -575,35 +585,24 @@ const VehiculosJerarquicos = () => {
             });
           }
           
-          // Remove highlight after 3 segundos
+          // Remove highlight after 3 seconds
           setTimeout(() => setVehiculoMatchId(null), 3000);
         }, 100);
+        
+        // Set filtered to only show the matching brand
+        setFilteredMarcas([marca]);
       } else {
+        console.log('No vehicle found for code:', query);
         message.warning(`No se encontró ningún vehículo con el código: ${query}`);
+        setFilteredMarcas([]);
       }
     } else {
-      // Filter brands by name
-      const filtered = marcas.filter(marca => 
-        marca.nombre.toLowerCase().includes(query)
-      );
-      setFilteredMarcas(filtered);
-      
-      // Auto-expand matching brands
-      if (filtered.length > 0) {
-        setActiveBrandKeys(filtered.map(m => `marca-${m.id}`));
-      }
-    }
-  }, [marcas, findVehiclePath]);
-
-  // Update filtered list when search query changes
-  useEffect(() => {
-    if (!searchQuery) {
-      setFilteredMarcas(marcas);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = marcas.filter(marca => 
-        marca.nombre.toLowerCase().includes(query) ||
-        (marca.modelos || []).some(modelo => 
+      console.log('General search pattern');
+      // Filter by all fields: brand, model, generation, and vehicle code
+      const filtered = marcas.filter(marca => {
+        const brandMatch = marca.nombre.toLowerCase().includes(query);
+        
+        const modelMatch = (marca.modelos || []).some(modelo => 
           modelo.nombre.toLowerCase().includes(query) ||
           (modelo.generaciones || []).some(generacion =>
             generacion.nombre.toLowerCase().includes(query) ||
@@ -611,11 +610,24 @@ const VehiculosJerarquicos = () => {
               (vehiculo.codigo_vehiculo || '').toLowerCase().includes(query)
             )
           )
-        )
-      );
+        );
+        
+        return brandMatch || modelMatch;
+      });
+      
+      console.log('Filtered results:', filtered);
       setFilteredMarcas(filtered);
+      
+      // Auto-expand matching brands
+      if (filtered.length > 0 && filtered.length <= 5) {
+        setActiveBrandKeys(filtered.map(m => `marca-${m.id}`));
+      } else {
+        setActiveBrandKeys([]);
+      }
     }
-  }, [searchQuery, marcas]);
+  }, [marcas, findVehiclePath]);
+
+  // Remove the redundant useEffect since handleSearch already handles filtering
 
 
   // Toggle model expansion
@@ -640,7 +652,7 @@ const VehiculosJerarquicos = () => {
 
   useEffect(() => {
     cargarDatos(); // ✅ aquí es donde cambiamos el estado con la data fusionada
-  }, [cargarDatos]);
+  }, []); // Empty dependency array since this should only run once on mount
 
   // Cargar tipos de transacciones al montar el componente
   useEffect(() => {
@@ -1397,7 +1409,7 @@ const VehiculosJerarquicos = () => {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <Input.Search
-              placeholder="Buscar por marca, modelo o código..."
+              placeholder="Buscar por marca, modelo, generación o código de vehículo..."
               allowClear
               enterButton={<SearchOutlined />}
               onSearch={handleSearch}

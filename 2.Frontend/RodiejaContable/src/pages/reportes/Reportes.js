@@ -599,14 +599,6 @@ const Reportes = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Title level={3}>Reportes y Análisis</Title>
-        <Space>
-          <Button icon={<DownloadOutlined />} onClick={() => exportarReporte('excel')}>
-            Exportar a Excel
-          </Button>
-          <Button type="primary" icon={<DownloadOutlined />} onClick={() => exportarReporte('pdf')}>
-            Generar PDF
-          </Button>
-        </Space>
       </div>
       
       {/* Métricas principales */}

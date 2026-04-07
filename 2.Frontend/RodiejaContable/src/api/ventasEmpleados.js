@@ -79,10 +79,11 @@ class VentasEmpleadosService {
   }
 
   // Obtener ventas por empleado en un rango de fechas
-  async getVentasPorRangoFechas(fechaInicio, fechaFin, empleado = null) {
+  async getVentasPorRangoFechas(fechaInicio, fechaFin, empleado = null, busqueda = null) {
     try {
       const params = { fechaInicio, fechaFin };
       if (empleado) params.empleado = empleado;
+      if (busqueda && busqueda.trim()) params.busqueda = busqueda.trim();
       
       const response = await api.get('/v1/ventas-empleados/rango-fechas', { params });
       return response.data;

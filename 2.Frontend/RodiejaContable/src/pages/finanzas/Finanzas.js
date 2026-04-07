@@ -44,7 +44,8 @@ const Finanzas = () => {
   const [filtros, setFiltros] = useState({
     tipo: null,
     estado: null,
-    rangoFechas: null,
+    mes: new Date().getMonth() + 1,
+    anio: new Date().getFullYear(),
     busqueda: '',
     searchFields: ['descripcion', 'referencia', 'codigoTransaccion'],
     categoria: null
@@ -69,15 +70,14 @@ const Finanzas = () => {
       setLoading(prev => ({ ...prev, transacciones: true }));
       setError(null);
       
-      const { estado, rangoFechas, busqueda, searchFields, categoria } = { ...filtros, ...filtrosAplicados };
-      const [fechaInicio, fechaFin] = rangoFechas || [null, null];
+      const { estado, mes, anio, busqueda, searchFields, categoria } = { ...filtros, ...filtrosAplicados };
       
       let data;
-      if (fechaInicio && fechaFin) {
-        data = await transaccionesCompletasService.getTransaccionesPorRangoFechas(
-          fechaInicio.format('YYYY-MM-DD'), 
-          fechaFin.format('YYYY-MM-DD')
-        );
+      if (mes && anio) {
+        // Calcular rango de fechas para el mes seleccionado
+        const primerDia = moment([anio, mes - 1, 1]).format('YYYY-MM-DD');
+        const ultimoDia = moment([anio, mes - 1, 1]).endOf('month').format('YYYY-MM-DD');
+        data = await transaccionesCompletasService.getTransaccionesPorRangoFechas(primerDia, ultimoDia);
       } else if (categoria) {
         data = await transaccionesCompletasService.getTransaccionesPorCategoria(categoria);
       } else if (estado) {
@@ -397,7 +397,8 @@ const Finanzas = () => {
     const filtrosIniciales = {
       tipo: null,
       estado: null,
-      rangoFechas: null,
+      mes: null,
+      anio: null,
       busqueda: '',
       categoria: null
     };
@@ -501,16 +502,50 @@ const Finanzas = () => {
         >
           <Row gutter={16}>
             <Col xs={24} md={12} lg={6} style={{ marginBottom: 16 }}>
-              <div style={{ marginBottom: 8 }}><strong>Rango de Fechas</strong></div>
-              <RangePicker
+              <div style={{ marginBottom: 8 }}><strong>Mes</strong></div>
+              <Select
                 style={{ width: '100%' }}
-                value={filtros.rangoFechas}
-                onChange={(dates) => {
-                  const newFiltros = { ...filtros, rangoFechas: dates };
+                placeholder="Seleccionar mes"
+                allowClear
+                value={filtros.mes}
+                onChange={(value) => {
+                  const newFiltros = { ...filtros, mes: value };
                   setFiltros(newFiltros);
                   handleFiltrar(newFiltros);
                 }}
-              />
+              >
+                <Option value={1}>Enero</Option>
+                <Option value={2}>Febrero</Option>
+                <Option value={3}>Marzo</Option>
+                <Option value={4}>Abril</Option>
+                <Option value={5}>Mayo</Option>
+                <Option value={6}>Junio</Option>
+                <Option value={7}>Julio</Option>
+                <Option value={8}>Agosto</Option>
+                <Option value={9}>Septiembre</Option>
+                <Option value={10}>Octubre</Option>
+                <Option value={11}>Noviembre</Option>
+                <Option value={12}>Diciembre</Option>
+              </Select>
+            </Col>
+            <Col xs={24} md={12} lg={6} style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 8 }}><strong>Año</strong></div>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Seleccionar año"
+                allowClear
+                value={filtros.anio}
+                onChange={(value) => {
+                  const newFiltros = { ...filtros, anio: value };
+                  setFiltros(newFiltros);
+                  handleFiltrar(newFiltros);
+                }}
+              >
+                {[...Array(10).keys()].map(i => {
+                  const year = new Date().getFullYear() - 5 + i;
+                  return <Option key={year} value={year}>{year}</Option>;
+                })}
+              </Select>
             </Col>
             <Col xs={24} md={12} lg={6} style={{ marginBottom: 16 }}>
               <div style={{ marginBottom: 8 }}><strong>Tipo de Transacción</strong></div>
