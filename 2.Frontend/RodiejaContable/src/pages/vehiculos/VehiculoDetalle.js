@@ -149,10 +149,34 @@ const VehiculoDetalle = () => {
       
       // Get vehicle by ID from the flat list
       const vehiculosResponse = await vehiculoService.getVehiculos();
-      const vehiculoEncontrado = vehiculosResponse.find(v => v.id === parseInt(id));
+      let vehiculoEncontrado;
+      
+      console.log('🔍 Buscando vehículo con ID/código:', id);
+      console.log('🔍 Vehículos disponibles:', vehiculosResponse.map(v => ({
+        id: v.id,
+        codigoVehiculo: v.codigoVehiculo,
+        codigo_vehiculo: v.codigo_vehiculo
+      })));
+
+      if (isNaN(Number(id))) {
+        console.log('🔍 Buscando por código (no numérico)');
+        vehiculoEncontrado = vehiculosResponse.find(v => 
+          v.codigoVehiculo === id || 
+          v.codigo_vehiculo === id ||
+          v.codigoVehiculo?.toLowerCase() === id.toLowerCase() ||
+          v.codigo_vehiculo?.toLowerCase() === id.toLowerCase()
+        );
+        console.log('🔍 Resultado búsqueda por código:', vehiculoEncontrado);
+      } else {
+        console.log('🔍 Buscando por ID (numérico)');
+        vehiculoEncontrado = vehiculosResponse.find(v => v.id === parseInt(id, 10));
+        console.log('🔍 Resultado búsqueda por ID:', vehiculoEncontrado);
+      }
       
       if (!vehiculoEncontrado) {
-        throw new Error('Vehículo no encontrado');
+        console.error('❌ Vehículo no encontrado. ID buscado:', id);
+        console.error('❌ Códigos disponibles:', vehiculosResponse.map(v => v.codigoVehiculo || v.codigo_vehiculo));
+        throw new Error(`Vehículo con código/ID "${id}" no encontrado. Verifique consola para detalles.`);
       }
 
       // The vehiculosResponse already includes generacion attached from vehiculoService
@@ -213,7 +237,7 @@ const VehiculoDetalle = () => {
   // Handle marking vehicle as available
   const handleMarcarComoDisponible = async () => {
     try {
-      await api.put(`/vehiculos/${id}/estado?estado=DISPONIBLE`);
+      await api.put(`/vehiculos/${vehiculo.id}/estado?estado=DISPONIBLE`);
       message.success('Vehículo marcado como disponible exitosamente');
       // Refresh vehicle data
       refetch();
@@ -482,7 +506,7 @@ const VehiculoDetalle = () => {
                       type="primary" 
                       icon={<EditOutlined />} 
                       style={{ marginRight: '8px', marginBottom: '8px' }}
-                      onClick={() => navigate(`/vehiculos/editar/${id}`)}
+                      onClick={() => navigate(`/vehiculos/editar/${vehiculo.id}`)}
                     >
                       Editar
                     </Button>
@@ -500,7 +524,7 @@ const VehiculoDetalle = () => {
                       <Button 
                         type="primary" 
                         icon={<DollarOutlined />}
-                        onClick={() => navigate(`/finanzas/venta-vehiculo/${id}`)}
+                        onClick={() => navigate(`/finanzas/venta-vehiculo/${vehiculo.id}`)}
                       >
                         Registrar Venta
                       </Button>
@@ -787,8 +811,6 @@ const VehiculoDetalle = () => {
                       <tbody>
                         {transacciones.map((transaccion) => {
                           // Determine if it's an income or expense
-                          const tipo = transaccion.tipo_transaccion || {};
-                          
                           return (
                             <tr key={transaccion.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                               <td style={{ padding: '8px' }}>{formatDate(transaccion.fecha)}</td>
@@ -801,7 +823,7 @@ const VehiculoDetalle = () => {
                                 <Button 
                                   type="link" 
                                   size="small"
-                                  onClick={() => navigate(`/finanzas/transacciones/${transaccion.id}`)}
+                                  onClick={() => navigate(`/finanzas/${transaccion.id}`)}
                                 >
                                   Ver
                                 </Button>

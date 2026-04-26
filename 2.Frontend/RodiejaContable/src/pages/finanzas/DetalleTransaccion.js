@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, Typography, Descriptions, Button, Spin, message, Tag } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, CarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import finanzaService from '../../api/finanzas';
+import { getTiposTransacciones } from '../../api/transacciones';
 
 const { Title } = Typography;
 
@@ -19,8 +20,22 @@ const DetalleTransaccion = () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await finanzaService.getTransaccionById(id);
-        setTransaccion(data);
+        // Obtener transacción y tipos en paralelo
+        const [transaccionData, tiposData] = await Promise.all([
+          finanzaService.getTransaccionById(id),
+          getTiposTransacciones()
+        ]);
+        
+        // Enriquecer con tipo de transacción
+        const enrichedTransaccion = {
+          ...transaccionData,
+          tipo_transaccion: tiposData.find(tipo => 
+            tipo.id === transaccionData.tipoTransaccionId || 
+            tipo.id === transaccionData.tipo_transaccion_id
+          )
+        };
+        
+        setTransaccion(enrichedTransaccion);
       } catch (err) {
         console.error('Error fetching transaction:', err);
         setError(err.message || 'Error al cargar la transacción');
@@ -75,9 +90,15 @@ const DetalleTransaccion = () => {
       minimumFractionDigits: 2
     }).format(Math.abs(amount || 0));
     
-    return isIncome ? 
-      `<span style="color: #52c41a;">+ ₡${formattedAmount.replace('₡', '').trim()}</span>` : 
-      `<span style="color: #f5222d;">- ₡${formattedAmount.replace('₡', '').trim()}</span>`;
+    const cleanAmount = formattedAmount.replace('₡', '').trim();
+    const color = isIncome ? '#52c41a' : '#f5222d';
+    const sign = isIncome ? '+' : '-';
+    
+    return (
+      <span style={{ color }}>
+        {sign} ₡{cleanAmount}
+      </span>
+    );
   };
 
   // Format date
@@ -139,7 +160,16 @@ const DetalleTransaccion = () => {
             {transaccion.descripcion || 'Sin descripción'}
           </Descriptions.Item>
           {transaccion.vehiculoId && (
-            <Descriptions.Item label="ID Vehículo">{transaccion.vehiculoId}</Descriptions.Item>
+            <Descriptions.Item label="Vehículo">
+              <Button 
+                type="link" 
+                icon={<CarOutlined />}
+                onClick={() => navigate(`/vehiculos/${transaccion.vehiculoId}`)}
+                style={{ padding: 0 }}
+              >
+                {transaccion.vehiculoId}
+              </Button>
+            </Descriptions.Item>
           )}
           {transaccion.repuestoId && (
             <Descriptions.Item label="ID Repuesto">{transaccion.repuestoId}</Descriptions.Item>

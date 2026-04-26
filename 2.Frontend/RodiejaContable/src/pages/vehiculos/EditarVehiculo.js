@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Card, 
@@ -84,7 +84,7 @@ const transaccionesService = {
       
       const filteredTransacciones = allTransacciones.filter(transaccion => {
         const matchesVehicle = transaccion.vehiculoId != null && 
-                             (transaccion.vehiculoId == vehiculoId || 
+                             (transaccion.vehiculoId === vehiculoId || 
                               transaccion.vehiculoId === parseInt(vehiculoId));
         
         const matchesRepuesto = transaccion.repuestoId != null && 
@@ -126,10 +126,9 @@ const EditarVehiculo = () => {
   const [vehiculo, setVehiculo] = useState(null);
   const [transacciones, setTransacciones] = useState([]);
   const [repuestos, setRepuestos] = useState([]);
-  const [generaciones, setGeneraciones] = useState([]);
+  const [generaciones] = useState([]);
   const [loadingTransacciones, setLoadingTransacciones] = useState(false);
   const [loadingRepuestos, setLoadingRepuestos] = useState(false);
-  const [isError, setIsError] = useState(false);
 
   // Use the same update logic as the hook
   const updateVehiculo = useUpdateVehiculo({
@@ -142,10 +141,9 @@ const EditarVehiculo = () => {
   });
 
   // Load vehicle data using the same logic as VehiculoDetalle
-  const loadVehicleData = async () => {
+  const loadVehicleData = useCallback(async () => {
     try {
       setLoading(true);
-      setIsError(false);
       
       // Get vehicle by ID from the flat list (same approach as VehiculoDetalle)
       const vehiculosResponse = await vehiculoService.getVehiculos();
@@ -204,16 +202,15 @@ const EditarVehiculo = () => {
 
     } catch (error) {
       console.error('Error loading vehicle:', error);
-      setIsError(true);
       message.error(`Error al cargar el vehículo: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadVehicleData();
-  }, [id]);
+  }, [loadVehicleData]);
 
   // Update form when vehicle data changes and load transactions/repuestos
   useEffect(() => {
@@ -293,34 +290,6 @@ const EditarVehiculo = () => {
       }
     }
   }, [vehiculo, form]);
-
-  // Cargar repuestos del vehículo
-  const cargarRepuestos = async (vehiculoId) => {
-    try {
-      setLoadingRepuestos(true);
-      const repuestosData = await inventarioService.getRepuestosPorVehiculo(vehiculoId);
-      setRepuestos(repuestosData);
-    } catch (error) {
-      console.error('Error cargando repuestos:', error);
-      message.warning('No se pudieron cargar los repuestos');
-    } finally {
-      setLoadingRepuestos(false);
-    }
-  };
-  
-  // Cargar transacciones del vehículo
-  const cargarTransacciones = async (vehiculoId) => {
-    try {
-      setLoadingTransacciones(true);
-      const transaccionesData = await transaccionesService.getTransaccionesPorVehiculo(vehiculoId);
-      setTransacciones(transaccionesData);
-    } catch (error) {
-      console.error('Error cargando transacciones:', error);
-      message.warning('No se pudieron cargar las transacciones');
-    } finally {
-      setLoadingTransacciones(false);
-    }
-  };
 
   const loadRepuestos = async (vehiculoId) => {
     try {
@@ -887,11 +856,6 @@ const EditarVehiculo = () => {
                         </thead>
                         <tbody>
                           {transacciones.map((transaccion) => {
-                            const tipo = transaccion.tipo_transaccion || {};
-                            const esIngreso = tipo.categoria === 'INGRESO' || 
-                                           (tipo.nombre && tipo.nombre.toLowerCase().includes('venta')) ||
-                                           transaccion.monto > 0;
-                            
                             return (
                               <tr key={transaccion.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                                 <td style={{ padding: '8px' }}>{formatDate(transaccion.fecha)}</td>
@@ -904,7 +868,7 @@ const EditarVehiculo = () => {
                                   <Button 
                                     type="link" 
                                     size="small"
-                                    onClick={() => navigate(`/finanzas/transacciones/${transaccion.id}`)}
+                                    onClick={() => navigate(`/finanzas/${transaccion.id}`)}
                                   >
                                     Ver
                                   </Button>
